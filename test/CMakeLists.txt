@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.8)
+project(fast_exchange_tests)
+find_package(GTest REQUIRED)
+add_executable(fast_exchange_tests order_test.cpp order_list_test.cpp)
+target_link_libraries(fast_exchange_tests GTest::GTest GTest::Main order_book)
+install(TARGETS fast_exchange_tests DESTINATION ${EXCHANGE_INSTALL_BIN_DIR})
+include(GoogleTest)
+gtest_discover_tests(fast_exchange_tests)

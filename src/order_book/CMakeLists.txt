@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.5)
+project(order_book)
+find_package(Boost)
+if(Boost_FOUND)
+    add_library(${PROJECT_NAME} src/order_list.cpp)
+    target_include_directories(${PROJECT_NAME} PUBLIC include ${Boost_INCLUDE_DIRS})
+endif()
