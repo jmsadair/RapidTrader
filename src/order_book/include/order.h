@@ -93,9 +93,17 @@ struct Order: public list_base_hook<> {
                 std::numeric_limits<float>::epsilon() * std::fmax(std::fabs(price), std::fabs(other.price)));
     }
 
+    /**
+     * Indicates whether two orders are not equal. Two orders are equal if and only if they have
+     * the same status, the same side, the same ID, and the same price (within epsilon).
+     *
+     * @param other another order.
+     * @return true if the orders are not equal and false otherwise.
+     */
     bool operator!=(const Order& other) const {
         return !(*this == other);
     }
+
     /**
      * @return the string representation of an order.
      */
