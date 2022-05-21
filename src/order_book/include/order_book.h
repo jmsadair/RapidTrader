@@ -34,6 +34,16 @@ namespace OrderBook {
          */
         void cancelOrder(Order& order) {}
 
+        /**
+         * Indicates whether the provided order is present in the
+         * order book.
+         *
+         * @param order an order.
+         * @return true if the order is in the order book and false
+         *         otherwise.
+         */
+        bool hasOrder(Order& order) {}
+
     private:
         /**
          * Attempts to execute an order as fully as possible.
