@@ -107,7 +107,7 @@ struct Order: public list_base_hook<> {
     /**
      * @return the string representation of an order.
      */
-    std::string toString() {
+    std::string toString() const {
         auto order_time = std::chrono::system_clock::to_time_t(time);
         std::string time_string = std::ctime(&order_time);
         std::string order_action = order_action_to_string[static_cast<std::underlying_type<OrderStatus>::type>(action)];

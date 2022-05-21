@@ -5,8 +5,6 @@
 #include <utility>
 #include "order_list.h"
 
-
-
 namespace OrderBook {
     using Price = float;
     using OrderID = uint64_t;
@@ -16,7 +14,9 @@ namespace OrderBook {
         /**
          * A constructor for the OrderBook ADT.
          *
-         * @param order_book_symbol the symbol associated with the order book.
+         * @param order_book_symbol the symbol associated with the order book, require that
+         *                          order_book_symbol is an arrangement of characters that represents
+         *                          a publicly traded security.
          */
         explicit OrderBook(std::string order_book_symbol) : symbol(std::move(order_book_symbol)) {}
 
