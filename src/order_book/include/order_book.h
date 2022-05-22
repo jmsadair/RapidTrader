@@ -2,13 +2,12 @@
 #define FAST_EXCHANGE_ORDER_BOOK_H
 #include <map>
 #include <string>
-#include <utility>
+#include <decimal/decimal>
 #include "order_list.h"
 
 namespace OrderBook {
     using Price = float;
     using OrderID = uint64_t;
-
     class OrderBook {
     public:
         /**
@@ -87,7 +86,7 @@ namespace OrderBook {
         void removeOrder(Order& order) {}
 
         /**
-         * Inserts the order into the order book.
+         * Inserts an order into the order book.
          *
          * @param order the order to insert.
          */

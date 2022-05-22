@@ -13,7 +13,7 @@ TEST(OrderBookTest, HandlesPlaceGtcOrderNoMatch) {
     const auto order1_price = 69.54;
     const auto order1_id = 1;
     const auto order1_user_id = 1;
-    Order order1(order1_action, order1_side, order1_type,
+    OrderBook::Order order1(order1_action, order1_side, order1_type,
                  order1_quantity, order1_price, order1_id, order1_user_id);
     const auto order2_action = OrderAction::Limit;
     const auto order2_side = OrderSide::Bid;
@@ -22,7 +22,7 @@ TEST(OrderBookTest, HandlesPlaceGtcOrderNoMatch) {
     const auto order2_price = 69.54;
     const auto order2_id = 2;
     const auto order2_user_id = 2;
-    Order order2(order2_action, order2_side, order2_type,
+    OrderBook::Order order2(order2_action, order2_side, order2_type,
                  order2_quantity, order2_price, order2_id, order2_user_id);
     const auto order3_action = OrderAction::Limit;
     const auto order3_side = OrderSide::Bid;
@@ -31,7 +31,7 @@ TEST(OrderBookTest, HandlesPlaceGtcOrderNoMatch) {
     const auto order3_price = 220.32;
     const auto order3_id = 3;
     const auto order3_user_id = 3;
-    Order order3(order3_action, order3_side, order3_type,
+    OrderBook::Order order3(order3_action, order3_side, order3_type,
                  order3_quantity, order3_price, order3_id, order3_user_id);
     // Place the orders.
     order_book.placeOrder(order1);
@@ -62,7 +62,7 @@ TEST(OrderBookTest, HandlesPlaceFokOrderWithMatch) {
     const auto order1_price = 69.54;
     const auto order1_id = 1;
     const auto order1_user_id = 1;
-    Order order1(order1_action, order1_side, order1_type,
+    OrderBook::Order order1(order1_action, order1_side, order1_type,
                  order1_quantity, order1_price, order1_id, order1_user_id);
     // Create a FOK order that will be matched.
     const auto order2_action = OrderAction::Limit;
@@ -72,7 +72,7 @@ TEST(OrderBookTest, HandlesPlaceFokOrderWithMatch) {
     const auto order2_price = 69.54;
     const auto order2_id = 2;
     const auto order2_user_id = 2;
-    Order order2(order2_action, order2_side, order2_type,
+    OrderBook::Order order2(order2_action, order2_side, order2_type,
                  order2_quantity, order2_price, order2_id, order2_user_id);
     // Place the orders.
     order_book.placeOrder(order1);
@@ -100,7 +100,7 @@ TEST(OrderBookTest, HandlesCancelOrder) {
     const auto order1_price = 233.45;
     const auto order1_id = 1;
     const auto order1_user_id = 1;
-    Order order1(order1_action, order1_side, order1_type,
+    OrderBook::Order order1(order1_action, order1_side, order1_type,
                  order1_quantity, order1_price, order1_id, order1_user_id);
     const auto order2_action = OrderAction::Limit;
     const auto order2_side = OrderSide::Ask;
@@ -109,7 +109,7 @@ TEST(OrderBookTest, HandlesCancelOrder) {
     const auto order2_price = 168.30;
     const auto order2_id = 2;
     const auto order2_user_id = 2;
-    Order order2(order2_action, order2_side, order2_type,
+    OrderBook::Order order2(order2_action, order2_side, order2_type,
                  order2_quantity, order2_price, order2_id, order2_user_id);
     // Add the orders to the order book.
     order_book.placeOrder(order1);
