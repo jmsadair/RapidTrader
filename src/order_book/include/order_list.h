@@ -56,6 +56,52 @@ namespace OrderBook {
         }
 
         /**
+         * @return the oldest order in the order list, require that the order
+         *         list is non-empty.
+         * @throws Error if the order list is empty.
+         */
+        inline Order front() {
+            // Require that the order list is non-empty.
+            assert(!order_list.empty());
+            return order_list.front();
+        }
+
+        /**
+         * Removes the oldest order from the order list, require that
+         * the order list is non-empty.
+         *
+         * @throws Error if the order list is empty.
+         */
+        inline void popFront() {
+            // Require that the order list is non-empty.
+            assert(!order_list.empty());
+            order_list.pop_front();
+        }
+
+        /**
+         * @return the newest order in the order book, require that the
+         *         order list is non-empty.
+         * @throws Error if the order list is empty.
+         */
+        inline Order back() {
+            // Require that the order list is non-empty.
+            assert(!order_list.empty());
+            return order_list.back();
+        }
+
+        /**
+         * Removes the newest order from the order list, require
+         * that the order list is non-empty.
+         *
+         * @throws Error if the order list is empty.
+         */
+        inline void popBack() {
+            // Require that the order list is non-empty.
+            assert(!order_list.empty());
+            order_list.pop_back();
+        }
+
+        /**
          * Given an order, determines whether the order is in the order list.
          *
          * @param order an order.
@@ -65,17 +111,27 @@ namespace OrderBook {
         [[nodiscard]] inline bool hasOrder(const Order &order) const {
             return std::find(order_list.begin(),
                              order_list.end(), order) != order_list.end();
-        };
+        }
 
         /**
-         * @returns true if the order list is empty and false otherwise.
+         * @return true if the order list is empty and false otherwise.
          */
         [[nodiscard]] inline bool isEmpty() const { return order_list.empty(); }
 
         /**
-         * @returns the number of orders that are in the order list.
+         * @return the number of orders that are in the order list.
          */
         [[nodiscard]] inline size_t size() const { return order_list.size(); }
+
+        /**
+         * @return an iterator to the beginning of the order list.
+         */
+        inline auto begin() { return order_list.begin(); }
+
+        /**
+         * @return an iterator to the end of the order list.
+         */
+        inline auto end() { return order_list.end(); }
 
         /**
          * @return the string representation of the order list.
@@ -85,7 +141,6 @@ namespace OrderBook {
             for (const auto &order: order_list) { order_list_string += order.toString(); }
             return order_list_string;
         }
-
     private:
         // A doubly-linked list of orders.
         list<OrderBook::Order> order_list;
