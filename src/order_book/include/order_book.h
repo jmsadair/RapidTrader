@@ -6,7 +6,6 @@
 #include "order_list.h"
 
 namespace OrderBook {
-    using Price = float;
     using OrderID = uint64_t;
     class OrderBook {
     public:
@@ -90,10 +89,14 @@ namespace OrderBook {
          *
          * @param order the order to insert.
          */
-        void insertOrder(Order& order) {}
+        void insertOrder(Order& order) {
+            auto& order_side_map = order.side == OrderSide::Ask ? ask_map : bid_map;
+            auto pair = order_side_map.emplace(order.price, order);
+            if (!pair.second) {pair.first->second.addOrder(order); }
+        }
 
-        std::multimap<Price, OrderList, std::greater<>> bid_map;
-        std::multimap<Price, OrderList, std::less<>> ask_map;
+        std::map<Price, OrderList> bid_map;
+        std::map<Price, OrderList> ask_map;
         std::unordered_map<OrderID, Order> order_map;
         std::string symbol;
     };

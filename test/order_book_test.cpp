@@ -10,7 +10,7 @@ TEST(OrderBookTest, HandlesPlaceGtcOrderNoMatch) {
     const auto order1_side = OrderSide::Bid;
     const auto order1_type = OrderType::GoodTillCancel;
     const auto order1_quantity = 301;
-    const auto order1_price = 69.54;
+    const auto order1_price = 69;
     const auto order1_id = 1;
     const auto order1_user_id = 1;
     OrderBook::Order order1(order1_action, order1_side, order1_type,
@@ -19,7 +19,7 @@ TEST(OrderBookTest, HandlesPlaceGtcOrderNoMatch) {
     const auto order2_side = OrderSide::Bid;
     const auto order2_type = OrderType::GoodTillCancel;
     const auto order2_quantity = 245;
-    const auto order2_price = 69.54;
+    const auto order2_price = 69;
     const auto order2_id = 2;
     const auto order2_user_id = 2;
     OrderBook::Order order2(order2_action, order2_side, order2_type,
@@ -28,7 +28,7 @@ TEST(OrderBookTest, HandlesPlaceGtcOrderNoMatch) {
     const auto order3_side = OrderSide::Bid;
     const auto order3_type = OrderType::GoodTillCancel;
     const auto order3_quantity = 657;
-    const auto order3_price = 220.32;
+    const auto order3_price = 220;
     const auto order3_id = 3;
     const auto order3_user_id = 3;
     OrderBook::Order order3(order3_action, order3_side, order3_type,
@@ -59,7 +59,7 @@ TEST(OrderBookTest, HandlesPlaceFokOrderWithMatch) {
     const auto order1_side = OrderSide::Ask;
     const auto order1_type = OrderType::GoodTillCancel;
     const auto order1_quantity = 301;
-    const auto order1_price = 69.54;
+    const auto order1_price = 69;
     const auto order1_id = 1;
     const auto order1_user_id = 1;
     OrderBook::Order order1(order1_action, order1_side, order1_type,
@@ -69,7 +69,7 @@ TEST(OrderBookTest, HandlesPlaceFokOrderWithMatch) {
     const auto order2_side = OrderSide::Bid;
     const auto order2_type = OrderType::FillOrKill;
     const auto order2_quantity = 245;
-    const auto order2_price = 69.54;
+    const auto order2_price = 69;
     const auto order2_id = 2;
     const auto order2_user_id = 2;
     OrderBook::Order order2(order2_action, order2_side, order2_type,
@@ -97,7 +97,7 @@ TEST(OrderBookTest, HandlesCancelOrder) {
     const auto order1_side = OrderSide::Ask;
     const auto order1_type = OrderType::GoodTillCancel;
     const auto order1_quantity = 5000;
-    const auto order1_price = 233.45;
+    const auto order1_price = 233;
     const auto order1_id = 1;
     const auto order1_user_id = 1;
     OrderBook::Order order1(order1_action, order1_side, order1_type,
@@ -106,7 +106,7 @@ TEST(OrderBookTest, HandlesCancelOrder) {
     const auto order2_side = OrderSide::Ask;
     const auto order2_type = OrderType::GoodTillCancel;
     const auto order2_quantity = 780;
-    const auto order2_price = 168.30;
+    const auto order2_price = 168;
     const auto order2_id = 2;
     const auto order2_user_id = 2;
     OrderBook::Order order2(order2_action, order2_side, order2_type,

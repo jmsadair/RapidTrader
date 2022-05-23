@@ -34,6 +34,9 @@ enum class OrderStatus {Accepted = 0, Rejected = 1, PartiallyFilled = 1, Filled 
 constexpr std::array order_status_to_string {"ACCEPTED", "REJECTED", "PARTIALLY FILLED", "FILLED", "CANCELLED"};
 
 using namespace boost::intrusive;
+using Price = uint64_t;
+using OrderID = uint64_t;
+using UserID = uint64_t;
 
 /**
  * A mutable order ADT.
@@ -43,11 +46,10 @@ namespace OrderBook {
         const OrderAction action;
         const OrderSide side;
         const OrderType type;
-        const uint64_t user_id;
-        const uint64_t id;
-        const std::string symbol;
+        const UserID user_id;
+        const OrderID id;
         const std::chrono::time_point<std::chrono::system_clock> time;
-        const float price;
+        const Price price;
         OrderStatus status;
         uint64_t quantity;
 
@@ -59,20 +61,19 @@ namespace OrderBook {
          * @param order_side the side of the order - ask or bid.
          * @param order_type the type of the order - GTC, IOC, FOK.
          * @param order_quantity the quantity of the order, require that quantity is positive.
-         * @param order_price the price of the order, require that price is non-negative.
+         * @param order_price the price of the order, require that price is positive.
          * @param order_id a unique ID associated with the order.
          * @param order_user_id a unique ID associated with the user placing the order.
          * @throws Error if price is negative or if quantity is not positive.
          */
         Order(OrderAction order_action, OrderSide order_side, OrderType order_type, uint64_t order_quantity,
-              float order_price,
-              uint64_t order_id, uint64_t order_user_id)
+              Price order_price, OrderID order_id, UserID order_user_id)
                 : action(order_action), side(order_side), type(order_type), status(OrderStatus::Accepted),
                   quantity(order_quantity),
                   price(order_price), id(order_id), user_id(order_user_id), time(std::chrono::system_clock::now()) {
             if (quantity == 0)
                 throw std::invalid_argument("quantity must be positive!");
-            if (price < 0)
+            if (price == 0)
                 throw std::invalid_argument("price must be non-negative!");
         }
 
