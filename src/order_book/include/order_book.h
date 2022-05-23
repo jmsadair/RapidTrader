@@ -82,17 +82,22 @@ namespace OrderBook {
          *
          * @param order the order to remove.
          */
-        void removeOrder(Order& order) {}
+        inline void removeOrder(Order& order) {
+            auto& order_side_map = order.side == OrderSide::Ask ? ask_map : bid_map;
+            order_side_map.at(order.price).removeOrder(order);
+            order_map.erase(order.id);
+        }
 
         /**
          * Inserts an order into the order book.
          *
          * @param order the order to insert.
          */
-        void insertOrder(Order& order) {
+        inline void insertOrder(Order& order) {
             auto& order_side_map = order.side == OrderSide::Ask ? ask_map : bid_map;
             auto pair = order_side_map.emplace(order.price, order);
             if (!pair.second) {pair.first->second.addOrder(order); }
+            order_map.insert(std::make_pair(order.id, order));
         }
 
         std::map<Price, OrderList> bid_map;
