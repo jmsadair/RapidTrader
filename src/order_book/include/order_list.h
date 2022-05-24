@@ -60,7 +60,7 @@ namespace OrderBook {
          *         list is non-empty.
          * @throws Error if the order list is empty.
          */
-        inline Order front() {
+        inline Order& front() {
             // Require that the order list is non-empty.
             assert(!order_list.empty());
             return order_list.front();
@@ -83,7 +83,7 @@ namespace OrderBook {
          *         order list is non-empty.
          * @throws Error if the order list is empty.
          */
-        inline Order back() {
+        inline Order& back() {
             // Require that the order list is non-empty.
             assert(!order_list.empty());
             return order_list.back();
@@ -143,7 +143,7 @@ namespace OrderBook {
         }
     private:
         // A doubly-linked list of orders.
-        list<OrderBook::Order> order_list;
+        list<Order, constant_time_size<false>> order_list;
     };
 }
 #endif //FAST_EXCHANGE_ORDER_LIST_H

@@ -2,7 +2,7 @@
 #define FAST_EXCHANGE_ORDER_BOOK_H
 #include <map>
 #include <string>
-#include <decimal/decimal>
+#include <exception>
 #include "order_list.h"
 
 namespace OrderBook {
@@ -23,14 +23,31 @@ namespace OrderBook {
          *
          * @param order the order to place.
          */
-        void placeOrder(Order& order) {}
+        inline void placeOrder(Order& order) {
+            switch(order.type) {
+                case OrderType::GoodTillCancel:
+                    handleGtcOrder(order);
+                    break;
+                case OrderType::ImmediateOrCancel:
+                    handleIocOrder(order);
+                    break;
+                case OrderType::FillOrKill:
+                    handleFokOrder(order);
+                    break;
+                default:
+                    throw std::logic_error("Default case should never be reached!");
+            }
+        }
 
         /**
          * Cancels the order if it exists in the order book.
          *
          * @param order the order to cancel.
          */
-        void cancelOrder(Order& order) {}
+        inline void cancelOrder(Order& order) {
+            removeOrder(order);
+            order.status = OrderStatus::Cancelled;
+        }
 
         /**
          * Indicates whether the provided order is present in the
@@ -40,7 +57,7 @@ namespace OrderBook {
          * @return true if the order is in the order book and false
          *         otherwise.
          */
-        bool hasOrder(Order& order) {}
+        inline bool hasOrder(const Order& order) { return order_map.find(order.id) != order_map.end(); }
 
     private:
         /**
@@ -48,14 +65,31 @@ namespace OrderBook {
          *
          * @param order the order to execute.
          */
-        void tryMatch(Order& order) {}
+        void execute(Order& order);
+
+        /**
+         * Given a bid and an ask order at the same price level, fills
+         * the orders as fully as possible. Mutates the orders by updating their
+         * status and quantity.
+         *
+         * @param first_order an order.
+         * @param second_order another order, require that second_order is an ask
+         *                     order if first_order is a bid order; otherwise, if
+         *                     first_order is an ask_order, require that second_order
+         *                     is a bid order.
+         */
+        static void fillOrders(Order& first_order, Order& second_order);
 
         /**
         * Places a GTC (Good 'Till Cancel) order.
         *
         * @param order a GTC order.
         */
-        void handleGtcOrder(Order& order) {}
+        void handleGtcOrder(Order& order) {
+            execute(order);
+            if (order.status != OrderStatus::Filled)
+                insertOrder(order);
+        }
 
         /**
          * Places a FOK (Fill or Kill Order). Note that this order will
@@ -65,7 +99,9 @@ namespace OrderBook {
          *
          * @param order a FOK order.
          */
-        void handleFokOrder(Order& order) {}
+        void handleFokOrder(Order& order) {
+            throw std::logic_error("Not yet implemented!");
+        }
 
         /**
          * Places an IOC (Immediate or Cancel Order). Note that order will
@@ -75,7 +111,9 @@ namespace OrderBook {
          *
          * @param order a IOC order.
          */
-        void handleIocOrder(Order& order) {}
+        void handleIocOrder(Order& order) {
+            throw std::logic_error("Not yet implemented!");
+        };
 
         /**
          * Removes the order from the order book, if its exists.
@@ -96,7 +134,7 @@ namespace OrderBook {
         inline void insertOrder(Order& order) {
             auto& order_side_map = order.side == OrderSide::Ask ? ask_map : bid_map;
             auto pair = order_side_map.emplace(order.price, order);
-            if (!pair.second) {pair.first->second.addOrder(order); }
+            if (!pair.second) { pair.first->second.addOrder(order); }
             order_map.insert(std::make_pair(order.id, order));
         }
 

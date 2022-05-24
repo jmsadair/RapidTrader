@@ -10,7 +10,7 @@ TEST(OrderTest, OrderAcceptsValidInput) {
     const auto order_id = 123;
     const auto order_user_id = 1;
 
-    ASSERT_NO_THROW(OrderBook::Order(order_action, order_side, order_type, order_quantity, order_price, order_id, order_user_id));
+    ASSERT_NO_THROW(Order(order_action, order_side, order_type, order_quantity, order_price, order_id, order_user_id));
 }
 
 TEST(OrderTest, OrderRejectsNonPositivePrice) {
@@ -22,7 +22,7 @@ TEST(OrderTest, OrderRejectsNonPositivePrice) {
     const auto order_id = 123;
     const auto order_user_id = 1;
 
-    ASSERT_THROW(OrderBook::Order(order_action, order_side, order_type, order_quantity, order_price, order_id, order_user_id),
+    ASSERT_THROW(Order(order_action, order_side, order_type, order_quantity, order_price, order_id, order_user_id),
                  std::invalid_argument);
 }
 
@@ -35,7 +35,7 @@ TEST(OrderTest, OrderRejectsZeroQuantity) {
     const auto order_id = 123;
     const auto order_user_id = 1;
 
-    ASSERT_THROW(OrderBook::Order(order_action, order_side, order_type, order_quantity, order_price, order_id, order_user_id),
+    ASSERT_THROW(Order(order_action, order_side, order_type, order_quantity, order_price, order_id, order_user_id),
                  std::invalid_argument);
 }
 
@@ -54,9 +54,9 @@ TEST(OrderTest, DifferentOrdersNotEqual) {
     const auto order2_price = 69;
     const auto order2_id = 2;
     const auto order2_user_id = 2;
-    const auto order1 = OrderBook::Order(order1_action, order1_side, order1_type,
+    const auto order1 = Order(order1_action, order1_side, order1_type,
                         order1_quantity, order1_price, order1_id, order1_user_id);
-    const auto order2 = OrderBook::Order(order2_action, order2_side, order2_type,
+    const auto order2 = Order(order2_action, order2_side, order2_type,
                          order2_quantity, order2_price, order2_id, order2_user_id);
     ASSERT_NE(order1, order2);
 }
@@ -76,9 +76,9 @@ TEST(OrderTest, SameOrdersEqual) {
     const auto order2_price = 69;
     const auto order2_id = 1;
     const auto order2_user_id = 1;
-    const auto order1 = OrderBook::Order(order1_action, order1_side, order1_type,
+    const auto order1 = Order(order1_action, order1_side, order1_type,
                         order1_quantity, order1_price, order1_id, order1_user_id);
-    const auto order2 = OrderBook::Order(order2_action, order2_side, order2_type,
+    const auto order2 = Order(order2_action, order2_side, order2_type,
                         order2_quantity, order2_price, order2_id, order2_user_id);
 
     ASSERT_EQ(order1, order2);

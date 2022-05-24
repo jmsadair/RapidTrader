@@ -27,11 +27,11 @@ TEST(OrderListTest, HandlesAddAndRemoveOrder) {
     const auto expected_size2 = 2;
     const auto expected_size3 = 3;
     const auto expected_size4 = 0;
-    auto order1 = OrderBook::Order(order1_action, order1_side, order1_type, order1_quantity,
+    auto order1 = Order(order1_action, order1_side, order1_type, order1_quantity,
                         order1_price, order1_id, order1_user_id);
-    auto order2 = OrderBook::Order(order2_action, order2_side, order2_type, order2_quantity,
+    auto order2 = Order(order2_action, order2_side, order2_type, order2_quantity,
                         order2_price, order2_id, order2_user_id);
-    auto order3 = OrderBook::Order(order3_action, order3_side, order3_type, order3_quantity,
+    auto order3 = Order(order3_action, order3_side, order3_type, order3_quantity,
                         order3_price, order3_id, order3_user_id);
     OrderBook::OrderList order_list;
 
@@ -65,7 +65,7 @@ TEST(OrderListTest, HandlesIsEmptyCorrectly) {
     const auto order_price = 695;
     const auto order_id = 1;
     const auto order_user_id = 1;
-    auto order = OrderBook::Order(order_action, order_side, order_type, order_quantity, order_price, order_id, order_user_id);
+    auto order = Order(order_action, order_side, order_type, order_quantity, order_price, order_id, order_user_id);
     auto order_list = OrderBook::OrderList(order);
     ASSERT_TRUE(!order_list.isEmpty());
     order_list.removeOrder(order);
