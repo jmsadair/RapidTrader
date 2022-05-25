@@ -143,7 +143,7 @@ namespace OrderBook {
         }
     private:
         // A doubly-linked list of orders.
-        list<Order, constant_time_size<false>> order_list;
+        list<Order> order_list;
     };
 }
 #endif //FAST_EXCHANGE_ORDER_LIST_H

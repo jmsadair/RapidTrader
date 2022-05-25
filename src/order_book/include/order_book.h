@@ -29,11 +29,9 @@ namespace OrderBook {
                     handleGtcOrder(order);
                     break;
                 case OrderType::ImmediateOrCancel:
-                    handleIocOrder(order);
-                    break;
+                    throw std::logic_error("IOC orders are not currently supported!");
                 case OrderType::FillOrKill:
-                    handleFokOrder(order);
-                    break;
+                    throw std::logic_error("FOK orders are not currently supported!");
                 default:
                     throw std::logic_error("Default case should never be reached!");
             }
@@ -92,37 +90,16 @@ namespace OrderBook {
         }
 
         /**
-         * Places a FOK (Fill or Kill Order). Note that this order will
-         * not be added to the order book - if possible, the order will
-         * be executed immediately in its entirety; otherwise, it will
-         * be cancelled.
-         *
-         * @param order a FOK order.
-         */
-        void handleFokOrder(Order& order) {
-            throw std::logic_error("Not yet implemented!");
-        }
-
-        /**
-         * Places an IOC (Immediate or Cancel Order). Note that order will
-         * not be added to the order book - the order will be executed immediately
-         * as fully as possible and non-executed parts of the order are deleted
-         * without entry into the order book.
-         *
-         * @param order a IOC order.
-         */
-        void handleIocOrder(Order& order) {
-            throw std::logic_error("Not yet implemented!");
-        };
-
-        /**
          * Removes the order from the order book, if its exists.
          *
          * @param order the order to remove.
          */
         inline void removeOrder(Order& order) {
-            auto& order_side_map = order.side == OrderSide::Ask ? ask_map : bid_map;
-            order_side_map.at(order.price).removeOrder(order);
+            auto it = order.side == OrderSide::Ask ?
+                    ask_map.find(order.price) : bid_map.find(order.price);
+            it->second.removeOrder(order);
+            if (it->second.isEmpty())
+                order_map.erase(order.price);
             order_map.erase(order.id);
         }
 
@@ -132,14 +109,14 @@ namespace OrderBook {
          * @param order the order to insert.
          */
         inline void insertOrder(Order& order) {
-            auto& order_side_map = order.side == OrderSide::Ask ? ask_map : bid_map;
-            auto pair = order_side_map.emplace(order.price, order);
+            auto pair = order.side == OrderSide::Ask ?
+                    ask_map.emplace(order.price, order) : bid_map.emplace(order.price, order);
             if (!pair.second) { pair.first->second.addOrder(order); }
             order_map.insert(std::make_pair(order.id, order));
         }
 
-        std::map<Price, OrderList> bid_map;
-        std::map<Price, OrderList> ask_map;
+        std::map<Price, OrderList, std::greater<>> bid_map;
+        std::map<Price, OrderList, std::less<>> ask_map;
         std::unordered_map<OrderID, Order> order_map;
         std::string symbol;
     };

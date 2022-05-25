@@ -41,7 +41,7 @@ using UserID = uint64_t;
 /**
  * A mutable order ADT.
  */
-struct Order : public list_base_hook<link_mode<auto_unlink>> {
+struct Order : public list_base_hook<> {
     const OrderAction action;
     const OrderSide side;
     const OrderType type;

@@ -3,43 +3,28 @@
 namespace OrderBook {
     void OrderBook::execute(Order &order) {
         // Incoming order is an ask order.
-        if (order.side == OrderSide::Ask) {
-            auto price_level_it = bid_map.rbegin();
-            while (price_level_it != bid_map.rend() && price_level_it->first >= order.price) {
-                OrderList& order_list = price_level_it->second;
-                while (!order_list.isEmpty() && order.status != OrderStatus::Filled) {
-                    Order& other_order = order_list.front();
-                    fillOrders(order, other_order);
-                    if (other_order.status == OrderStatus::Filled) {
-                        order_list.popFront();
-                        removeOrder(other_order);
-                    }
-                }
-                if (order_list.isEmpty())
-                    bid_map.erase(order.price);
-                if (order.status == OrderStatus::Filled)
-                    return;
-                ++price_level_it;
-            }
-            return;
-        }
-        // Incoming order is a bid order.
-        auto price_level_it = ask_map.begin();
-        while (price_level_it != ask_map.end() && price_level_it->first <= order.price) {
+        bool is_ask = order.side == OrderSide::Ask;
+        auto price_level_it = is_ask ? bid_map.begin() : ask_map.begin();
+        auto last_it = is_ask ? bid_map.end() : ask_map.end();
+        while (price_level_it != last_it && ((!is_ask && price_level_it->first <= order.price) ||
+            (is_ask && price_level_it->first >= order.price))) {
             OrderList& order_list = price_level_it->second;
             while (!order_list.isEmpty() && order.status != OrderStatus::Filled) {
                 Order& other_order = order_list.front();
                 fillOrders(order, other_order);
                 if (other_order.status == OrderStatus::Filled) {
+                    order_map.erase(other_order.id);
                     order_list.popFront();
-                    removeOrder(other_order);
                 }
             }
-            if (order_list.isEmpty())
-                ask_map.erase(order.price);
+            if (order_list.isEmpty() && is_ask)
+                bid_map.erase(price_level_it++);
+            else if (order_list.isEmpty())
+                ask_map.erase(price_level_it++);
+            else
+                ++price_level_it;
             if (order.status == OrderStatus::Filled)
                 return;
-            ++price_level_it;
         }
     }
 
