@@ -57,6 +57,11 @@ namespace OrderBook {
          */
         inline bool hasOrder(const Order& order) { return order_map.find(order.id) != order_map.end(); }
 
+        /**
+         * @return the string representation of the order book.
+         */
+        std::string toString() const;
+
     private:
         /**
          * Attempts to execute an order as fully as possible.
@@ -76,7 +81,15 @@ namespace OrderBook {
          *                     first_order is an ask_order, require that second_order
          *                     is a bid order.
          */
-        static void fillOrders(Order& first_order, Order& second_order);
+        static inline void fillOrders(Order& first_order, Order& second_order) {
+            // Require that orders are not on same side.
+            assert(first_order.side != second_order.side);
+            uint64_t quantity_filled = std::min(first_order.quantity, second_order.quantity);
+            first_order.quantity -= quantity_filled;
+            second_order.quantity -= quantity_filled;
+            second_order.status = second_order.quantity != 0 ? OrderStatus::PartiallyFilled : OrderStatus::Filled;
+            first_order.status = first_order.quantity != 0 ? OrderStatus::PartiallyFilled : OrderStatus::Filled;
+        }
 
         /**
         * Places a GTC (Good 'Till Cancel) order.

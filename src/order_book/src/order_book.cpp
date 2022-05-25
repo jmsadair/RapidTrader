@@ -2,12 +2,13 @@
 
 namespace OrderBook {
     void OrderBook::execute(Order &order) {
-        // Incoming order is an ask order.
         bool is_ask = order.side == OrderSide::Ask;
         auto price_level_it = is_ask ? bid_map.begin() : ask_map.begin();
         auto last_it = is_ask ? bid_map.end() : ask_map.end();
-        while (price_level_it != last_it && ((!is_ask && price_level_it->first <= order.price) ||
-            (is_ask && price_level_it->first >= order.price))) {
+        const auto can_match = is_ask ?
+                [](Price order_price, Price price_level) { return price_level >= order_price; } :
+                [](Price order_price, Price price_level) { return price_level <= order_price; };
+        while (price_level_it != last_it && can_match(order.price, price_level_it->first)) {
             OrderList& order_list = price_level_it->second;
             while (!order_list.isEmpty() && order.status != OrderStatus::Filled) {
                 Order& other_order = order_list.front();
@@ -17,10 +18,8 @@ namespace OrderBook {
                     order_list.popFront();
                 }
             }
-            if (order_list.isEmpty() && is_ask)
-                bid_map.erase(price_level_it++);
-            else if (order_list.isEmpty())
-                ask_map.erase(price_level_it++);
+            if (order_list.isEmpty())
+                is_ask ? bid_map.erase(price_level_it++) : ask_map.erase(price_level_it++);
             else
                 ++price_level_it;
             if (order.status == OrderStatus::Filled)
@@ -28,24 +27,15 @@ namespace OrderBook {
         }
     }
 
-    void OrderBook::fillOrders(Order& first_order, Order& second_order) {
-        // Require that orders are not on same side.
-        assert(first_order.side != second_order.side);
-        if (first_order.quantity > second_order.quantity) {
-            first_order.quantity -= second_order.quantity;
-            second_order.quantity = 0;
-            second_order.status = OrderStatus::Filled;
-            first_order.status = OrderStatus::PartiallyFilled;
-        } else if (first_order.quantity < second_order.quantity) {
-            second_order.quantity -= first_order.quantity;
-            first_order.quantity = 0;
-            first_order.status = OrderStatus::Filled;
-            second_order.status = OrderStatus::PartiallyFilled;
-        } else {
-            first_order.quantity = 0;
-            second_order.quantity = 0;
-            first_order.status = OrderStatus::Filled;
-            second_order.status = OrderStatus::Filled;
+    std::string OrderBook::toString() const {
+        std::string order_book_string = "----------ASK SIDE ORDERS----------\n\n";
+        for (const auto& [price_level, order_list] : ask_map) {
+            order_book_string += "Price Level: " + std::to_string(price_level) + "\n" + order_list.toString();
         }
+        order_book_string += "-----------------------------------\n\n----------BID SIDE ORDERS----------\n\n";
+        for (const auto& [price_level, order_list] : bid_map) {
+            order_book_string += "Price Level: " + std::to_string(price_level) + "\n" + order_list.toString();
+        }
+        order_book_string += "-----------------------------------\n\n";
     }
 }

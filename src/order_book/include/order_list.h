@@ -136,7 +136,7 @@ namespace OrderBook {
         /**
          * @return the string representation of the order list.
          */
-        std::string toString() {
+        [[nodiscard]] std::string toString() const {
             std::string order_list_string;
             for (const auto &order: order_list) { order_list_string += order.toString(); }
             return order_list_string;
