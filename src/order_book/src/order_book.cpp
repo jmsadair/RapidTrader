@@ -37,5 +37,6 @@ namespace OrderBook {
             order_book_string += "Price Level: " + std::to_string(price_level) + "\n" + order_list.toString();
         }
         order_book_string += "-----------------------------------\n\n";
+        return order_book_string;
     }
 }

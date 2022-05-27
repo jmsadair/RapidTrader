@@ -1,3 +1,4 @@
 cmake_minimum_required(VERSION 3.5)
 project(fast_exchange_source)
 add_subdirectory(order_book)
+add_subdirectory(messaging)

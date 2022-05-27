@@ -37,7 +37,8 @@ using namespace boost::intrusive;
 using Price = uint64_t;
 using OrderID = uint64_t;
 using UserID = uint64_t;
-
+using Quantity = uint64_t;
+using Time = std::chrono::time_point<std::chrono::system_clock>;
 /**
  * A mutable order ADT.
  */
@@ -47,10 +48,10 @@ struct Order : public list_base_hook<> {
     const OrderType type;
     const UserID user_id;
     const OrderID id;
-    const std::chrono::time_point<std::chrono::system_clock> time;
+    const Time time;
     const Price price;
     OrderStatus status;
-    uint64_t quantity;
+    Quantity quantity;
 
     /**
      * A constructor for the order ADT.

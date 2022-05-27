@@ -112,7 +112,7 @@ namespace OrderBook {
                     ask_map.find(order.price) : bid_map.find(order.price);
             it->second.removeOrder(order);
             if (it->second.isEmpty())
-                order_map.erase(order.price);
+                order.side == OrderSide::Ask ? ask_map.erase(it) : bid_map.erase(it);
             order_map.erase(order.id);
         }
 
