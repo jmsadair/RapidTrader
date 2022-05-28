@@ -5,7 +5,7 @@
 #include <queue>
 #include <memory>
 
-namespace messaging {
+namespace Messaging {
     /**
      * A message base class.
      */
@@ -50,7 +50,7 @@ namespace messaging {
          *
          * @return the oldest message from the queue.
          */
-        std::shared_ptr<Message> wait_and_pop() {
+        std::shared_ptr<Message> waitAndPop() {
             std::unique_lock<std::mutex> lk(m);
             // Checks if queue is empty.
             const auto is_empty = [&]{ return !message_queue.empty(); };
