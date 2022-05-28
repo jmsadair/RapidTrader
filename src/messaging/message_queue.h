@@ -53,9 +53,9 @@ namespace Messaging {
         std::shared_ptr<Message> waitAndPop() {
             std::unique_lock<std::mutex> lk(m);
             // Checks if queue is empty.
-            const auto is_empty = [&]{ return !message_queue.empty(); };
+            const auto is_not_empty = [&]{ return !message_queue.empty(); };
             // Wait until queue is not empty.
-            c.wait(lk, is_empty);
+            c.wait(lk, is_not_empty);
             auto msg = message_queue.front();
             message_queue.pop();
             return msg;
