@@ -38,7 +38,7 @@ namespace Messaging {
          * @param func_ the function that will handle the message.
          */
         TemplateDispatcher(MessageQueue* msg_queue_ptr_, PreviousDispatcher* prev_dispatcher_ptr_, Func&& func_):
-            msg_queue_ptr(msg_queue_ptr_), prev_dispatcher_ptr(prev_dispatcher_ptr_), func(std::forward(func_)),
+            msg_queue_ptr(msg_queue_ptr_), prev_dispatcher_ptr(prev_dispatcher_ptr_), func(std::forward<Func>(func_)),
             chained(false)
         {
             prev_dispatcher_ptr->chained = true;
@@ -74,7 +74,7 @@ namespace Messaging {
         PreviousDispatcher* prev_dispatcher_ptr;
         Func func;
         bool chained;
-        friend class TemplateDispatcher;
+        template<typename Dispatcher, typename OtherMsg, typename OtherFunc> friend class TemplateDispatcher;
 
         /**
          * Waits for a message and attempts to handle it.
