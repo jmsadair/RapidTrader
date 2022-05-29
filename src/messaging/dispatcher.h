@@ -61,7 +61,7 @@ namespace Messaging {
         MessageQueue* msg_queue_ptr;
         bool chained;
         template<typename Dispatcher, typename Msg, typename Func> friend class TemplateDispatcher;
-        
+
         /**
          * Waits for and dispatches messages.
          */
