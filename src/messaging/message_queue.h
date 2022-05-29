@@ -9,8 +9,8 @@ namespace Messaging {
     /**
      * A message base class.
      */
-    struct Message {
-        virtual ~Message() = default;
+    struct BaseMessage {
+        virtual ~BaseMessage() = default;
     };
 
     /**
@@ -20,7 +20,7 @@ namespace Messaging {
      * @tparam Msg the message type.
      */
     template<typename Msg>
-    struct WrappedMessage: Message {
+    struct WrappedMessage: BaseMessage {
         Msg content;
         explicit WrappedMessage(const Msg& msg_content)
             : content(msg_content)
@@ -50,7 +50,7 @@ namespace Messaging {
          *
          * @return the oldest message from the queue.
          */
-        std::shared_ptr<Message> waitAndPop() {
+        std::shared_ptr<BaseMessage> waitAndPop() {
             std::unique_lock<std::mutex> lk(m);
             // Checks if queue is empty.
             const auto is_not_empty = [&]{ return !message_queue.empty(); };
@@ -65,7 +65,7 @@ namespace Messaging {
         std::mutex m;
         std::condition_variable c;
         // Stores pointers to messages.
-        std::queue<std::shared_ptr<Message>> message_queue;
+        std::queue<std::shared_ptr<BaseMessage>> message_queue;
     };
 }
 #endif //FAST_EXCHANGE_MESSAGE_QUEUE_H

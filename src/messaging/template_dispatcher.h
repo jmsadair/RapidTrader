@@ -95,7 +95,7 @@ namespace Messaging {
          * @param msg the message that the supplied function will be called on.
          * @return true if the if the message is a match.
          */
-        bool dispatch(const std::shared_ptr<Message>& msg) {
+        bool dispatch(const std::shared_ptr<BaseMessage>& msg) {
             auto* wrapped = dynamic_cast<WrappedMessage<Msg>*>(msg.get());
             if(wrapped) {
                 func(wrapped->content);
