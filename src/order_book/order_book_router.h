@@ -1,7 +1,7 @@
 #ifndef FAST_EXCHANGE_ORDER_BOOK_ROUTER_H
 #define FAST_EXCHANGE_ORDER_BOOK_ROUTER_H
 #include "order_book.h"
-#include "messages.h"
+#include "commands.h"
 
 class OrderBookRouter {
 public:

@@ -1,5 +1,5 @@
-#ifndef FAST_EXCHANGE_MESSAGES_H
-#define FAST_EXCHANGE_MESSAGES_H
+#ifndef FAST_EXCHANGE_COMMANDS_H
+#define FAST_EXCHANGE_COMMANDS_H
 #include <utility>
 #include "order.h"
 
@@ -46,28 +46,4 @@ struct AddOrderBookCommand : Command {
 
     const Symbol order_book_symbol;
 };
-
-struct Result {
-    virtual ~Result() = default;
-};
-
-struct OrderExecuted : Result {
-    OrderExecuted(UserID user_id_, OrderID order_id_) :
-        user_id(user_id_), order_id(order_id_)
-    {}
-
-    const UserID user_id;
-    const OrderID order_id;
-};
-
-struct OrderCancelled : Result {
-    OrderCancelled(UserID user_id_, OrderID order_id_, Quantity remaining_quantity_, OrderStatus order_status_) :
-        user_id(user_id_), order_id(order_id_), remaining_quantity(remaining_quantity_), order_status(order_status_)
-    {}
-
-    const UserID user_id;
-    const OrderID order_id;
-    const Quantity remaining_quantity;
-    const OrderStatus order_status;
-};
-#endif //FAST_EXCHANGE_MESSAGES_H
+#endif //FAST_EXCHANGE_COMMANDS_H
