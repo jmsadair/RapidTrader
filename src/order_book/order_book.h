@@ -4,8 +4,11 @@
 #include <string>
 #include <exception>
 #include "order_list.h"
+#include "messages.h"
+#include "receiver.h"
 
 namespace OrderBook {
+    using Symbol = std::string;
     class OrderBook {
     public:
         /**
@@ -15,17 +18,17 @@ namespace OrderBook {
          *                          order_book_symbol is an arrangement of characters that represents
          *                          a publicly traded security.
          */
-        explicit OrderBook(std::string order_book_symbol) : symbol(std::move(order_book_symbol)) {}
+        explicit OrderBook(Symbol order_book_symbol) : symbol(std::move(order_book_symbol)) {}
 
         /**
          * Places a new order.
          *
          * @param order the order to place.
          */
-        inline void placeOrder(Order& order) {
-            switch(order.type) {
+        inline void placeOrder(PlaceOrderCommand& command) {
+            switch(command.order_type) {
                 case OrderType::GoodTillCancel:
-                    handleGtcOrder(order);
+                    handleGtcOrder(command);
                     break;
                 case OrderType::ImmediateOrCancel:
                     throw std::logic_error("IOC orders are not currently supported!");
@@ -39,22 +42,13 @@ namespace OrderBook {
         /**
          * Cancels the order if it exists in the order book.
          *
-         * @param order the order to cancel.
+         * @param command a command to cancel the order.
          */
-        inline void cancelOrder(Order& order) {
-            removeOrder(order);
-            order.status = OrderStatus::Cancelled;
+        inline void cancelOrder(CancelOrderCommand& command) {
+            auto it = order_map.find(command.order_id);
+            if (it != order_map.end())
+                removeOrder(it->second);
         }
-
-        /**
-         * Indicates whether the provided order is present in the
-         * order book.
-         *
-         * @param order an order.
-         * @return true if the order is in the order book and false
-         *         otherwise.
-         */
-        inline bool hasOrder(const Order& order) { return order_map.find(order.id) != order_map.end(); }
 
         /**
          * @return the string representation of the order book.
@@ -74,24 +68,45 @@ namespace OrderBook {
 
     private:
         /**
-         * Attempts to execute an order as fully as possible.
+         * Handles a command to place a GTC order. Mutates the command.
          *
-         * @param order the order to execute.
+         * @param command a command to place a GTC order.
          */
-        void execute(Order& order) {
-            bool is_ask = order.side == OrderSide::Ask;
+        void handleGtcOrder(PlaceOrderCommand& command) {
+            execute(command);
+            if (command.order_quantity) {
+                Order order(command.order_action, command.order_side, command.order_type,
+                            command.order_quantity,command.order_price, command.order_id,
+                            command.user_id);
+                insertOrder(order);
+            }
+        }
+
+        /**
+         * Attempts to execute an order as fully as possible. Mutates
+         * the command.
+         *
+         * @param order a command to place an order.
+         */
+        void execute(PlaceOrderCommand& command) {
+            bool is_ask = command.order_side == OrderSide::Ask;
             auto price_level_it = is_ask ? bid_map.begin() : ask_map.begin();
             auto last_it = is_ask ? bid_map.end() : ask_map.end();
             const auto can_match = is_ask ?
                                    [](Price order_price, Price price_level) { return price_level >= order_price; } :
                                    [](Price order_price, Price price_level) { return price_level <= order_price; };
-            while (price_level_it != last_it && can_match(order.price, price_level_it->first)) {
+            while (price_level_it != last_it && can_match(command.order_price, price_level_it->first)) {
                 OrderList& order_list = price_level_it->second;
-                while (!order_list.isEmpty() && order.status != OrderStatus::Filled) {
-                    Order& other_order = order_list.front();
-                    fillOrders(order, other_order);
-                    if (other_order.status == OrderStatus::Filled) {
-                        order_map.erase(other_order.id);
+                while (!order_list.isEmpty() && command.order_quantity != 0) {
+                    // Fill the order.
+                    Order& order = order_list.front();
+                    Quantity quantity_filled = std::min(command.order_quantity, order.quantity);
+                    command.order_quantity -= quantity_filled;
+                    order.quantity -= quantity_filled;
+                    order.status = order.quantity != 0 ? OrderStatus::PartiallyFilled : OrderStatus::Filled;
+                    if (order.status == OrderStatus::Filled) {
+                        outgoing.send(OrderExecuted(order.user_id, order.id));
+                        order_map.erase(order.id);
                         order_list.popFront();
                     }
                 }
@@ -99,41 +114,11 @@ namespace OrderBook {
                     is_ask ? bid_map.erase(price_level_it++) : ask_map.erase(price_level_it++);
                 else
                     ++price_level_it;
-                if (order.status == OrderStatus::Filled)
+                if (!command.order_quantity) {
+                    outgoing.send(OrderExecuted(command.user_id, command.order_id));
                     return;
+                }
             }
-        }
-
-        /**
-         * Given a bid and an ask order at the same price level, fills
-         * the orders as fully as possible. Mutates the orders by updating their
-         * status and quantity.
-         *
-         * @param first_order an order.
-         * @param second_order another order, require that second_order is an ask
-         *                     order if first_order is a bid order; otherwise, if
-         *                     first_order is an ask_order, require that second_order
-         *                     is a bid order.
-         */
-        static inline void fillOrders(Order& first_order, Order& second_order) {
-            // Require that orders are not on same side.
-            assert(first_order.side != second_order.side);
-            uint64_t quantity_filled = std::min(first_order.quantity, second_order.quantity);
-            first_order.quantity -= quantity_filled;
-            second_order.quantity -= quantity_filled;
-            second_order.status = second_order.quantity != 0 ? OrderStatus::PartiallyFilled : OrderStatus::Filled;
-            first_order.status = first_order.quantity != 0 ? OrderStatus::PartiallyFilled : OrderStatus::Filled;
-        }
-
-        /**
-        * Places a GTC (Good 'Till Cancel) order.
-        *
-        * @param order a GTC order.
-        */
-        void handleGtcOrder(Order& order) {
-            execute(order);
-            if (order.status != OrderStatus::Filled)
-                insertOrder(order);
         }
 
         /**
@@ -162,10 +147,21 @@ namespace OrderBook {
             order_map.insert(std::make_pair(order.id, order));
         }
 
+        /**
+         * Indicates whether the provided order is present in the
+         * order book.
+         *
+         * @param order an order.
+         * @return true if the order is in the order book and false
+         *         otherwise.
+         */
+        inline bool hasOrder(const Order& order) { return order_map.find(order.id) != order_map.end(); }
+
         std::map<Price, OrderList, std::greater<>> bid_map;
         std::map<Price, OrderList, std::less<>> ask_map;
         std::unordered_map<OrderID, Order> order_map;
-        std::string symbol;
+        Symbol symbol;
+        Messaging::Sender outgoing;
     };
 }
 #endif //FAST_EXCHANGE_ORDER_BOOK_H
