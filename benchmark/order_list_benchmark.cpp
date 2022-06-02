@@ -1,5 +1,5 @@
 #include <benchmark/benchmark.h>
-#include "../src/order_book/order_list.h"
+#include "order_list.h"
 
 static void BM_OrderListCreationNoOrder(benchmark::State& state) {
     for (auto _ : state)

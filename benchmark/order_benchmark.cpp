@@ -1,5 +1,5 @@
 #include <benchmark/benchmark.h>
-#include "../src/order_book/order.h"
+#include "order.h"
 
 static void BM_OrderCreation(benchmark::State& state) {
     const auto order_action = OrderAction::Limit;
