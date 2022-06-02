@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <thread>
 #include "vector_orderbook.h"
-#include "map_orderbook.h"
 
 struct OrderBookReceiver {
     Messaging::Receiver receiver;

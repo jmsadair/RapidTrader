@@ -102,8 +102,8 @@ namespace OrderBook {
                                    [](Price order_price, Price price_level) { return price_level >= order_price; } :
                                    [](Price order_price, Price price_level) { return price_level <= order_price; };
             while (price_level_it != last_it && can_match(command.order_price, price_level_it->first)) {
-                OrderList& order_list = price_level_it->second;
-                while (!order_list.isEmpty() && incoming_order_quantity != 0) {
+                auto& order_list = price_level_it->second.order_list;
+                while (!order_list.empty() && incoming_order_quantity != 0) {
                     // Fill the order.
                     Order& order = order_list.front();
                     Quantity quantity_filled = std::min(incoming_order_quantity, order.quantity);
@@ -114,11 +114,11 @@ namespace OrderBook {
                         outgoing.send(OrderExecuted(order.user_id, order.id));
                         // Note: Be careful! The order must be removed from the order list before
                         // it can be removed from the order book.
-                        order_list.popFront();
+                        order_list.pop_front();
                         orders.erase(order.id);
                     }
                 }
-                if (order_list.isEmpty())
+                if (order_list.empty())
                     is_ask ? bid_map.erase(price_level_it++) : ask_map.erase(price_level_it++);
                 else
                     ++price_level_it;
@@ -136,7 +136,7 @@ namespace OrderBook {
         inline void remove(Order& order) override {
             auto it = order.side == OrderSide::Ask ? ask_map.find(order.price) : bid_map.find(order.price);
             it->second.removeOrder(order);
-            if (it->second.isEmpty())
+            if (it->second.order_list.empty())
                 order.side == OrderSide::Ask ? ask_map.erase(it) : bid_map.erase(it);
             orders.erase(order.id);
         }
@@ -150,13 +150,13 @@ namespace OrderBook {
                     ask_map.emplace(id_order_pair.first->second.price, id_order_pair.first->second) :
                     bid_map.emplace(id_order_pair.first->second.price, id_order_pair.first->second);
             if (!price_list_pair.second)
-                price_list_pair.first->second.addOrder(id_order_pair.first->second);
+                price_list_pair.first->second.order_list.push_back(id_order_pair.first->second);
             return id_order_pair.first->second;
         }
 
         std::unordered_map<OrderID, Order> orders;
-        std::map<Price, OrderList, std::greater<>> bid_map;
-        std::map<Price, OrderList, std::less<>> ask_map;
+        std::map<Price, PriceLevel, std::greater<>> bid_map;
+        std::map<Price, PriceLevel, std::less<>> ask_map;
         Messaging::Sender outgoing;
         Symbol symbol;
     };
