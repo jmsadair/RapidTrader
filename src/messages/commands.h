@@ -25,7 +25,7 @@ struct PlaceOrderCommand : Command {
     const OrderAction order_action;
     const OrderSide order_side;
     const OrderType order_type;
-    Quantity order_quantity;
+    const Quantity order_quantity;
 
 };
 
