@@ -37,6 +37,11 @@ namespace OrderBook {
          */
         inline void addOrder(Order &order) { order_list.push_back(order); }
 
+
+        inline void clear() {
+            order_list.clear();
+        }
+
         /**
          * Removes the order associated with order_id
          * from the list - does not cancel the order.

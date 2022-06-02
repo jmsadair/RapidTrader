@@ -9,36 +9,10 @@
 #include <cmath>
 #include <iomanip>
 #include <boost/intrusive/list.hpp>
-
-// Represents the different actions of orders.
-enum class OrderAction {Limit = 0, Market = 1};
-constexpr std::array order_action_to_string {"LIMIT", "MARKET"};
-
-//Represents the different types of orders.
-// Good 'Til Cancelled: A good-til-canceled order will remain active until
-//                      you decide to cancel it.
-// Fill Or Kill: A fill-or-kill order will be executed immediately in its entirety;
-//             otherwise, it will be cancelled.
-// Immediate or Cancel: A immediate-or-cancel order will be executed immediately
-//                      as fully as possible. Non-executed parts of the order are deleted
-//                      without entry in the order book.
-enum class OrderType {GoodTillCancel = 0, FillOrKill = 1, ImmediateOrCancel = 2};
-constexpr std::array order_type_to_string {"GTC", "FOK", "IOC"};
-
-// Represents the side of the order.
-enum class OrderSide {Bid = 0, Ask = 1};
-constexpr std::array order_side_to_string {"BID", "ASK"};
-
-// Represents the status of an order.
-enum class OrderStatus {Accepted = 0, Rejected = 1, PartiallyFilled = 1, Filled = 2, Cancelled = 3};
-constexpr std::array order_status_to_string {"ACCEPTED", "REJECTED", "PARTIALLY FILLED", "FILLED", "CANCELLED"};
+#include "types.h"
 
 using namespace boost::intrusive;
-using Price = uint64_t;
-using OrderID = uint64_t;
-using UserID = uint64_t;
-using Quantity = uint64_t;
-using Time = std::chrono::time_point<std::chrono::system_clock>;
+
 /**
  * A mutable order ADT.
  */
@@ -50,27 +24,27 @@ struct Order : public list_base_hook<> {
     const OrderID id;
     const Time time;
     const Price price;
-    OrderStatus status;
     Quantity quantity;
+    OrderStatus status;
 
     /**
      * A constructor for the order ADT.
      * TODO: When is an order rejected?
      *
-     * @param order_action the action of the order - limit or market.
-     * @param order_side the side of the order - ask or bid.
-     * @param order_type the type of the order - GTC, IOC, FOK.
-     * @param order_quantity the quantity of the order, require that quantity is positive.
-     * @param order_price the price of the order, require that price is positive.
-     * @param order_id a unique ID associated with the order.
-     * @param order_user_id a unique ID associated with the user placing the order.
+     * @param action_ the action of the order - limit or market.
+     * @param side_ the side of the order - ask or bid.
+     * @param type_ type of the order - GTC, IOC, FOK.
+     * @param quantity_ the quantity of the order, require that quantity is positive.
+     * @param price_ the price of the order, require that price is positive.
+     * @param id_ a unique ID associated with the order.
+     * @param user_id_ a unique ID associated with the user placing the order.
      * @throws Error if price is negative or if quantity is not positive.
      */
-    Order(OrderAction order_action, OrderSide order_side, OrderType order_type, uint64_t order_quantity,
-          Price order_price, OrderID order_id, UserID order_user_id)
-            : action(order_action), side(order_side), type(order_type), status(OrderStatus::Accepted),
-              quantity(order_quantity),
-              price(order_price), id(order_id), user_id(order_user_id), time(std::chrono::system_clock::now()) {
+    Order(OrderAction action_, OrderSide side_, OrderType type_, uint64_t quantity_,
+          Price price_, OrderID id_, UserID user_id_, OrderStatus status_ = OrderStatus::Accepted)
+            : action(action_), side(side_), type(), quantity(quantity_),
+              price(price_), id(id_), user_id(user_id_), status(status_),
+              time(std::chrono::system_clock::now()) {
         if (quantity == 0)
             throw std::invalid_argument("quantity must be positive!");
         if (price == 0)

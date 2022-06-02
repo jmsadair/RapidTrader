@@ -1,6 +1,6 @@
 #ifndef FAST_EXCHANGE_ORDER_BOOK_ROUTER_H
 #define FAST_EXCHANGE_ORDER_BOOK_ROUTER_H
-#include "order_book.h"
+#include "map_orderbook.h"
 #include "commands.h"
 
 class OrderBookRouter {
@@ -8,6 +8,16 @@ public:
     // OrderBookRouter ADT is move only.
     OrderBookRouter(const OrderBookRouter&) = delete;
     OrderBookRouter& operator=(const OrderBookRouter&) = delete;
+
+    /**
+     * A constructor for the OrderBookRouter ADT.
+     *
+     * @param order_book_sender_ the sender that each order book will
+     *                           use to send messages.
+     */
+    explicit OrderBookRouter(Messaging::Sender order_book_sender_) :
+        order_book_sender(order_book_sender_)
+    {}
 
     /**
      * Processes a command for placing an order.
@@ -39,10 +49,13 @@ public:
     inline void processCommand(AddOrderBookCommand& command) {
         auto it = symbol_to_book.find(command.order_book_symbol);
         if (it == symbol_to_book.end())
-            symbol_to_book.emplace(command.order_book_symbol, command.order_book_symbol);
+            symbol_to_book.emplace(std::piecewise_construct, std::forward_as_tuple(command.order_book_symbol),
+                                   std::forward_as_tuple(command.order_book_symbol, order_book_sender));
     }
 private:
     // Maps a symbol to its corresponding order book.
-    std::unordered_map<Symbol, OrderBook::OrderBook> symbol_to_book;
+    std::unordered_map<Symbol, OrderBook::MapOrderBook> symbol_to_book;
+    // A sender that each order book will use.
+    Messaging::Sender order_book_sender;
 };
 #endif //FAST_EXCHANGE_ORDER_BOOK_ROUTER_H
