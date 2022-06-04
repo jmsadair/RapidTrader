@@ -4,14 +4,18 @@
 
 struct OrderBookReceiver {
     Messaging::Receiver receiver;
-    std::vector<OrderAddedToBook> orders_added {};
-    std::vector<OrderExecuted> orders_executed {};
+    std::vector<Message::Event::TradeEvent> trade_events {};
+    std::vector<Message::Event::OrderExecuted> orders_executed {};
     void start() {
         try {
             while (true) {
                 receiver.wait()
-                        .handle<OrderAddedToBook>([&](const OrderAddedToBook& msg) { orders_added.push_back(msg); })
-                        .handle<OrderExecuted>([&](const OrderExecuted& msg) { orders_executed.push_back(msg); });
+                        .handle<Message::Event::TradeEvent>([&](const Message::Event::TradeEvent& msg) {
+                            trade_events.push_back(msg);
+                        })
+                        .handle<Message::Event::OrderExecuted>([&](const Message::Event::OrderExecuted& msg) {
+                            orders_executed.push_back(msg);
+                        });
             }
         } catch(const Messaging::CloseQueue&) {}
     }
@@ -31,7 +35,7 @@ TEST(VectorOrderBookTest, BookShouldInsertUnmatchedOrders1) {
     const auto side = OrderSide::Ask;
     const auto type = OrderType::GoodTillCancel;
     const auto quantity = 200;
-    PlaceOrderCommand command {uid, id, price, symbol, action, side, type, quantity};
+    Message::Command::PlaceOrder command {uid, id, symbol, price, action, side, type, quantity};
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
@@ -48,13 +52,8 @@ TEST(VectorOrderBookTest, BookShouldInsertUnmatchedOrders1) {
     const auto& order = book.getOrder(command.order_id);
     ASSERT_EQ(order.status, OrderStatus::Accepted);
     ASSERT_EQ(order.quantity, quantity);
-    // Check the receiver for a result message.
-    auto& result = result_receiver.orders_added.back();
-    ASSERT_EQ(result.order_id, id);
-    ASSERT_EQ(result.user_id, uid);
-    ASSERT_EQ(result.order_status, OrderStatus::Accepted);
-    result_receiver.orders_added.pop_back();
-    ASSERT_TRUE(result_receiver.orders_added.empty());
+    // Order should not have been traded, so no messages should have been sent.
+    ASSERT_TRUE(result_receiver.trade_events.empty());
     ASSERT_TRUE(result_receiver.orders_executed.empty());
 }
 
@@ -68,7 +67,7 @@ TEST(VectorOrderBookTest, BookShouldInsertUnmatchedOrders2) {
     const auto side1 = OrderSide::Ask;
     const auto type1 = OrderType::GoodTillCancel;
     const auto quantity1 = 200;
-    PlaceOrderCommand command1 {uid1, id1, price1, symbol1, action1, side1, type1, quantity1};
+    Message::Command::PlaceOrder command1 {uid1, id1, symbol1, price1, action1, side1, type1, quantity1};
     const auto uid2 = 2;
     const auto id2 = 2;
     const auto price2 = 200;
@@ -77,7 +76,7 @@ TEST(VectorOrderBookTest, BookShouldInsertUnmatchedOrders2) {
     const auto side2 = OrderSide::Ask;
     const auto type2 = OrderType::GoodTillCancel;
     const auto quantity2 = 120;
-    PlaceOrderCommand command2 {uid2, id2, price2, symbol2, action2, side2, type2, quantity2};
+    Message::Command::PlaceOrder command2 {uid2, id2, symbol2, price2, action2, side2, type2, quantity2};
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
@@ -97,22 +96,13 @@ TEST(VectorOrderBookTest, BookShouldInsertUnmatchedOrders2) {
     const auto& order1 = book.getOrder(command1.order_id);
     ASSERT_EQ(order1.status, OrderStatus::Accepted);
     ASSERT_EQ(order1.quantity, quantity1);
+    ASSERT_EQ(order1.quantity_to_fill, order1.quantity);
     // Get the second order and check that it is unmodified.
     const auto& order2 = book.getOrder(command2.order_id);
     ASSERT_EQ(order2.status, OrderStatus::Accepted);
     ASSERT_EQ(order2.quantity, quantity2);
-    // Check the receiver for result messages.
-    auto& result1 = result_receiver.orders_added.back();
-    result_receiver.orders_added.pop_back();
-    ASSERT_EQ(result1.order_id, id2);
-    ASSERT_EQ(result1.user_id, uid2);
-    ASSERT_EQ(result1.order_status, OrderStatus::Accepted);
-    auto result2 = result_receiver.orders_added.back();
-    result_receiver.orders_added.pop_back();
-    ASSERT_EQ(result2.order_id, id1);
-    ASSERT_EQ(result2.user_id, uid1);
-    ASSERT_EQ(result2.order_status, OrderStatus::Accepted);
-    ASSERT_TRUE(result_receiver.orders_added.empty());
+    ASSERT_EQ(order2.quantity_to_fill, order2.quantity);
+    ASSERT_TRUE(result_receiver.trade_events.empty());
     ASSERT_TRUE(result_receiver.orders_executed.empty());
 }
 
@@ -126,7 +116,7 @@ TEST(VectorOrderBookTest, BookShouldInsertUnmatchedOrders3) {
     const auto side1 = OrderSide::Ask;
     const auto type1 = OrderType::GoodTillCancel;
     const auto quantity1 = 200;
-    PlaceOrderCommand command1 {uid1, id1, price1, symbol1, action1, side1, type1, quantity1};
+    Message::Command::PlaceOrder command1 {uid1, id1, symbol1, price1, action1, side1, type1, quantity1};
     const auto uid2 = 2;
     const auto id2 = 2;
     const auto price2 = 50;
@@ -135,7 +125,7 @@ TEST(VectorOrderBookTest, BookShouldInsertUnmatchedOrders3) {
     const auto side2 = OrderSide::Ask;
     const auto type2 = OrderType::GoodTillCancel;
     const auto quantity2 = 120;
-    PlaceOrderCommand command2 {uid2, id2, price2, symbol2, action2, side2, type2, quantity2};
+    Message::Command::PlaceOrder command2 {uid2, id2, symbol2, price2, action2, side2, type2, quantity2};
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
@@ -154,23 +144,13 @@ TEST(VectorOrderBookTest, BookShouldInsertUnmatchedOrders3) {
     // Get the first order and check that it is unmodified.
     const auto& order1 = book.getOrder(command1.order_id);
     ASSERT_EQ(order1.status, OrderStatus::Accepted);
-    ASSERT_EQ(order1.quantity, quantity1);
+    ASSERT_EQ(order1.quantity_to_fill, order1.quantity);
     // Get the second order and check that it is unmodified.
     const auto& order2 = book.getOrder(command2.order_id);
     ASSERT_EQ(order2.status, OrderStatus::Accepted);
-    ASSERT_EQ(order2.quantity, quantity2);
+    ASSERT_EQ(order2.quantity_to_fill, order2.quantity);
     // Check the receiver for result messages.
-    auto result1 = result_receiver.orders_added.back();
-    result_receiver.orders_added.pop_back();
-    ASSERT_EQ(result1.order_id, id2);
-    ASSERT_EQ(result1.user_id, uid2);
-    ASSERT_EQ(result1.order_status, OrderStatus::Accepted);
-    auto result2 = result_receiver.orders_added.back();
-    result_receiver.orders_added.pop_back();
-    ASSERT_EQ(result2.order_id, id1);
-    ASSERT_EQ(result2.user_id, uid1);
-    ASSERT_EQ(result2.order_status, OrderStatus::Accepted);
-    ASSERT_TRUE(result_receiver.orders_added.empty());
+    ASSERT_TRUE(result_receiver.trade_events.empty());
     ASSERT_TRUE(result_receiver.orders_executed.empty());
 }
 
@@ -184,7 +164,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders1) {
     const auto side1 = OrderSide::Ask;
     const auto type1 = OrderType::GoodTillCancel;
     const auto quantity1 = 100;
-    PlaceOrderCommand command1 {uid1, id1, price1, symbol1, action1, side1, type1, quantity1};
+    Message::Command::PlaceOrder command1 {uid1, id1, symbol1, price1, action1, side1, type1, quantity1};
     const auto uid2 = 2;
     const auto id2 = 2;
     const auto price2 = 100;
@@ -193,7 +173,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders1) {
     const auto side2 = OrderSide::Bid;
     const auto type2 = OrderType::GoodTillCancel;
     const auto quantity2 = 100;
-    PlaceOrderCommand command2 {uid2, id2, price2, symbol2, action2, side2, type2, quantity2};
+    Message::Command::PlaceOrder command2 {uid2, id2, symbol2, price2, action2, side2, type2, quantity2};
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
@@ -208,6 +188,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders1) {
     const auto& order1 = book.getOrder(command1.order_id);
     ASSERT_EQ(order1.status, OrderStatus::Accepted);
     ASSERT_EQ(order1.quantity, quantity1);
+    ASSERT_EQ(order1.quantity_to_fill, order1.quantity);
     // Place a second order at the same price level and same quantity as the first order.
     // Both orders should be completely filled.
     book.placeOrder(command2);
@@ -218,20 +199,19 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders1) {
     // First order should have been removed.
     ASSERT_FALSE(book.hasOrder(command1.order_id));
     // Check the receiver for result messages.
-    auto result1 = result_receiver.orders_added.back();
-    result_receiver.orders_added.pop_back();
-    ASSERT_EQ(result1.order_id, id1);
-    ASSERT_EQ(result1.user_id, uid1);
-    ASSERT_EQ(result1.order_status, OrderStatus::Accepted);
-    auto result2 = result_receiver.orders_executed.back();
+    auto event1 = result_receiver.orders_executed.back();
     result_receiver.orders_executed.pop_back();
-    ASSERT_EQ(result2.order_id, id2);
-    ASSERT_EQ(result2.user_id, uid2);
-    auto result3 = result_receiver.orders_executed.back();
+    ASSERT_EQ(event1.order_id, id2);
+    ASSERT_EQ(event1.user_id, uid2);
+    ASSERT_EQ(event1.order_price, price2);
+    ASSERT_EQ(event1.order_quantity, quantity2);
+    auto event2 = result_receiver.orders_executed.back();
     result_receiver.orders_executed.pop_back();
-    ASSERT_EQ(result3.order_id, id1);
-    ASSERT_EQ(result3.user_id, uid1);
-    ASSERT_TRUE(result_receiver.orders_added.empty());
+    ASSERT_EQ(event2.order_id, id1);
+    ASSERT_EQ(event2.user_id, uid1);
+    ASSERT_EQ(event2.order_price, price1);
+    ASSERT_EQ(event2.order_quantity, quantity1);
+    ASSERT_TRUE(result_receiver.trade_events.empty());
     ASSERT_TRUE(result_receiver.orders_executed.empty());
 }
 
@@ -245,7 +225,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders2) {
     const auto side1 = OrderSide::Ask;
     const auto type1 = OrderType::GoodTillCancel;
     const auto quantity1 = 90;
-    PlaceOrderCommand command1 {uid1, id1, price1, symbol1, action1, side1, type1, quantity1};
+    Message::Command::PlaceOrder command1 {uid1, id1, symbol1, price1, action1, side1, type1, quantity1};
     const auto uid2 = 2;
     const auto id2 = 2;
     const auto price2 = 100;
@@ -254,7 +234,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders2) {
     const auto side2 = OrderSide::Bid;
     const auto type2 = OrderType::GoodTillCancel;
     const auto quantity2 = 100;
-    PlaceOrderCommand command2 {uid2, id2, price2, symbol2, action2, side2, type2, quantity2};
+    Message::Command::PlaceOrder command2 {uid2, id2, symbol2, price2, action2, side2, type2, quantity2};
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
@@ -268,34 +248,28 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders2) {
     // Get the first order and check that it is unmodified.
     const auto& order1 = book.getOrder(command1.order_id);
     ASSERT_EQ(order1.status, OrderStatus::Accepted);
-    ASSERT_EQ(order1.quantity, quantity1);
+    ASSERT_EQ(order1.quantity_to_fill, order1.quantity);
     // Place a second order at the same price level but greater quantity than the first order.
-    // First order places should be filled, second order placed should be partially filled.
+    // First order placed should be filled, second order placed should be partially filled.
     book.placeOrder(command2);
     result_receiver.stop();
     t1.join();
     // Second order should have never been inserted into the book.
     ASSERT_TRUE(book.hasOrder(command2.order_id));
+    // Get the second order and check that it was matched.
+    const auto& order2 = book.getOrder(command2.order_id);
+    ASSERT_EQ(order2.status, OrderStatus::PartiallyFilled);
+    ASSERT_EQ(order2.quantity_to_fill, quantity2 - quantity1);
     // First order should have been removed.
     ASSERT_FALSE(book.hasOrder(command1.order_id));
     // Check the receiver for result messages.
-    auto result1 = result_receiver.orders_added.back();
-    result_receiver.orders_added.pop_back();
-    ASSERT_EQ(result1.order_id, id2);
-    ASSERT_EQ(result1.user_id, uid2);
-    ASSERT_EQ(result1.order_quantity, quantity2 - quantity1);
-    ASSERT_EQ(result1.order_status, OrderStatus::PartiallyFilled);
-    auto result2 = result_receiver.orders_added.back();
-    result_receiver.orders_added.pop_back();
-    ASSERT_EQ(result2.order_id, id1);
-    ASSERT_EQ(result2.user_id, uid1);
-    ASSERT_EQ(result2.order_quantity, quantity1);
-    ASSERT_EQ(result2.order_status, OrderStatus::Accepted);
-    auto result3 = result_receiver.orders_executed.back();
+    auto event1 = result_receiver.orders_executed.back();
     result_receiver.orders_executed.pop_back();
-    ASSERT_EQ(result3.order_id, id1);
-    ASSERT_EQ(result3.user_id, uid1);
-    ASSERT_TRUE(result_receiver.orders_added.empty());
+    ASSERT_EQ(event1.order_id, id1);
+    ASSERT_EQ(event1.user_id, uid1);
+    ASSERT_EQ(event1.order_quantity, quantity1);
+    ASSERT_EQ(event1.order_price, price1);
+    ASSERT_TRUE(result_receiver.trade_events.empty());
     ASSERT_TRUE(result_receiver.orders_executed.empty());
 }
 
@@ -309,7 +283,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders3) {
     const auto side1 = OrderSide::Ask;
     const auto type1 = OrderType::GoodTillCancel;
     const auto quantity1 = 90;
-    PlaceOrderCommand command1 {uid1, id1, price1, symbol1, action1, side1, type1, quantity1};
+    Message::Command::PlaceOrder command1 {uid1, id1, symbol1, price1, action1, side1, type1, quantity1};
     const auto uid2 = 2;
     const auto id2= 2;
     const auto price2 = 120;
@@ -318,7 +292,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders3) {
     const auto side2 = OrderSide::Ask;
     const auto type2 = OrderType::GoodTillCancel;
     const auto quantity2 = 200;
-    PlaceOrderCommand command2 {uid2, id2, price2, symbol2, action2, side2, type2, quantity2};
+    Message::Command::PlaceOrder command2 {uid2, id2, symbol2, price2, action2, side2, type2, quantity2};
     const auto uid3 = 3;
     const auto id3 = 3;
     const auto price3 = 200;
@@ -327,7 +301,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders3) {
     const auto side3 = OrderSide::Bid;
     const auto type3 = OrderType::GoodTillCancel;
     const auto quantity3 = 200;
-    PlaceOrderCommand command3 {uid3, id3, price3, symbol3, action3, side3, type3, quantity3};
+    Message::Command::PlaceOrder command3 {uid3, id3, symbol3, price3, action3, side3, type3, quantity3};
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
@@ -341,7 +315,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders3) {
     // Get the first order and check that it is unmodified.
     const auto& order1 = book.getOrder(command1.order_id);
     ASSERT_EQ(order1.status, OrderStatus::Accepted);
-    ASSERT_EQ(order1.quantity, quantity1);
+    ASSERT_EQ(order1.quantity_to_fill, order1.quantity);
     // Place new order.
     book.placeOrder(command2);
     // Book should now contain the second order since it has no match.
@@ -349,7 +323,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders3) {
     // Get the second order and check that it is unmodified.
     const auto& order2 = book.getOrder(command1.order_id);
     ASSERT_EQ(order2.status, OrderStatus::Accepted);
-    ASSERT_EQ(order2.quantity, quantity1);
+    ASSERT_EQ(order2.quantity_to_fill, order2.quantity);
     // Place new order. This order should match with the previous two orders.
     book.placeOrder(command3);
     ASSERT_FALSE(book.hasOrder(command3.order_id));
@@ -357,29 +331,32 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders3) {
     t1.join();
     // Second order should still be in the book since it was not fully filled.
     ASSERT_TRUE(book.hasOrder(command2.order_id));
+    const auto& order2_matched = book.getOrder(command2.order_id);
+    ASSERT_EQ(order2_matched.status, OrderStatus::PartiallyFilled);
+    ASSERT_EQ(order2_matched.quantity_to_fill, quantity2 - (quantity3 - quantity1));
     // First order should have been removed since it was filled.
     ASSERT_FALSE(book.hasOrder(command1.order_id));
     // Check the receiver for result messages.
-    auto result1 = result_receiver.orders_added.back();
-    result_receiver.orders_added.pop_back();
-    ASSERT_EQ(result1.order_id, id2);
-    ASSERT_EQ(result1.user_id, uid2);
-    ASSERT_EQ(result1.order_quantity, quantity2);
-    ASSERT_EQ(result1.order_status, OrderStatus::Accepted);
-    auto result2 = result_receiver.orders_added.back();
-    result_receiver.orders_added.pop_back();
-    ASSERT_EQ(result2.order_id, id1);
-    ASSERT_EQ(result2.user_id, uid1);
-    ASSERT_EQ(result2.order_quantity, quantity1);
-    ASSERT_EQ(result2.order_status, OrderStatus::Accepted);
-    auto result3 = result_receiver.orders_executed.back();
+    auto event1 = result_receiver.trade_events.back();
+    result_receiver.trade_events.pop_back();
+    ASSERT_EQ(event1.order_id, id2);
+    ASSERT_EQ(event1.user_id, uid2);
+    ASSERT_EQ(event1.matched_order_id, id3);
+    ASSERT_EQ(event1.quantity, quantity3 - quantity1);
+    ASSERT_EQ(event1.order_price, price2);
+    ASSERT_EQ(event1.matched_order_price, price3);
+    auto event2 = result_receiver.orders_executed.back();
     result_receiver.orders_executed.pop_back();
-    ASSERT_EQ(result3.order_id, id3);
-    ASSERT_EQ(result3.user_id, uid3);
-    auto result4 = result_receiver.orders_executed.back();
+    ASSERT_EQ(event2.order_id, id3);
+    ASSERT_EQ(event2.user_id, uid3);
+    ASSERT_EQ(event2.order_quantity, quantity3);
+    ASSERT_EQ(event2.order_price, price3);
+    auto event3 = result_receiver.orders_executed.back();
     result_receiver.orders_executed.pop_back();
-    ASSERT_EQ(result4.order_id, id1);
-    ASSERT_EQ(result4.user_id, uid1);
-    ASSERT_TRUE(result_receiver.orders_added.empty());
+    ASSERT_EQ(event3.order_id, id1);
+    ASSERT_EQ(event3.user_id, uid1);
+    ASSERT_EQ(event3.order_quantity, quantity1);
+    ASSERT_EQ(event3.order_price, price1);
+    ASSERT_TRUE(result_receiver.trade_events.empty());
     ASSERT_TRUE(result_receiver.orders_executed.empty());
 }

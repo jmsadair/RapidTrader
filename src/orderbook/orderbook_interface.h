@@ -1,12 +1,9 @@
 #ifndef FAST_EXCHANGE_ORDERBOOK_INTERFACE_H
 #define FAST_EXCHANGE_ORDERBOOK_INTERFACE_H
-#include <string>
 #include <exception>
 #include "types.h"
-#include "price_level.h"
-#include "commands.h"
-#include "results.h"
-#include "receiver.h"
+#include "command.h"
+
 
 namespace OrderBook {
     class OrderBook {
@@ -16,14 +13,14 @@ namespace OrderBook {
          *
          * @param command a command to place an order.
          */
-        virtual void placeOrder(PlaceOrderCommand &command) = 0;
+        virtual void placeOrder(Message::Command::PlaceOrder &command) = 0;
 
         /**
          * Cancels an order.
          *
          * @param command a command to cancel an order.
          */
-        virtual void cancelOrder(CancelOrderCommand &command) = 0;
+        virtual void cancelOrder(Message::Command::CancelOrder &command) = 0;
 
         /**
          * Indicates whether an order is in the order book or not.
@@ -55,21 +52,31 @@ namespace OrderBook {
         virtual ~OrderBook() = default;
 
     private:
+
         /**
-         * Executes an order command as fully as possible.
+         * Given a newly placed order command and an existing order fills each
+         * as much as possible. Mutates the command and the order. Require that
+         * the command and order are on opposite sides of the book.
+         *
+         * @param command a command to place an order.
+         * @param order an existing order in the order book.
+         */
+        virtual void execute(Message::Command::PlaceOrder &command, Order& order) = 0;
+
+        /**
+         * Fills an order command as fully as possible.
          * Mutates the command.
          *
          * @param command a command to place an order.
-         * @return the quantity of the order that has not been filled.
          */
-        virtual Quantity execute(PlaceOrderCommand &command) = 0;
+        virtual void match(Message::Command::PlaceOrder &command) = 0;
 
         /**
          * Handles a GTC order.
          *
          * @param command a command to place a GTC order.
          */
-        virtual void handleGtcOrder(PlaceOrderCommand &command) = 0;
+        virtual void handleGtcOrder(Message::Command::PlaceOrder &command) = 0;
 
         /**
          * Creates a new order and inserts it into the order book.
@@ -77,7 +84,7 @@ namespace OrderBook {
          * @param order the order to insert into the order book.
          * @return a reference to the newly inserted order.
          */
-        virtual const Order& insert(Order order) = 0;
+        virtual void insert(Order order) = 0;
 
         /**
          * Removes an order from the order book if it exists.

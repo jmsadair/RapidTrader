@@ -11,10 +11,9 @@ static void BM_OrderCreation(benchmark::State& state) {
     const auto order_user_id = 1;
 
     for (auto _ : state)
-        benchmark::DoNotOptimize(Order(order_action, order_side, order_type, order_quantity,
+        benchmark::DoNotOptimize(Order(order_action, order_side, order_type, order_quantity, 0,
                                        order_price, order_id, order_user_id));
 }
 
 BENCHMARK(BM_OrderCreation);
-
 BENCHMARK_MAIN();

@@ -2,6 +2,7 @@
 #define FAST_EXCHANGE_TYPES_H
 #include <array>
 #include <chrono>
+#include <string>
 
 // Represents the different actions of orders.
 enum class OrderAction {Limit = 0, Market = 1};
@@ -11,7 +12,7 @@ constexpr std::array order_action_to_string {"LIMIT", "MARKET"};
 // Good 'Til Cancelled: A good-til-canceled order will remain active until
 //                      you decide to cancel it.
 // Fill Or Kill: A fill-or-kill order will be executed immediately in its entirety;
-//             otherwise, it will be cancelled.
+//               otherwise, it will be cancelled.
 // Immediate or Cancel: A immediate-or-cancel order will be executed immediately
 //                      as fully as possible. Non-executed parts of the order are deleted
 //                      without entry in the order book.
@@ -31,4 +32,5 @@ using OrderID = uint64_t;
 using UserID = uint64_t;
 using Quantity = uint64_t;
 using Time = std::chrono::time_point<std::chrono::system_clock>;
+using Symbol = std::string;
 #endif //FAST_EXCHANGE_TYPES_H

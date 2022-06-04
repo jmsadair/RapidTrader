@@ -1,7 +1,5 @@
 #ifndef FAST_EXCHANGE_PRICE_LEVEL_H
 #define FAST_EXCHANGE_PRICE_LEVEL_H
-#include <list>
-#include <unordered_map>
 #include <algorithm>
 #include "order.h"
 
@@ -33,24 +31,6 @@ namespace OrderBook {
         explicit PriceLevel(Order &order) {
             order_list.push_back(order);
             volume += order.quantity;
-        }
-
-        /**
-         * Removes the order associated with order_id
-         * from the list - does not cancel the order.
-         *
-         * @param order_id the ID of the order to remove, require
-         *                  that the order associated with ID
-         *                  is in the order list.
-         * @return the order that was removed from the list.
-         * @throws Error if the order associated with order_id
-         *               is not in the order list.
-         */
-        inline void removeOrder(const Order &order) {
-            auto order_it = order_list.iterator_to(order);
-            // Require that order is in list.
-            assert(order_it != order_list.end());
-            order_list.erase(order_it);
         }
 
         /**

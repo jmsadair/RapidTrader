@@ -1,7 +1,7 @@
 #ifndef FAST_EXCHANGE_ORDER_BOOK_ROUTER_H
 #define FAST_EXCHANGE_ORDER_BOOK_ROUTER_H
-#include "map_orderbook.h"
-#include "commands.h"
+#include "vector_orderbook.h"
+#include "command.h"
 
 class OrderBookRouter {
 public:
@@ -24,7 +24,7 @@ public:
      *
      * @param command a command to place an order.
      */
-    inline void processCommand(PlaceOrderCommand& command) {
+    inline void processCommand(Message::Command::PlaceOrder& command) {
         auto it = symbol_to_book.find(command.order_symbol);
         if (it != symbol_to_book.end())
             it->second.placeOrder(command);
@@ -35,7 +35,7 @@ public:
      *
      * @param command a command to cancel an order.
      */
-    inline void processCommand(CancelOrderCommand& command) {
+    inline void processCommand(Message::Command::CancelOrder& command) {
         auto it = symbol_to_book.find(command.order_symbol);
         if (it != symbol_to_book.end())
             it->second.cancelOrder(command);
@@ -46,7 +46,7 @@ public:
      *
      * @param command a command to create a new order book.
      */
-    inline void processCommand(AddOrderBookCommand& command) {
+    inline void processCommand(Message::Command::AddOrderBook& command) {
         auto it = symbol_to_book.find(command.order_book_symbol);
         if (it == symbol_to_book.end())
             symbol_to_book.emplace(std::piecewise_construct, std::forward_as_tuple(command.order_book_symbol),
@@ -54,7 +54,7 @@ public:
     }
 private:
     // Maps a symbol to its corresponding order book.
-    std::unordered_map<Symbol, OrderBook::MapOrderBook> symbol_to_book;
+    std::unordered_map<Symbol, OrderBook::VectorOrderBook> symbol_to_book;
     // A sender that each order book will use.
     Messaging::Sender order_book_sender;
 };

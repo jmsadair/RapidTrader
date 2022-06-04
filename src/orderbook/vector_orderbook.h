@@ -1,9 +1,14 @@
 #ifndef FAST_EXCHANGE_VECTOR_ORDERBOOK_H
 #define FAST_EXCHANGE_VECTOR_ORDERBOOK_H
 #include <vector>
+#include <limits>
+#include "robin_hood.h"
+#include "price_level.h"
+#include "event.h"
+#include "receiver.h"
 #include "orderbook_interface.h"
 
-constexpr size_t DEFAULT_PRICE_LEVELS_SIZE = 100000;
+constexpr size_t DEFAULT_PRICE_LEVELS_SIZE = 1000000;
 
 namespace OrderBook {
     class VectorOrderBook : public OrderBook {
@@ -24,7 +29,7 @@ namespace OrderBook {
        /**
         * @inheritdoc
         */
-        inline void placeOrder(PlaceOrderCommand& command) override  {
+        inline void placeOrder(Message::Command::PlaceOrder &command) override  {
             switch(command.order_type) {
                 case OrderType::GoodTillCancel:
                     handleGtcOrder(command);
@@ -41,10 +46,13 @@ namespace OrderBook {
         /**
          * @inheritdoc
          */
-        inline void cancelOrder(CancelOrderCommand& command) override {
+        inline void cancelOrder(Message::Command::CancelOrder &command) override {
             auto it = orders.find(command.order_id);
-            if (it != orders.end())
+            if (it != orders.end()) {
                 remove(it->second);
+                outgoing.send(Message::Event::RejectionEvent(it->second.user_id, it->second.id, symbol, it->second.price,
+                                                             it->second.quantity_to_fill));
+            }
         }
 
         /**
@@ -64,7 +72,7 @@ namespace OrderBook {
         /**
          * @inheritdoc
          */
-        std::string toString() const override {
+        [[nodiscard]] std::string toString() const override {
             std::string order_book_string = "----------ASK SIDE ORDERS----------\n\n";
             for (Price price = min_ask_price; price < ask_price_levels.size(); ++price) {
                 if (!ask_price_levels[price].order_list.empty())
@@ -85,86 +93,99 @@ namespace OrderBook {
         /**
          * @inheritdoc
          */
-        Quantity execute(PlaceOrderCommand& command)  override {
-            Quantity incoming_order_quantity = command.order_quantity;
+        inline void execute(Message::Command::PlaceOrder &command, Order &order) override {
+            Quantity matched_quantity = std::min(command.order_quantity, order.quantity_to_fill);
+            command.order_quantity -= matched_quantity;
+            order.quantity_to_fill -= matched_quantity;
+            if (order.quantity_to_fill != 0) {
+                order.status = OrderStatus::PartiallyFilled;
+                outgoing.send(Message::Event::TradeEvent(order.user_id, order.id, command.order_id, order.price,
+                                                         command.order_price, matched_quantity));
+            } else {
+                order.status = OrderStatus::Filled;
+                outgoing.send(Message::Event::OrderExecuted(order.user_id, order.id, order.price,
+                                                            order.quantity));
+            }
+        }
+
+        /**
+         * @inheritdoc
+         */
+        void match(Message::Command::PlaceOrder &command)  override {
             if (command.order_side == OrderSide::Ask) {
                 auto price_level_it = bid_price_levels.begin() + max_bid_price;
-                while (price_level_it != bid_price_levels.begin() && max_bid_price >= command.order_price) {
-                    auto& order_list = price_level_it->order_list;
-                    while (!order_list.empty() && incoming_order_quantity != 0) {
-                        Order& order = order_list.front();
-                        Quantity quantity_filled = std::min(incoming_order_quantity, order.quantity);
-                        incoming_order_quantity -= quantity_filled;
-                        order.quantity -= quantity_filled;
-                        (*price_level_it).volume -= quantity_filled;
-                        order.status = order.quantity != 0 ? OrderStatus::PartiallyFilled : OrderStatus::Filled;
+                while (max_bid_price >= command.order_price) {
+                    auto& price_level = *price_level_it;
+                    while (!price_level.order_list.empty() && command.order_quantity != 0) {
+                        auto& order = price_level.order_list.front();
+                        execute(command, order);
                         if (order.status == OrderStatus::Filled) {
-                            outgoing.send(OrderExecuted(order.user_id, order.id));
-                            order_list.pop_front();
-                            orders.erase(order.id);
+                            const OrderID id_to_erase = order.id;
+                            price_level.order_list.pop_front();
+                            orders.erase(id_to_erase);
                         }
                     }
-                    if (order_list.empty())
-                        --max_bid_price;
+                    max_bid_price -= price_level.order_list.empty();
                     --price_level_it;
-                    if (incoming_order_quantity == 0) {
-                        outgoing.send(OrderExecuted(command.user_id, command.order_id));
-                        return incoming_order_quantity;
-                    }
                 }
             } else {
                 auto price_level_it = ask_price_levels.begin() + min_ask_price;
-                while (price_level_it != bid_price_levels.begin() && min_ask_price <= command.order_price) {
-                    auto& order_list = price_level_it->order_list;
-                    while (!order_list.empty() && incoming_order_quantity != 0) {
-                        Order& order = order_list.front();
-                        Quantity quantity_filled = std::min(incoming_order_quantity, order.quantity);
-                        incoming_order_quantity -= quantity_filled;
-                        order.quantity -= quantity_filled;
-                        (*price_level_it).volume -= quantity_filled;
-                        order.status = order.quantity != 0 ? OrderStatus::PartiallyFilled : OrderStatus::Filled;
+                while (min_ask_price <= command.order_price) {
+                    auto& price_level = *price_level_it;
+                    while (!price_level.order_list.empty() && command.order_quantity != 0) {
+                        auto& order = price_level.order_list.front();
+                        execute(command, order);
                         if (order.status == OrderStatus::Filled) {
-                            outgoing.send(OrderExecuted(order.user_id, order.id));
-                            order_list.pop_front();
-                            orders.erase(order.id);
+                            const OrderID id_to_erase = order.id;
+                            price_level.order_list.pop_front();
+                            orders.erase(id_to_erase);
                         }
                     }
-                    if (order_list.empty())
-                        ++min_ask_price;
+                    min_ask_price += price_level.order_list.empty();
                     ++price_level_it;
-                    if (incoming_order_quantity == 0) {
-                        outgoing.send(OrderExecuted(command.user_id, command.order_id));
-                        return incoming_order_quantity;
-                    }
                 }
             }
-            return incoming_order_quantity;
         }
 
         /**
          * @inheritdoc
          */
-        void handleGtcOrder(PlaceOrderCommand& command) override {
-            const Quantity remaining_quantity = execute(command);
+        void handleGtcOrder(Message::Command::PlaceOrder &command) override {
+            const Quantity initial_quantity = command.order_quantity;
+            match(command);
+            const Quantity remaining_quantity = command.order_quantity;
             if (remaining_quantity != 0) {
-                auto& order = insert(std::move(Order(command.order_action, command.order_side, command.order_type,
-                                                     remaining_quantity, command.order_price, command.order_id,
-                                                     command.user_id, remaining_quantity == command.order_quantity ?
+                insert(std::move(Order(command.order_action, command.order_side, command.order_type,
+                                                     initial_quantity, remaining_quantity,
+                                                     command.order_price, command.order_id,
+                                                     command.user_id, remaining_quantity == initial_quantity ?
                                                      OrderStatus::Accepted : OrderStatus::PartiallyFilled)));
-                outgoing.send(OrderAddedToBook(order.user_id, order.id, order.quantity, order.status));
+                return;
             }
+            outgoing.send(Message::Event::OrderExecuted(command.user_id, command.order_id,
+                                                        command.order_price, initial_quantity));
         }
 
         /**
          * @inheritdoc
          */
-        inline const Order& insert(Order order) override {
-            auto [it, success] = orders.try_emplace(order.id, order);
-            auto& order_side_levels = order.side == OrderSide::Ask ? ask_price_levels : bid_price_levels;
-            if (order.price >= order_side_levels.size())
-                order_side_levels.resize(order.price + 1);
-            order_side_levels[order.price].order_list.push_back(it->second);
-            return it->second;
+        inline void insert(Order order) override {
+            auto [it, success] = orders.insert({order.id, order});
+            if (order.side == OrderSide::Ask) {
+                min_ask_price = std::min(min_ask_price, order.price);
+                if (order.price >= ask_price_levels.size())
+                    ask_price_levels.resize(order.price + 1);
+                auto& price_level = *(ask_price_levels.begin() + order.price);
+                price_level.order_list.push_back(it->second);
+                price_level.volume += order.quantity_to_fill;
+            } else {
+                max_bid_price = std::max(max_bid_price, order.price);
+                if (order.price >= bid_price_levels.size())
+                    bid_price_levels.resize(order.price + 1);
+                auto& price_level = *(bid_price_levels.begin() + order.price);
+                price_level.order_list.push_back(it->second);
+                price_level.volume += order.quantity_to_fill;
+            }
         }
 
         /**
@@ -203,11 +224,11 @@ namespace OrderBook {
         // Class members are destroyed in the reverse order of their declaration,
         // so the price level vectors will be destroyed before orders. This is
         // required for the intrusive list.
-        std::unordered_map<OrderID, Order> orders;
+        robin_hood::unordered_map<OrderID, Order> orders;
         std::vector<PriceLevel> ask_price_levels;
         std::vector<PriceLevel> bid_price_levels;
-        Price min_ask_price = 1;
-        Price max_bid_price = 1;
+        Price min_ask_price = std::numeric_limits<Price>::max();
+        Price max_bid_price = 0;
         std::string symbol;
         Messaging::Sender outgoing;
     };
