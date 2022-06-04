@@ -8,7 +8,7 @@ namespace Messaging {
     struct CloseQueue : std::exception {};
 
     /**
-     * An ADT responsible for dispatching messages.
+     * An ADT responsible for dispatching message.
      */
     class Dispatcher {
     public:
@@ -63,7 +63,7 @@ namespace Messaging {
         template<typename Dispatcher, typename Msg, typename Func> friend class TemplateDispatcher;
 
         /**
-         * Waits for and dispatches messages.
+         * Waits for and dispatches message.
          */
         [[noreturn]] void waitAndDispatch() {
             while (true) {

@@ -4,7 +4,7 @@
 
 namespace Messaging {
     /**
-     * A wrapper for MessageQueue that only allows messages
+     * A wrapper for MessageQueue that only allows message
      * to be pushed onto the queue.
      */
     class Sender {

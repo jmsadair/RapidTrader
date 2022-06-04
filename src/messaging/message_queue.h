@@ -16,7 +16,7 @@ namespace Messaging {
 
     /**
      * A wrapper class for the message base class that allows
-     * for different types of messages.
+     * for different types of message.
      *
      * @tparam Msg the message type.
      */
@@ -29,7 +29,7 @@ namespace Messaging {
     };
 
     /**
-     * A FIFO queue for messages.
+     * A FIFO queue for message.
      */
     class MessageQueue {
     public:
@@ -42,7 +42,7 @@ namespace Messaging {
         template <typename T>
         void push(const T& msg) {
             std::lock_guard<std::mutex> lk(m);
-            message_queue.push_back(std::make_shared<WrappedMessage<T>>(msg));
+            message_queue.push(std::make_shared<WrappedMessage<T>>(msg));
             c.notify_all();
         }
 
@@ -58,15 +58,15 @@ namespace Messaging {
             // Wait until queue is not empty.
             c.wait(lk, is_not_empty);
             auto msg = message_queue.front();
-            message_queue.pop_front();
+            message_queue.pop();
             return msg;
         }
 
     private:
         std::mutex m;
         std::condition_variable c;
-        // Stores pointers to messages.
-        boost::circular_buffer<std::shared_ptr<BaseMessage>> message_queue;
+        // Stores pointers to message.
+        std::queue<std::shared_ptr<BaseMessage>> message_queue;
     };
 }
 #endif //FAST_EXCHANGE_MESSAGE_QUEUE_H

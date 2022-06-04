@@ -4,7 +4,7 @@
 
 namespace Messaging {
     /**
-     * An ADT that is capable of handling messages of the specified type.
+     * An ADT that is capable of handling message of the specified type.
      *
      * @tparam PreviousDispatcher the type of the dispatcher that this dispatcher
      *                            is chained to.
@@ -45,7 +45,7 @@ namespace Messaging {
         }
 
         /**
-         * Chains dispatchers to allow for multiple types of messages to be handled.
+         * Chains dispatchers to allow for multiple types of message to be handled.
          *
          * @tparam OtherMsg the type of the message.
          * @tparam OtherFunc the type of the function that will handle the message.

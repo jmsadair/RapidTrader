@@ -5,7 +5,7 @@
 
 namespace Messaging {
     /**
-     * An ADT responsible for receiving messages.
+     * An ADT responsible for receiving message.
      */
     class Receiver {
     public:
