@@ -52,7 +52,7 @@ TEST(VectorOrderBookTest, BookShouldInsertUnmatchedOrders1) {
     const auto& order = book.getOrder(command.order_id);
     ASSERT_EQ(order.status, OrderStatus::Accepted);
     ASSERT_EQ(order.quantity, quantity);
-    // Order should not have been traded, so no messages should have been sent.
+    // Order should not have been traded, so no message should have been sent.
     ASSERT_TRUE(result_receiver.trade_events.empty());
     ASSERT_TRUE(result_receiver.orders_executed.empty());
 }
@@ -149,7 +149,7 @@ TEST(VectorOrderBookTest, BookShouldInsertUnmatchedOrders3) {
     const auto& order2 = book.getOrder(command2.order_id);
     ASSERT_EQ(order2.status, OrderStatus::Accepted);
     ASSERT_EQ(order2.quantity_to_fill, order2.quantity);
-    // Check the receiver for result messages.
+    // Check the receiver for result message.
     ASSERT_TRUE(result_receiver.trade_events.empty());
     ASSERT_TRUE(result_receiver.orders_executed.empty());
 }
@@ -198,7 +198,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders1) {
     ASSERT_FALSE(book.hasOrder(command2.order_id));
     // First order should have been removed.
     ASSERT_FALSE(book.hasOrder(command1.order_id));
-    // Check the receiver for result messages.
+    // Check the receiver for result message.
     auto event1 = result_receiver.orders_executed.back();
     result_receiver.orders_executed.pop_back();
     ASSERT_EQ(event1.order_id, id2);
@@ -262,7 +262,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders2) {
     ASSERT_EQ(order2.quantity_to_fill, quantity2 - quantity1);
     // First order should have been removed.
     ASSERT_FALSE(book.hasOrder(command1.order_id));
-    // Check the receiver for result messages.
+    // Check the receiver for result message.
     auto event1 = result_receiver.orders_executed.back();
     result_receiver.orders_executed.pop_back();
     ASSERT_EQ(event1.order_id, id1);
@@ -336,7 +336,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders3) {
     ASSERT_EQ(order2_matched.quantity_to_fill, quantity2 - (quantity3 - quantity1));
     // First order should have been removed since it was filled.
     ASSERT_FALSE(book.hasOrder(command1.order_id));
-    // Check the receiver for result messages.
+    // Check the receiver for result message.
     auto event1 = result_receiver.trade_events.back();
     result_receiver.trade_events.pop_back();
     ASSERT_EQ(event1.order_id, id2);

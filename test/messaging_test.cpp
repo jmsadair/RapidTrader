@@ -25,7 +25,7 @@ TEST(MessagingTest, SenderAndRecieverShouldWork) {
     MessagingTester tester;
     auto sender = static_cast<Messaging::Sender>(tester.receiver);
     std::thread t1 {&MessagingTester::start, &tester};
-    // Initialize some messages for testing.
+    // Initialize some message for testing.
     AddMessage test_msg1;
     SubtractMessage test_msg2;
     // Expected value after sending the first message.

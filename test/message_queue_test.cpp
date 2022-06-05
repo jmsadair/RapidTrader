@@ -10,7 +10,7 @@ struct TestMessage {
 TEST(MessageQueueTest, QueueShouldHandlePushAndPop) {
     Messaging::MessageQueue queue;
     TestMessage msg1 {"test1"};
-    // The queue is empty - no messages can be popped until messages are pushed onto the queue.
+    // The queue is empty - no message can be popped until message are pushed onto the queue.
     std::future<std::shared_ptr<Messaging::BaseMessage>> msg1_future =
             std::async(std::launch::async, &Messaging::MessageQueue::waitAndPop, &queue);
     queue.push(msg1);

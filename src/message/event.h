@@ -7,6 +7,9 @@ namespace Message::Event {
         virtual ~Event() = default;
     };
 
+    /**
+     * A message indicating that an order has traded.
+     */
     struct TradeEvent : public Event {
         TradeEvent(UserID user_id_, OrderID order_id_, OrderID matched_order_id_, Price order_price_,
                    Price matched_order_price_, Quantity quantity_) :
@@ -22,6 +25,9 @@ namespace Message::Event {
         const Quantity quantity;
     };
 
+    /**
+     * A message to indicate that an add order has been executed. That is, the order has been completely filled.
+     */
     struct OrderExecuted : public Event {
         OrderExecuted(UserID user_id_, OrderID order_id_, Price order_price_, Quantity order_quantity_) :
                 user_id(user_id_), order_id(order_id_), order_price(order_price_),
@@ -34,6 +40,9 @@ namespace Message::Event {
         Quantity order_quantity;
     };
 
+    /**
+     * A message to indicate that an order has been rejected.
+     */
     struct RejectionEvent : public Event {
         RejectionEvent(UserID user_id_, OrderID order_id_, Symbol symbol_, Price order_price_,
                        Quantity quantity_rejected_) :

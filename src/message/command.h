@@ -7,6 +7,9 @@ namespace Message::Command {
         virtual ~Command() = default;
     };
 
+    /**
+     * A message to place a new order.
+     */
     struct PlaceOrder : public Command {
         PlaceOrder(UserID user_id_, OrderID order_id_, Symbol order_symbol_, Price order_price_, OrderAction order_action_,
                    OrderSide order_side_, OrderType order_type_, Quantity order_quantity_) :
@@ -26,6 +29,9 @@ namespace Message::Command {
 
     };
 
+    /**
+     * A message to cancel an existing order.
+     */
     struct CancelOrder : public Command {
         CancelOrder(UserID user_id_, OrderID order_id_, Symbol order_symbol_) :
                 user_id(user_id_), order_id(order_id_), order_symbol(std::move(order_symbol_)) {}
@@ -35,6 +41,9 @@ namespace Message::Command {
         const Symbol order_symbol;
     };
 
+    /**
+     * A message to create a new order book for the provided symbol.
+     */
     struct AddOrderBook : public Command {
         explicit AddOrderBook(Symbol order_book_symbol_) :
                 order_book_symbol(std::move(order_book_symbol_)) {}

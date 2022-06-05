@@ -13,7 +13,7 @@ public:
      * A constructor for the OrderBookRouter ADT.
      *
      * @param order_book_sender_ the sender that each order book will
-     *                           use to send messages.
+     *                           use to send message.
      */
     explicit OrderBookRouter(Messaging::Sender order_book_sender_) :
         order_book_sender(order_book_sender_)
