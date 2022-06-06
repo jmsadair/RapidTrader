@@ -20,7 +20,7 @@ namespace OrderBook {
          * @param outgoing_ a message sender used to communicate with users.
          */
         VectorOrderBook(Symbol symbol_, Messaging::Sender outgoing_) :
-            symbol(std::move(symbol_)), outgoing(outgoing_)
+        symbol(std::move(symbol_)), outgoing(outgoing_)
         {
             ask_price_levels.resize(DEFAULT_PRICE_LEVELS_SIZE);
             bid_price_levels.resize(DEFAULT_PRICE_LEVELS_SIZE);

@@ -4,7 +4,6 @@
 #include "types.h"
 #include "command.h"
 
-
 namespace OrderBook {
     class OrderBook {
     public:

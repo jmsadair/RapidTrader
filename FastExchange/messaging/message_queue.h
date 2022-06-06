@@ -4,7 +4,6 @@
 #include <condition_variable>
 #include <queue>
 #include <memory>
-#include <boost/circular_buffer.hpp>
 
 namespace Messaging {
     /**
