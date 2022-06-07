@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.5)
+project(examples)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+add_executable(${PROJECT_NAME} exchange_example.cpp)
+target_link_libraries(${PROJECT_NAME} fast_exchange)

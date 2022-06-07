@@ -1,13 +1,10 @@
 #ifndef FAST_EXCHANGE_ORDERBOOK_ROUTER_H
 #define FAST_EXCHANGE_ORDERBOOK_ROUTER_H
+#include <iostream>
 #include "vector_orderbook.h"
 
 class OrderBookRouter {
 public:
-    // OrderBookRouter ADT is move only.
-    OrderBookRouter(const OrderBookRouter&) = delete;
-    OrderBookRouter& operator=(const OrderBookRouter&) = delete;
-
     /**
      * A constructor for the OrderBookRouter ADT.
      *
@@ -15,8 +12,46 @@ public:
      *                           use to send message.
      */
     explicit OrderBookRouter(Messaging::Sender orderbook_sender_) :
-            orderbook_sender(orderbook_sender_) {}
+        orderbook_sender(orderbook_sender_)
+    {}
 
+    /**
+     * @return a sender that can be used to send messages to the order book router.
+     */
+    Messaging::Sender getSender() {
+        return static_cast<Messaging::Sender>(receiver);
+    }
+
+    /**
+     * Prepares the router to start receiving commands.
+     */
+    void start() {
+        try {
+            while (true) {
+                receiver.wait()
+                        .handle<Message::Command::PlaceOrder>([&](Message::Command::PlaceOrder &msg)
+                        {
+                            processCommand(msg);
+                        })
+                        .handle<Message::Command::AddOrderBook>([&](Message::Command::AddOrderBook &msg)
+                        {
+                            processCommand(msg);
+                        })
+                        .handle<Message::Command::CancelOrder>([&](Message::Command::CancelOrder &msg)
+                        {
+                            processCommand(msg);
+                        });
+            }
+        } catch(const Messaging::CloseQueue&) {}
+    }
+
+    /**
+     * Shutdown the order book router.
+     */
+    void stop() {
+        getSender().send(Messaging::CloseQueue());
+    }
+private:
     /**
      * Processes a command for placing an order.
      *
@@ -51,37 +86,6 @@ public:
                                    std::forward_as_tuple(command.order_book_symbol, orderbook_sender));
     }
 
-    /**
-     * @return a sender that can be used to send messages to the order book router.
-     */
-    Messaging::Sender getSender() {
-        return static_cast<Messaging::Sender>(receiver);
-    }
-
-    /**
-     * Prepares the router to start receiving commands.
-     */
-    void start() {
-        try {
-            while (true) {
-                receiver.wait()
-                        .handle<Message::Command::PlaceOrder>([&](Message::Command::PlaceOrder &msg)
-                        {
-                            processCommand(msg);
-                        })
-                        .handle<Message::Command::AddOrderBook>([&](Message::Command::AddOrderBook &msg)
-                        {
-                            processCommand(msg);
-                        })
-                        .handle<Message::Command::CancelOrder>([&](Message::Command::CancelOrder &msg)
-                        {
-                           processCommand(msg);
-                        });
-            }
-        } catch(const Messaging::CloseQueue&) {}
-    }
-
-private:
     // Maps a symbol to its corresponding order book.
     std::unordered_map<Symbol, OrderBook::VectorOrderBook> symbol_to_book;
     // Receives incoming command messages.
