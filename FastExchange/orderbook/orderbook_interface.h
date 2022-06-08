@@ -8,18 +8,18 @@ namespace OrderBook {
     class OrderBook {
     public:
         /**
-         * Places a new order. Mutates the command.
+         * Places a new order.
          *
-         * @param command a command to place an order.
+         * @param command an order.
          */
-        virtual void placeOrder(Message::Command::PlaceOrder &command) = 0;
+        virtual void placeOrder(Order &order) = 0;
 
         /**
          * Cancels an order.
          *
-         * @param command a command to cancel an order.
+         * @param order_id the ID of the order to cancel.
          */
-        virtual void cancelOrder(Message::Command::CancelOrder &command) = 0;
+        virtual void cancelOrder(uint64_t order_id) = 0;
 
         /**
          * Indicates whether an order is in the order book or not.
@@ -39,13 +39,6 @@ namespace OrderBook {
         [[nodiscard]] virtual const Order& getOrder(OrderID order_id) const = 0;
 
         /**
-         * Converts the order book to its string representation.
-         *
-         * @return the string representation of the order book.
-         */
-        [[nodiscard]] virtual std::string toString() const = 0;
-
-        /**
          * A destructor for the OrderBook ADT.
          */
         virtual ~OrderBook() = default;
@@ -54,36 +47,35 @@ namespace OrderBook {
 
         /**
          * Given a newly placed order command and an existing order fills each
-         * as much as possible. Mutates the command and the order. Require that
-         * the command and order are on opposite sides of the book.
+         * as much as possible. Mutates the orders and potentially the orderbook.
+         * Require that the orders are on opposite sides of the book.
          *
-         * @param command a command to place an order.
-         * @param order an existing order in the order book.
+         * @param incoming the newly placed order that.
+         * @param existing an order that already exists in the order book.
          */
-        virtual void execute(Message::Command::PlaceOrder &command, Order& order) = 0;
+        virtual void execute(Order &incoming, Order &existing) = 0;
 
         /**
-         * Fills an order command as fully as possible.
-         * Mutates the command.
+         * Fills an order as fully as possible.
+         * Mutates the order.
          *
-         * @param command a command to place an order.
+         * @param order an order to match.
          */
-        virtual void match(Message::Command::PlaceOrder &command) = 0;
+        virtual void match(Order &order) = 0;
 
         /**
          * Handles a GTC order.
          *
-         * @param command a command to place a GTC order.
+         * @param order a GTC order.
          */
-        virtual void handleGtcOrder(Message::Command::PlaceOrder &command) = 0;
+        virtual void handleGtcOrder(Order &order) = 0;
 
         /**
-         * Creates a new order and inserts it into the order book.
+         * Inserts an order into the order book.
          *
          * @param order the order to insert into the order book.
-         * @return a reference to the newly inserted order.
          */
-        virtual void insert(Order order) = 0;
+        virtual void insert(Order &order) = 0;
 
         /**
          * Removes an order from the order book if it exists.

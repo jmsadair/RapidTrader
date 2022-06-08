@@ -44,15 +44,6 @@ namespace OrderBook {
             return std::find(order_list.begin(),
                              order_list.end(), order) != order_list.end();
         }
-
-        /**
-         * @return the string representation of the order list.
-         */
-        [[nodiscard]] std::string toString() const {
-            std::string order_list_string;
-            for (const auto &order: order_list) { order_list_string += order.toString(); }
-            return order_list_string;
-        }
     };
 }
 #endif //FAST_EXCHANGE_PRICE_LEVEL_H

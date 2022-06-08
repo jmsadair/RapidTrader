@@ -1,7 +1,7 @@
 #ifndef FAST_EXCHANGE_EXCHANGE_H
 #define FAST_EXCHANGE_EXCHANGE_H
 #include <thread>
-#include "orderbook_router.h"
+#include "matching_engine.h"
 #include "exchange_api.h"
 #include "event_handler.h"
 class Exchange {
@@ -13,7 +13,7 @@ public:
     Exchange() :
         orderbook_router(event_handler.getSender()), exchange_api(orderbook_router.getSender())
     {
-        t1 = std::thread(&OrderBookRouter::start, &orderbook_router);
+        t1 = std::thread(&MatchingEngine::start, &orderbook_router);
         t2 = std::thread(&EventHandler::start, &event_handler);
     }
 
@@ -38,7 +38,7 @@ public:
     }
 private:
     EventHandler event_handler;
-    OrderBookRouter orderbook_router;
+    MatchingEngine orderbook_router;
     ExchangeApi exchange_api;
     std::thread t1;
     std::thread t2;

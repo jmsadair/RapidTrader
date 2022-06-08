@@ -44,17 +44,17 @@ namespace Message::Event {
      * A message to indicate that an order has been rejected.
      */
     struct RejectionEvent : public Event {
-        RejectionEvent(UserID user_id_, OrderID order_id_, Symbol symbol_, Price order_price_,
-                       Quantity quantity_rejected_) :
-                user_id(user_id_), order_id(order_id_), symbol(std::move(symbol_)), order_price(order_price_),
-                quantity_rejected(quantity_rejected_), timestamp(std::chrono::system_clock::now()) {}
+        RejectionEvent(uint64_t user_id_, uint64_t order_id_, uint32_t symbol_id_, uint32_t order_price_,
+                       uint64_t quantity_rejected_) :
+                user_id(user_id_), order_id(order_id_), symbol_id(symbol_id_), order_price(order_price_),
+                quantity_rejected(quantity_rejected_)
+        {}
 
-        const UserID user_id;
-        const OrderID order_id;
-        const Symbol symbol;
-        const Price order_price;
-        const Quantity quantity_rejected;
-        const Time timestamp;
+        const uint64_t user_id;
+        const uint64_t order_id;
+        const uint32_t symbol_id;
+        const uint32_t order_price;
+        const uint64_t quantity_rejected;
     };
 }
 #endif //FAST_EXCHANGE_EVENT_H

@@ -20,64 +20,40 @@ struct Order : public list_base_hook<> {
     const OrderAction action;
     const OrderSide side;
     const OrderType type;
-    const UserID user_id;
-    const OrderID id;
-    const Price price;
-    const Quantity quantity;
-    // The remaining quantity that must be filled.
-    Quantity quantity_to_fill;
-    OrderStatus status;
-
+    const uint64_t quantity;
+    const uint32_t price;
+    const uint64_t id;
+    const uint64_t user_id;
+    const uint32_t symbol_id;
+    uint64_t quantity_executed;
 
     /**
      * A constructor for the order ADT.
-     * TODO: When is an order rejected?
      *
      * @param action_ the action of the order - limit or market.
-     * @param side_ the side of the order - ask or bid.
-     * @param type_ type of the order - GTC, IOC, FOK.
-     * @param quantity_ the quantity of the order, require that quantity is positive.
-     * @param price_ the price of the order, require that price is positive.
-     * @param id_ a unique ID associated with the order.
-     * @param user_id_ a unique ID associated with the user placing the order.
-     * @param status_ the status of the of the order.
-     * @throws Error if price is negative or if quantity is not positive.
+     * @param side_ the side od the order - ask or bid.
+     * @param type_ the type of the order - GTC, IOC, FOK.
+     * @param quantity_ the quantity of the order, require that quantity_ is positive.
+     * @param price_ the price of the order, require that price_ is positive.
+     * @param id_ the ID associated with the order, require that id_ is positive.
+     * @param user_id_ the user ID associated with the order, require that user_id_ is positive.
+     * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
+     * @param status_ the status of the order - accepted, partially filled, filled, or rejected.
      */
-    Order(OrderAction action_, OrderSide side_, OrderType type_, Quantity quantity_, Price price_, OrderID id_,
-          UserID user_id_, OrderStatus status_ = OrderStatus::Accepted)
-            : action(action_), side(side_), type(type_), quantity(quantity_),
-              price(price_), id(id_), user_id(user_id_), quantity_to_fill(quantity_), status(status_)
-    {
-        if (quantity == 0)
-            throw std::invalid_argument("quantity must be positive!");
-        if (price == 0)
-            throw std::invalid_argument("price must be non-negative!");
-    }
+    inline Order(OrderAction action_, OrderSide side_, OrderType type_, uint64_t quantity_, uint32_t price_,
+                 uint64_t id_, uint64_t user_id_, uint32_t symbol_id_) :
+          action(action_), side(side_), type(type_), quantity(quantity_), price(price_), id(id_),
+          user_id(user_id_), symbol_id(symbol_id_), quantity_executed(0)
+    {}
 
-    /**
-     * A constructor for the Order ADT.
-     *
-     * @param action_ the action of the order - limit or market.
-     * @param side_ the side of the order - ask or bid.
-     * @param type_ type of the order - GTC, IOC, FOK.
-     * @param quantity_ the quantity of the order, require that quantity is positive.
-     * @param quantity_to_fill_ the quantity of the order that remains to be filled, require that quantity_to_fill is
-     *                          positive.
-     * @param price_ the price of the order, require that price is positive.
-     * @param id_ a unique ID associated with the order.
-     * @param user_id_ a unique ID associated with the user placing the order.
-     * @param status_ the status of the order.
-     */
-    Order(OrderAction action_, OrderSide side_, OrderType type_, Quantity quantity_, Quantity quantity_to_fill_,
-          Price price_, OrderID id_, UserID user_id_, OrderStatus status_ = OrderStatus::Accepted)
-            : action(action_), side(side_), type(type_), quantity(quantity_), quantity_to_fill(quantity_to_fill_),
-              price(price_), id(id_), user_id(user_id_), status(status_)
-    {
-        if (quantity == 0)
-            throw std::invalid_argument("quantity must be positive!");
-        if (price == 0)
-            throw std::invalid_argument("price must be non-negative!");
-    }
+    [[nodiscard]] inline uint64_t executableQuantity() const { return quantity - quantity_executed; }
+    [[nodiscard]] inline bool isAsk() const { return side == OrderSide::Ask; }
+    [[nodiscard]] inline bool isBid() const { return side == OrderSide::Bid; }
+    [[nodiscard]] inline bool isLimit() const { return action == OrderAction::Limit; }
+    [[nodiscard]] inline bool isMarket() const { return action == OrderAction::Market; }
+    [[nodiscard]] inline bool isIoc() const { return type == OrderType::ImmediateOrCancel; }
+    [[nodiscard]] inline bool isGtc() const { return type == OrderType::GoodTillCancel; }
+    [[nodiscard]] inline bool isFilled() const { return quantity_executed == quantity; }
 
     /**
      * Indicates whether two orders are equal. Two orders are equal if and only if they have
@@ -87,15 +63,14 @@ struct Order : public list_base_hook<> {
      * @param other another order.
      * @return true if the orders are equal and false otherwise.
      */
-    bool operator==(const Order &other) const {
-        return status == other.status &&
-               action == other.action &&
+    inline bool operator==(const Order &other) const {
+        return action == other.action &&
                type == other.type &&
                side == other.side &&
                id == other.id &&
                user_id == other.user_id &&
                quantity == other.quantity &&
-               quantity_to_fill == other.quantity_to_fill &&
+               quantity_executed == other.quantity_executed &&
                price == other.price;
     }
 
@@ -107,31 +82,32 @@ struct Order : public list_base_hook<> {
      * @param other another order.
      * @return true if the orders are not equal and false otherwise.
      */
-    bool operator!=(const Order &other) const {
-        return !(*this == other);
+    inline bool operator!=(const Order &other) const { return !(*this == other); }
+
+    static inline Order askLimit(OrderType type_, uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
+                          uint32_t symbol_id_)
+    {
+        return {OrderAction::Limit, OrderSide::Ask, type_, quantity_, price_, id_, user_id_, symbol_id_};
     }
 
-    /**
-     * @return the string representation of an order.
-     */
-    [[nodiscard]] std::string toString() const {
-        std::string order_action = order_action_to_string[static_cast<std::underlying_type<OrderStatus>::type>(action)];
-        std::string order_side = order_side_to_string[static_cast<std::underlying_type<OrderStatus>::type>(side)];
-        std::string order_status = order_status_to_string[static_cast<std::underlying_type<OrderStatus>::type>(status)];
-        std::string order_type = order_type_to_string[static_cast<std::underlying_type<OrderStatus>::type>(type)];
-        std::string order_price = std::to_string(price);
-        std::string order_quantity = std::to_string(quantity);
-        std::string order_id = std::to_string(id);
-        std::string order_user_id = std::to_string(user_id);
+    static inline Order bidLimit(OrderType type_, uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
+                                 uint32_t symbol_id_)
+    {
+        return {OrderAction::Limit, OrderSide::Bid, type_, quantity_, price_, id_, user_id_, symbol_id_};
+    }
 
-        return "Order ID: " + order_id +
-               "\nUser ID: " + order_user_id +
-               "\nOrder Side: " + order_side +
-               "\nOrder Action: " + order_action +
-               "\nOrder Status: " + order_status +
-               "\nOrder Type: " + order_type +
-               "\nOrder Price: " + order_price +
-               "\nOrder Quantity: " + order_quantity + "\n";
+    static inline Order askMarket(uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
+                                  uint32_t symbol_id_)
+    {
+        return {OrderAction::Market, OrderSide::Ask, OrderType::ImmediateOrCancel, quantity_, price_, id_, user_id_,
+                symbol_id_};
+    }
+
+    static inline Order bidMarket(uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
+                                 uint32_t symbol_id_)
+    {
+        return {OrderAction::Limit, OrderSide::Bid, OrderType::ImmediateOrCancel, quantity_, price_, id_, user_id_,
+                symbol_id_};
     }
 };
 #endif //FAST_EXCHANGE_ORDER_H
