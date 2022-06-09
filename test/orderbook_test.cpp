@@ -46,7 +46,7 @@ TEST(VectorOrderBookTest, BookShouldInsertUnmatchedOrders1) {
     t1.join();
     // Book should now contain the order since it is a GTC order and has no match.
     ASSERT_TRUE(book.hasOrder(id));
-    ASSERT_EQ(order.quantity_executed, 0);
+    ASSERT_EQ(book.getOrder(id).quantity_executed, 0);
     // Order should not have been traded, so no message should have been sent.
     ASSERT_TRUE(result_receiver.trade_events.empty());
     ASSERT_TRUE(result_receiver.orders_executed.empty());
@@ -83,8 +83,8 @@ TEST(VectorOrderBookTest, BookShouldInsertUnmatchedOrders2) {
     // Orders on the same side of the book should never match with one another.
     ASSERT_TRUE(book.hasOrder(id1));
     ASSERT_TRUE(book.hasOrder(id2));
-    ASSERT_EQ(order1.quantity_executed, 0);
-    ASSERT_EQ(order2.quantity_executed, 0);
+    ASSERT_EQ(book.getOrder(id1).quantity_executed, 0);
+    ASSERT_EQ(book.getOrder(id2).quantity_executed, 0);
     ASSERT_TRUE(result_receiver.trade_events.empty());
     ASSERT_TRUE(result_receiver.orders_executed.empty());
 }
@@ -120,8 +120,8 @@ TEST(VectorOrderBookTest, BookShouldInsertUnmatchedOrders3) {
     // Orders on the same side of the book should never match with one another.
     ASSERT_TRUE(book.hasOrder(id1));
     ASSERT_TRUE(book.hasOrder(id2));
-    ASSERT_EQ(order1.quantity_executed, 0);
-    ASSERT_EQ(order2.quantity_executed, 0);
+    ASSERT_EQ(book.getOrder(id1).quantity_executed, 0);
+    ASSERT_EQ(book.getOrder(id2).quantity_executed, 0);
     // Check the receiver for result message.
     ASSERT_TRUE(result_receiver.trade_events.empty());
     ASSERT_TRUE(result_receiver.orders_executed.empty());
@@ -153,7 +153,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders1) {
     book.placeOrder(order1);
     // Book should now contain the first order since it has no match.
     ASSERT_TRUE(book.hasOrder(id1));
-    ASSERT_EQ(order1.quantity_executed, 0);
+    ASSERT_EQ(book.getOrder(id1).quantity_executed, 0);
     // Place a second order at the same price level and same quantity as the first order.
     // Both orders should be completely filled.
     book.placeOrder(order2);
@@ -207,8 +207,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders2) {
     // Book should now contain the first order since it has no match.
     ASSERT_TRUE(book.hasOrder(id1));
     // Get the first order and check that it is unmodified.
-    const auto& inserted_order1 = book.getOrder(id1);
-    ASSERT_EQ(inserted_order1.quantity_executed, 0);
+    ASSERT_EQ(book.getOrder(id1).quantity_executed, 0);
     // Place a second order at the same price level but greater quantity than the first order.
     // First order placed should be filled, second order placed should be partially filled.
     book.placeOrder(order2);
@@ -216,7 +215,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders2) {
     t1.join();
     // Second order should have never been inserted into the book.
     ASSERT_TRUE(book.hasOrder(id2));
-    ASSERT_EQ(order2.quantity_executed, quantity1);
+    ASSERT_EQ(book.getOrder(id2).quantity_executed, quantity1);
     // First order should have been removed.
     ASSERT_FALSE(book.hasOrder(id1));
     // Check the receiver for result message.
@@ -272,10 +271,9 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders3) {
     // Place new order. This order should match with the previous two orders.
     book.placeOrder(order3);
     ASSERT_FALSE(book.hasOrder(id3));
-    const Order& order2_ref = book.getOrder(id2);
     // Second order should still be in the book since it was not fully filled.
     ASSERT_TRUE(book.hasOrder(id2));
-    ASSERT_EQ(order2.quantity_executed, quantity3 - quantity1);
+    ASSERT_EQ(book.getOrder(id2).quantity_executed, quantity3 - quantity1);
     // First order should have been removed since it was filled.
     ASSERT_FALSE(book.hasOrder(id1));
     // Check the receiver for result message.

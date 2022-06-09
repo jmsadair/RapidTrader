@@ -29,7 +29,7 @@ namespace OrderBook {
        /**
         * @inheritdoc
         */
-        void placeOrder(Order &order) override;
+        void placeOrder(Order order) override;
 
         /**
          * @inheritdoc
@@ -39,12 +39,12 @@ namespace OrderBook {
         /**
          * @inheritdoc
          */
-        [[nodiscard]] inline bool hasOrder(OrderID order_id) const override { return orders.find(order_id) != orders.end(); }
+        [[nodiscard]] inline bool hasOrder(uint64_t order_id) const override { return orders.find(order_id) != orders.end(); }
 
         /**
          * @inheritdoc
          */
-        [[nodiscard]] inline const Order& getOrder(OrderID order_id) const override { return orders.at(order_id); }
+        [[nodiscard]] inline const Order& getOrder(uint64_t order_id) const override { return orders.at(order_id); }
 
     private:
         /**
@@ -60,12 +60,12 @@ namespace OrderBook {
         /**
          * @inheritdoc
          */
-        void handleGtcOrder(Order &order) override;
+        void placeGtcOrder(Order order) override;
 
         /**
          * @inheritdoc
          */
-        void insert(Order &order) override;
+        void insert(Order order) override;
 
         /**
          * @inheritdoc

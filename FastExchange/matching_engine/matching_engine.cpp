@@ -20,21 +20,20 @@ void MatchingEngine::start() {
     } catch(const Messaging::CloseQueue&) {}
 }
 
-void MatchingEngine::processCommand(Message::Command::PlaceOrder& command) {
+void MatchingEngine::processCommand(const Message::Command::PlaceOrder &command) {
     auto it = symbol_to_book.find(command.order_symbol_id);
     if (it != symbol_to_book.end()) {
-        Order order = command.makeOrder();
-        it->second.placeOrder(order);
+        it->second.placeOrder(command.makeOrder());
     }
 }
 
-void MatchingEngine::processCommand(Message::Command::CancelOrder& command) {
+void MatchingEngine::processCommand(const Message::Command::CancelOrder &command) {
     auto it = symbol_to_book.find(command.order_symbol_id);
     if (it != symbol_to_book.end())
         it->second.cancelOrder(command.order_id);
 }
 
-void MatchingEngine::processCommand(Message::Command::AddOrderBook& command) {
+void MatchingEngine::processCommand(const Message::Command::AddOrderBook &command) {
     auto it = symbol_to_book.find(command.orderbook_symbol_id);
     if (it == symbol_to_book.end())
         symbol_to_book.emplace(std::piecewise_construct, std::forward_as_tuple(command.orderbook_symbol_id),

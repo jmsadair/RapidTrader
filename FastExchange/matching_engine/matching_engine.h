@@ -33,21 +33,21 @@ private:
      *
      * @param command a command to place an order.
      */
-    void processCommand(Message::Command::PlaceOrder& command);
+    void processCommand(const Message::Command::PlaceOrder &command);
 
     /**
      * Processes a command for cancelling an order.
      *
      * @param command a command to cancel an order.
      */
-    void processCommand(Message::Command::CancelOrder& command);
+    void processCommand(const Message::Command::CancelOrder &command);
 
     /**
      * Processes a command for adding creating a new order book.
      *
      * @param command a command to create a new order book.
      */
-    void processCommand(Message::Command::AddOrderBook& command);
+    void processCommand(const Message::Command::AddOrderBook &command);
 
     // Maps a symbol to its corresponding order book.
     std::unordered_map<uint32_t, OrderBook::VectorOrderBook> symbol_to_book;

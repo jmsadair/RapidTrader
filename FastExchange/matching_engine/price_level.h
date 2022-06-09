@@ -14,7 +14,7 @@ namespace OrderBook {
         // A doubly-linked list of orders.
         list<Order> order_list;
         // The total volume of the orders in the order list.
-        Quantity volume = 0;
+        uint64_t volume = 0;
 
         /**
          * A constructor for the PriceLevel ADT, initializes

@@ -12,7 +12,7 @@ namespace OrderBook {
          *
          * @param command an order.
          */
-        virtual void placeOrder(Order &order) = 0;
+        virtual void placeOrder(Order order) = 0;
 
         /**
          * Cancels an order.
@@ -27,7 +27,7 @@ namespace OrderBook {
          * @param order the order that may or may not be in the order book.
          * @return true if the book contains the order and false otherwise.
          */
-        [[nodiscard]] virtual bool hasOrder(OrderID order_id) const = 0;
+        [[nodiscard]] virtual bool hasOrder(uint64_t order_id) const = 0;
 
         /**
          * Given an order ID, retrieves the corresponding order.
@@ -36,7 +36,7 @@ namespace OrderBook {
          *                 the order book contains an order with order_id.
          * @return the order with the provided ID.
          */
-        [[nodiscard]] virtual const Order& getOrder(OrderID order_id) const = 0;
+        [[nodiscard]] virtual const Order& getOrder(uint64_t order_id) const = 0;
 
         /**
          * A destructor for the OrderBook ADT.
@@ -47,7 +47,7 @@ namespace OrderBook {
 
         /**
          * Given a newly placed order command and an existing order fills each
-         * as much as possible. Mutates the orders and potentially the orderbook.
+         * as much as possible. Mutates the orders and potentially the matching_engine.
          * Require that the orders are on opposite sides of the book.
          *
          * @param incoming the newly placed order that.
@@ -68,14 +68,14 @@ namespace OrderBook {
          *
          * @param order a GTC order.
          */
-        virtual void handleGtcOrder(Order &order) = 0;
+        virtual void placeGtcOrder(Order order) = 0;
 
         /**
          * Inserts an order into the order book.
          *
          * @param order the order to insert into the order book.
          */
-        virtual void insert(Order &order) = 0;
+        virtual void insert(Order order) = 0;
 
         /**
          * Removes an order from the order book if it exists.

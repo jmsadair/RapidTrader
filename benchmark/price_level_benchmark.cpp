@@ -14,7 +14,8 @@ static void BM_PriceLevelCreationWithOrder(benchmark::State& state) {
     const auto order_price = 30;
     const auto order_id = 123;
     const auto order_user_id = 1;
-    Order order { order_action, order_side, order_type, order_quantity, order_price, order_id, order_user_id };
+    const auto symbol_id = 1;
+    Order order { order_action, order_side, order_type, order_quantity, order_price, order_id, order_user_id, symbol_id};
     for (auto _ : state) {
         benchmark::DoNotOptimize(OrderBook::PriceLevel(order));
     }
@@ -28,7 +29,8 @@ static void BM_PriceLevelAddOrder(benchmark::State& state) {
     const auto order_price = 30;
     const auto order_id = 123;
     const auto order_user_id = 1;
-    Order order { order_action, order_side, order_type, order_quantity, order_price, order_id, order_user_id };
+    const auto symbol_id = 1;
+    Order order { order_action, order_side, order_type, order_quantity, order_price, order_id, order_user_id, symbol_id};
     for (auto _ : state) {
         OrderBook::PriceLevel price_level;
         benchmark::DoNotOptimize(price_level);

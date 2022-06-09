@@ -1,9 +1,9 @@
 #include "vector_orderbook.h"
 
-void OrderBook::VectorOrderBook::placeOrder(Order &order) {
+void OrderBook::VectorOrderBook::placeOrder(Order order) {
     switch(order.type) {
         case OrderType::GoodTillCancel:
-            handleGtcOrder(order);
+            placeGtcOrder(order);
             break;
         case OrderType::ImmediateOrCancel:
             throw std::logic_error("IOC orders are not currently supported!");
@@ -14,7 +14,7 @@ void OrderBook::VectorOrderBook::placeOrder(Order &order) {
     }
 }
 
-void OrderBook::VectorOrderBook::handleGtcOrder(Order &order) {
+void OrderBook::VectorOrderBook::placeGtcOrder(Order order) {
     match(order);
     if (!order.isFilled())
         insert(order);
@@ -34,7 +34,7 @@ void OrderBook::VectorOrderBook::execute(Order &incoming, Order &existing) {
         outgoing.send(Message::Event::OrderExecuted(existing.user_id, existing.id, existing.price,
                                                     existing.quantity));
         // Remove existing order from the order book.
-        const OrderID id_to_erase = existing.id;
+        const uint64_t id_to_erase = existing.id;
         if (existing.isAsk())
             ask_price_levels[existing.price].order_list.pop_front();
         else
@@ -71,7 +71,7 @@ void OrderBook::VectorOrderBook::match(Order &order) {
     }
 }
 
-void OrderBook::VectorOrderBook::insert(Order &order) {
+void OrderBook::VectorOrderBook::insert(Order order) {
     auto [it, success] = orders.insert({order.id, order});
     if (order.isAsk()) {
         min_ask_price = std::min(min_ask_price, order.price);

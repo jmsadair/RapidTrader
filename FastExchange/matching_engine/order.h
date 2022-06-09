@@ -1,12 +1,5 @@
 #ifndef FAST_EXCHANGE_ORDER_H
 #define FAST_EXCHANGE_ORDER_H
-#include <chrono>
-#include <string>
-#include <utility>
-#include <array>
-#include <stdexcept>
-#include <numeric>
-#include <cmath>
 #include <iomanip>
 #include <boost/intrusive/list.hpp>
 #include "types.h"
@@ -46,13 +39,44 @@ struct Order : public list_base_hook<> {
           user_id(user_id_), symbol_id(symbol_id_), quantity_executed(0)
     {}
 
+    /**
+     * @return the quantity of the order that remains to be executed.
+     */
     [[nodiscard]] inline uint64_t executableQuantity() const { return quantity - quantity_executed; }
+
+    /**
+     * @return true if the order is on the ask side and false otherwise.
+     */
     [[nodiscard]] inline bool isAsk() const { return side == OrderSide::Ask; }
+
+    /**
+     * @return true if the order is on the bid side and false otherwise.
+     */
     [[nodiscard]] inline bool isBid() const { return side == OrderSide::Bid; }
+
+    /**
+     * @return true if the order is a limit order and false otherwise.
+     */
     [[nodiscard]] inline bool isLimit() const { return action == OrderAction::Limit; }
+
+    /**
+     * @return true if the order is a market order and false otherwise.
+     */
     [[nodiscard]] inline bool isMarket() const { return action == OrderAction::Market; }
+
+    /**
+     * @return true if the order is of type IOC and false otherwise.
+     */
     [[nodiscard]] inline bool isIoc() const { return type == OrderType::ImmediateOrCancel; }
+
+    /**
+     * @return true if the order is of type GTC and false otherwise.
+     */
     [[nodiscard]] inline bool isGtc() const { return type == OrderType::GoodTillCancel; }
+
+    /**
+     * @return true if the complete quantity of the order has been executed and false otherwise.
+     */
     [[nodiscard]] inline bool isFilled() const { return quantity_executed == quantity; }
 
     /**
@@ -84,18 +108,50 @@ struct Order : public list_base_hook<> {
      */
     inline bool operator!=(const Order &other) const { return !(*this == other); }
 
+    /**
+     * Creates an order on the ask side with a limit action.
+     *
+     * @param type_ the type of the order - IOC, FOK, or GTC.
+     * @param quantity_ the quantity of the order, require that quantity_ is positive.
+     * @param price_ the price of the order, require that price_ is positive.
+     * @param id_ the ID associated with the order, require that id_ is positive.
+     * @param user_id_ the user ID associated with the order, require that user_id_ is positive.
+     * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
+     * @return a new order.
+     */
     static inline Order askLimit(OrderType type_, uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
                           uint32_t symbol_id_)
     {
         return {OrderAction::Limit, OrderSide::Ask, type_, quantity_, price_, id_, user_id_, symbol_id_};
     }
 
+    /**
+     * Creates an order on the bid side with a limit action.
+     *
+     * @param type_ the type of the order - IOC, FOK, or GTC.
+     * @param quantity_ the quantity of the order, require that quantity_ is positive.
+     * @param price_ the price of the order, require that price_ is positive.
+     * @param id_ the ID associated with the order, require that id_ is positive.
+     * @param user_id_ the user ID associated with the order, require that user_id_ is positive.
+     * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
+     * @return a new order.
+     */
     static inline Order bidLimit(OrderType type_, uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
                                  uint32_t symbol_id_)
     {
         return {OrderAction::Limit, OrderSide::Bid, type_, quantity_, price_, id_, user_id_, symbol_id_};
     }
 
+    /**
+     * Creates an order on the ask side with a market action.
+     *
+     * @param quantity_ the quantity of the order, require that quantity_ is positive.
+     * @param price_ the price of the order, require that price_ is positive.
+     * @param id_ the ID associated with the order, require that id_ is positive.
+     * @param user_id_ the user ID associated with the order, require that user_id_ is positive.
+     * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
+     * @return a new order.
+     */
     static inline Order askMarket(uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
                                   uint32_t symbol_id_)
     {
@@ -103,6 +159,16 @@ struct Order : public list_base_hook<> {
                 symbol_id_};
     }
 
+    /**
+     * Creates an order on the bid side with a market action.
+     *
+     * @param quantity_ the quantity of the order, require that quantity_ is positive.
+     * @param price_ the price of the order, require that price_ is positive.
+     * @param id_ the ID associated with the order, require that id_ is positive.
+     * @param user_id_ the user ID associated with the order, require that user_id_ is positive.
+     * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
+     * @return a new order.
+     */
     static inline Order bidMarket(uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
                                  uint32_t symbol_id_)
     {

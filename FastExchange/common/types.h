@@ -27,10 +27,4 @@ constexpr std::array order_side_to_string {"BID", "ASK"};
 enum class OrderStatus {Accepted = 0, Rejected = 1, PartiallyFilled = 1, Filled = 2, Cancelled = 3};
 constexpr std::array order_status_to_string {"ACCEPTED", "REJECTED", "PARTIALLY FILLED", "FILLED", "CANCELLED"};
 
-using Price = uint32_t;
-using OrderID = uint64_t;
-using UserID = uint64_t;
-using Quantity = uint64_t;
-using Time = std::chrono::time_point<std::chrono::system_clock>;
-using Symbol = std::string;
 #endif //FAST_EXCHANGE_TYPES_H
