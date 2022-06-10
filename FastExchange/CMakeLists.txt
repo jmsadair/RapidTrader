@@ -5,5 +5,6 @@ if(Boost_FOUND)
     set(SOURCE ${SOURCE} matching_engine/vector_orderbook.cpp matching_engine/matching_engine.cpp matching_engine/order.cpp
             exchange.h exchange_api.h event_handler.h)
     add_library(${PROJECT_NAME} ${SOURCE})
+    target_include_directories(${PROJECT_NAME} PUBLIC .)
     target_include_directories(${PROJECT_NAME} PUBLIC matching_engine common message messaging users ${Boost_INCLUDE_DIRS})
 endif()

@@ -1,3 +1,4 @@
+#include <iostream>
 #include "vector_orderbook.h"
 
 void OrderBook::VectorOrderBook::placeOrder(Order order) {

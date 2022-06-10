@@ -10,11 +10,16 @@ public:
      * A constructor for the Exchange ADT - spawns threads for the order matching engine and
      * the event handler.
      */
-    Exchange() :
-        orderbook_router(event_handler.getSender()), exchange_api(orderbook_router.getSender())
+    explicit Exchange(int num_engines) :
+        api(engine_router_ptr)
     {
-        t1 = std::thread(&MatchingEngine::start, &orderbook_router);
-        t2 = std::thread(&EventHandler::start, &event_handler);
+        engines.reserve(num_engines);
+        threads.reserve(num_engines);
+        for (int i = 0; i < num_engines; ++i) {
+            engines.push_back(std::make_shared<MatchingEngine>(event_handler.getSender()));
+            threads.emplace_back(&MatchingEngine::start, engines.back());
+            engine_router_ptr->addSender(engines.back()->getSender());
+        }
     }
 
     /**
@@ -22,25 +27,25 @@ public:
      * were running on.
      */
     ~Exchange() {
-        orderbook_router.stop();
-        event_handler.stop();
-        if (t1.joinable())
-            t1.join();
-        if (t2.joinable())
-            t2.join();
+        for (auto& engine : engines) {
+            engine->stop();
+        }
+        for (auto& thread : threads) {
+            thread.join();
+        }
     }
 
     /**
      * @return an API for the exchange.
      */
-    inline ExchangeApi& getApi() {
-        return exchange_api;
-    }
+    inline ExchangeApi& getApi() { return api; }
+
 private:
     EventHandler event_handler;
-    MatchingEngine orderbook_router;
-    ExchangeApi exchange_api;
-    std::thread t1;
-    std::thread t2;
+    std::shared_ptr<MatchingEngineRouter> engine_router_ptr = std::make_shared<MatchingEngineRouter>();
+    ExchangeApi api;
+    std::vector<std::shared_ptr<MatchingEngine>> engines;
+    std::vector<std::thread> threads;
+    std::vector<Messaging::Sender> senders;
 };
 #endif //FAST_EXCHANGE_EXCHANGE_H
