@@ -13,6 +13,11 @@ void OrderBook::VectorOrderBook::placeOrder(Order order) {
         default:
             throw std::logic_error("Default case should never be reached!");
     }
+
+    if (orders.empty()) {
+        min_ask_price = std::numeric_limits<uint32_t>::max();
+        max_bid_price = 0;
+    }
 }
 
 void OrderBook::VectorOrderBook::placeGtcOrder(Order order) {
@@ -99,8 +104,14 @@ void OrderBook::VectorOrderBook::remove(Order &order) {
         orders_at_price_level->volume -= order.quantity;
         order_list.erase(order_list.iterator_to(order));
         orders.erase(order.id);
-        if (orders.empty())
+        // If the orderbook is empty, reset the min ask and max bid prices.
+        if (orders.empty()) {
+            min_ask_price = std::numeric_limits<uint32_t>::max();
+            max_bid_price = 0;
             return;
+        }
+        // If the price level of the order is now empty, increment minimum asking price until
+        // the next non-empty price level is found.
         while (price_level_it->order_list.empty() && price_level_it != ask_price_levels.end()) {
             ++min_ask_price;
             ++price_level_it;
@@ -108,10 +119,18 @@ void OrderBook::VectorOrderBook::remove(Order &order) {
     } else {
         auto orders_at_price_level = bid_price_levels.begin() + order.price;
         auto& order_list = orders_at_price_level->order_list;
-        auto price_level_it = ask_price_levels.begin() + max_bid_price;
+        auto price_level_it = bid_price_levels.begin() + max_bid_price;
         orders_at_price_level->volume -= order.quantity;
         order_list.erase(order_list.iterator_to(order));
         orders.erase(order.id);
+        // If the orderbook is empty, reset the min ask and max bid prices.
+        if (orders.empty()) {
+            min_ask_price = std::numeric_limits<uint32_t>::max();
+            max_bid_price = 0;
+            return;
+        }
+        // If the price level of the order is now empty, decrement max bid price until
+        // the next non-empty price level is found.
         while (price_level_it->order_list.empty() && price_level_it != bid_price_levels.begin()) {
             --max_bid_price;
             --price_level_it;
@@ -124,6 +143,6 @@ void OrderBook::VectorOrderBook::cancelOrder(uint64_t order_id) {
     if (it != orders.end()) {
         remove(it->second);
         outgoing.send(Message::Event::RejectionEvent(it->second.user_id, it->second.id, symbol_id, it->second.price,
-                                                     it->second.quantity_executed));
+                                                     it->second.executableQuantity()));
     }
 }

@@ -46,6 +46,15 @@ namespace OrderBook {
          */
         [[nodiscard]] inline const Order& getOrder(uint64_t order_id) const override { return orders.at(order_id); }
 
+        /**
+         * @inheritdoc
+         */
+        [[nodiscard]] inline uint32_t minAskPrice() const override { return min_ask_price; }
+
+        /**
+         * @inheritdoc
+         */
+        [[nodiscard]] inline uint32_t maxBidPrice() const override { return max_bid_price; }
     private:
         /**
          * @inheritdoc

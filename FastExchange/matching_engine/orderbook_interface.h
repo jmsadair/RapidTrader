@@ -39,6 +39,16 @@ namespace OrderBook {
         [[nodiscard]] virtual const Order& getOrder(uint64_t order_id) const = 0;
 
         /**
+         * @return the minimum asking price in the order book.
+         */
+        [[nodiscard]] virtual uint32_t minAskPrice() const = 0;
+
+        /**
+         * @return the maximum bidding price in the order book.
+         */
+        [[nodiscard]] virtual uint32_t maxBidPrice() const = 0;
+
+        /**
          * A destructor for the OrderBook ADT.
          */
         virtual ~OrderBook() = default;
