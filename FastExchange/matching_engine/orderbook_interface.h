@@ -81,6 +81,13 @@ namespace OrderBook {
         virtual void placeGtcOrder(Order order) = 0;
 
         /**
+         * Handles a FOK order.
+         *
+         * @param order a FOK order.
+         */
+        virtual void placeFokOrder(Order order) = 0;
+
+        /**
          * Inserts an order into the order book.
          *
          * @param order the order to insert into the order book.

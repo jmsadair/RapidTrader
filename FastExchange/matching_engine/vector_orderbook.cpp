@@ -9,14 +9,10 @@ void OrderBook::VectorOrderBook::placeOrder(Order order) {
         case OrderType::ImmediateOrCancel:
             throw std::logic_error("IOC orders are not currently supported!");
         case OrderType::FillOrKill:
-            throw std::logic_error("FOK orders are not currently supported!");
+            placeFokOrder(order);
+            break;
         default:
             throw std::logic_error("Default case should never be reached!");
-    }
-
-    if (orders.empty()) {
-        min_ask_price = std::numeric_limits<uint32_t>::max();
-        max_bid_price = 0;
     }
 }
 
@@ -26,36 +22,55 @@ void OrderBook::VectorOrderBook::placeGtcOrder(Order order) {
         insert(order);
 }
 
+void OrderBook::VectorOrderBook::placeFokOrder(Order order) {
+    match(order);
+    // In the case of FOK order, if it is not fully filled, it will not be inserted into the orderbook.
+    // It is instead cancelled.
+    if (!order.isFilled())
+        outgoing.send(Message::Event::RejectionEvent(order.user_id, order.id, symbol_id, order.price,
+                                                     order.executableQuantity()));
+}
+
 void OrderBook::VectorOrderBook::execute(Order &incoming, Order &existing) {
     const uint64_t matched_quantity = std::min(incoming.executableQuantity(), existing.executableQuantity());
     incoming.quantity_executed += matched_quantity;
     existing.quantity_executed += matched_quantity;
+    const uint64_t existing_id = existing.id;
+    const uint32_t existing_price  = existing.price;
     // Existing order could not be completely filled.
     if (!existing.isFilled()) {
         // Notify event handler that the existing order has been traded.
         outgoing.send(Message::Event::TradeEvent(existing.user_id, existing.id, incoming.id, existing.price,
                                                  incoming.price, matched_quantity));
-        // Existing order could be completely filled.
+        // Notify that incoming order has been completely filled.
+        if (incoming.isFilled())
+            outgoing.send(Message::Event::OrderExecuted(incoming.user_id, incoming.id, incoming.price,
+                                                        incoming.quantity));
+    // Existing order could be completely filled.
     } else {
-        outgoing.send(Message::Event::OrderExecuted(existing.user_id, existing.id, existing.price,
-                                                    existing.quantity));
+        outgoing.send(Message::Event::OrderExecuted(existing.user_id, existing.id, existing.price, existing.quantity));
         // Remove existing order from the order book.
-        const uint64_t id_to_erase = existing.id;
         if (existing.isAsk())
             ask_price_levels[existing.price].order_list.pop_front();
         else
             bid_price_levels[existing.price].order_list.pop_front();
-        orders.erase(id_to_erase);
+        orders.erase(existing_id);
+        // Notify that incoming order has been completely filled.
+        if (incoming.isFilled())
+            outgoing.send(Message::Event::OrderExecuted(incoming.user_id, incoming.id, incoming.price,
+                                                        incoming.quantity));
+        // Notify that incoming order has been traded, but not matched.
+        else
+            outgoing.send(Message::Event::TradeEvent(incoming.user_id, incoming.id, existing_id, incoming.price,
+                                                     existing_price, matched_quantity));
     }
-    // Notify event handler that incoming order has been completely filled.
-    if (incoming.isFilled())
-        outgoing.send(Message::Event::OrderExecuted(incoming.user_id, incoming.id, incoming.price,
-                                                    incoming.quantity));
+
 }
 
 void OrderBook::VectorOrderBook::match(Order &order) {
     if (order.isAsk()) {
-        auto price_level_it = bid_price_levels.begin() + static_cast<std::vector<PriceLevel>::difference_type>(max_bid_price);
+        auto price_level_it = bid_price_levels.begin() +
+                static_cast<std::vector<PriceLevel>::difference_type>(max_bid_price);
         while (max_bid_price >= order.price) {
             auto& price_level = *price_level_it;
             while (!price_level.order_list.empty() && !order.isFilled()) {
@@ -65,7 +80,8 @@ void OrderBook::VectorOrderBook::match(Order &order) {
             --price_level_it;
         }
     } else {
-        auto price_level_it = ask_price_levels.begin() + static_cast<std::vector<PriceLevel>::difference_type>(min_ask_price);
+        auto price_level_it = ask_price_levels.begin() +
+                static_cast<std::vector<PriceLevel>::difference_type>(min_ask_price);
         while (min_ask_price <= order.price) {
             auto& price_level = *price_level_it;
             while (!price_level.order_list.empty() && !order.isFilled()) {
@@ -85,14 +101,16 @@ void OrderBook::VectorOrderBook::insert(Order order) {
             ask_price_levels.resize(order.price + 1);
         auto& price_level = *(ask_price_levels.begin() + order.price);
         price_level.order_list.push_back(it->second);
-        price_level.volume += order.quantity_executed;
+        // Update the total volume of the price level with the executable quantity of the order.
+        price_level.volume += order.executableQuantity();
     } else {
         max_bid_price = std::max(max_bid_price, order.price);
         if (order.price >= bid_price_levels.size())
             bid_price_levels.resize(order.price + 1);
         auto& price_level = *(bid_price_levels.begin() + order.price);
         price_level.order_list.push_back(it->second);
-        price_level.volume += order.quantity_executed;
+        // Update the total volume of the price level with the executable quantity of the order.
+        price_level.volume += order.executableQuantity();
     }
 }
 

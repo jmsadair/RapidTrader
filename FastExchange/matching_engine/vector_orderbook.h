@@ -74,6 +74,11 @@ namespace OrderBook {
         /**
          * @inheritdoc
          */
+        void placeFokOrder(Order order) override;
+
+        /**
+         * @inheritdoc
+         */
         void insert(Order order) override;
 
         /**
