@@ -64,6 +64,16 @@ namespace OrderBook {
         /**
          * @inheritdoc
          */
+        void executePriceChain(const std::vector<uint32_t> &price_chain, Order &order) override;
+
+        /**
+         * @inheritdoc
+         */
+        std::pair<std::vector<uint32_t>, bool> getPriceChain(const Order &order) override;
+
+        /**
+         * @inheritdoc
+         */
         void match(Order &order)  override;
 
         /**
@@ -75,6 +85,11 @@ namespace OrderBook {
          * @inheritdoc
          */
         void placeFokOrder(Order order) override;
+
+        /**
+         * @inheritdoc;
+         */
+        void placeIocOrder(Order order) override;
 
         /**
          * @inheritdoc

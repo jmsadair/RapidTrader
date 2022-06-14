@@ -7,7 +7,8 @@ void OrderBook::VectorOrderBook::placeOrder(Order order) {
             placeGtcOrder(order);
             break;
         case OrderType::ImmediateOrCancel:
-            throw std::logic_error("IOC orders are not currently supported!");
+            placeIocOrder(order);
+            break;
         case OrderType::FillOrKill:
             placeFokOrder(order);
             break;
@@ -23,6 +24,15 @@ void OrderBook::VectorOrderBook::placeGtcOrder(Order order) {
 }
 
 void OrderBook::VectorOrderBook::placeFokOrder(Order order) {
+    auto [price_chain, can_execute] = getPriceChain(order);
+    if (can_execute)
+        executePriceChain(price_chain, order);
+    else
+        outgoing.send(Message::Event::RejectionEvent(order.user_id, order.id, symbol_id, order.price,
+                                                     order.executableQuantity()));
+}
+
+void OrderBook::VectorOrderBook::placeIocOrder(Order order) {
     match(order);
     // In the case of FOK order, if it is not fully filled, it will not be inserted into the orderbook.
     // It is instead cancelled.
@@ -33,10 +43,14 @@ void OrderBook::VectorOrderBook::placeFokOrder(Order order) {
 
 void OrderBook::VectorOrderBook::execute(Order &incoming, Order &existing) {
     const uint64_t matched_quantity = std::min(incoming.executableQuantity(), existing.executableQuantity());
-    incoming.quantity_executed += matched_quantity;
-    existing.quantity_executed += matched_quantity;
     const uint64_t existing_id = existing.id;
     const uint32_t existing_price  = existing.price;
+    incoming.quantity_executed += matched_quantity;
+    existing.quantity_executed += matched_quantity;
+    if (existing.isAsk())
+        ask_price_levels[existing.price].volume -= matched_quantity;
+    else
+        bid_price_levels[existing.price].volume -= matched_quantity;
     // Existing order could not be completely filled.
     if (!existing.isFilled()) {
         // Notify event handler that the existing order has been traded.
@@ -59,12 +73,55 @@ void OrderBook::VectorOrderBook::execute(Order &incoming, Order &existing) {
         if (incoming.isFilled())
             outgoing.send(Message::Event::OrderExecuted(incoming.user_id, incoming.id, incoming.price,
                                                         incoming.quantity));
-        // Notify that incoming order has been traded, but not matched.
+        // Notify that incoming order has been traded.
         else
             outgoing.send(Message::Event::TradeEvent(incoming.user_id, incoming.id, existing_id, incoming.price,
                                                      existing_price, matched_quantity));
     }
 
+}
+
+void OrderBook::VectorOrderBook::executePriceChain(const std::vector<uint32_t> &price_chain, Order &order) {
+    if (order.isAsk()) {
+        for (const auto& price : price_chain) {
+            max_bid_price = price;
+            auto& price_level = bid_price_levels[price];
+            while (!price_level.order_list.empty() && !order.isFilled())
+                execute(order, price_level.order_list.front());
+            max_bid_price -= price_level.order_list.empty();
+        }
+    } else {
+        for (const auto& price : price_chain) {
+            min_ask_price = price;
+            auto& price_level = ask_price_levels[price];
+            while (!price_level.order_list.empty() && !order.isFilled())
+                execute(order, price_level.order_list.front());
+            min_ask_price += price_level.order_list.empty();
+        }
+    }
+}
+
+std::pair<std::vector<uint32_t>, bool> OrderBook::VectorOrderBook::getPriceChain(const Order &order) {
+    std::vector<uint32_t> price_chain;
+    uint64_t quantity_can_fill = 0;
+    if (order.isAsk()) {
+        uint32_t price = max_bid_price;
+        while (price >= order.price && quantity_can_fill < order.quantity && price > 0) {
+            quantity_can_fill += bid_price_levels[price].volume;
+            if (!bid_price_levels[price].order_list.empty())
+                price_chain.push_back(price);
+            --price;
+        }
+    } else {
+        uint32_t price = min_ask_price;
+        while (price <= order.price && quantity_can_fill < order.quantity && price < ask_price_levels.size()) {
+            quantity_can_fill += ask_price_levels[price].volume;
+            if (!ask_price_levels[price].order_list.empty())
+                price_chain.push_back(price);
+            ++price;
+        }
+    }
+    return std::make_pair(price_chain, quantity_can_fill >= order.quantity);
 }
 
 void OrderBook::VectorOrderBook::match(Order &order) {

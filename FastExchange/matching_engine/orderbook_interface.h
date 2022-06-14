@@ -66,6 +66,35 @@ namespace OrderBook {
         virtual void execute(Order &incoming, Order &existing) = 0;
 
         /**
+         * Given a vector of prices that the provided order can match with, executes the orders
+         * at those price levels until the provided order is fully filled. Mutates the order book
+         * and the order.
+         *
+         * @param price_chain a vector of prices. Require that the vector is non-empty. If the order
+         *                    is an ask order, require that the prices are strictly decreasing. If the
+         *                    order is a bid order, require that the prices are strictly increasing.
+         *                    Require that all prices correspond to a non-empty order list on the opposite
+         *                    side of the book as the order (i.e. if the order is an ask order, the prices
+         *                    should correspond to non-empty price levels on the bid side).
+         * @param order an order to match with.
+         */
+        virtual void executePriceChain(const std::vector<uint32_t> &price_chain, Order &order) = 0;
+
+        /**
+         * Retrieves the prices that an order can match with and indicates whether
+         * the order can be filled immediately or not.
+         *
+         * @param order an order.
+         * @return a pair containing a boolean indicating whether the order can
+         *         be executed in full immediately and a vector containing all of the
+         *         prices that the order is able to match with. If the order is an ask
+         *         order, then the prices in the vector are strictly increasing. Otherwise,
+         *         if the order is a bid order, then the prices in the vector are strictly
+         *         decreasing. Does not mutate the order book or the order.
+         */
+        virtual std::pair<std::vector<uint32_t>, bool> getPriceChain(const Order &order) = 0;
+
+        /**
          * Fills an order as fully as possible.
          * Mutates the order.
          *
@@ -86,6 +115,13 @@ namespace OrderBook {
          * @param order a FOK order.
          */
         virtual void placeFokOrder(Order order) = 0;
+
+        /**
+         * Handles an IOC order.
+         *
+         * @param order an IOC order.
+         */
+        virtual void placeIocOrder(Order order) = 0;
 
         /**
          * Inserts an order into the order book.
