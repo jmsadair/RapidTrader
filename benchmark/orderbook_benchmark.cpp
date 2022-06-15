@@ -16,11 +16,12 @@ static void BM_OrderBookPlaceOrder(benchmark::State& state) {
     std::random_device seed;
     std::mt19937 gen{seed()};
     std::uniform_int_distribution price_dist{1, 100};
-    std::uniform_int_distribution order_type_dist{0, 2};
+    std::uniform_int_distribution order_type_dist{0, 4};
     std::uniform_int_distribution order_side_dist{0, 1};
     std::uniform_int_distribution quantity_dist{1, 20000};
     std::vector<OrderSide> sides {OrderSide::Ask, OrderSide::Bid};
-    std::vector<OrderType> types = {OrderType::FillOrKill, OrderType::GoodTillCancel, OrderType::ImmediateOrCancel};
+    std::vector<OrderType> types = {OrderType::FillOrKill, OrderType::GoodTillCancel, OrderType::GoodTillCancel,
+                                    OrderType::GoodTillCancel, OrderType::ImmediateOrCancel};
     std::vector<Order> orders;
     Messaging::Receiver rec;
     orders.reserve(4000000);

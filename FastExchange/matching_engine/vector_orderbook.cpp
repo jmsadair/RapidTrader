@@ -1,7 +1,7 @@
 #include <iostream>
 #include "vector_orderbook.h"
 
-void OrderBook::VectorOrderBook::placeOrder(Order order) {
+void OrderBook::VectorOrderBook::placeOrder(Order &order) {
     switch(order.type) {
         case OrderType::GoodTillCancel:
             placeGtcOrder(order);
@@ -17,13 +17,13 @@ void OrderBook::VectorOrderBook::placeOrder(Order order) {
     }
 }
 
-void OrderBook::VectorOrderBook::placeGtcOrder(Order order) {
+void OrderBook::VectorOrderBook::placeGtcOrder(Order &order) {
     match(order);
     if (!order.isFilled())
         insert(order);
 }
 
-void OrderBook::VectorOrderBook::placeFokOrder(Order order) {
+void OrderBook::VectorOrderBook::placeFokOrder(Order &order) {
     auto [price_chain, can_execute] = getPriceChain(order);
     if (can_execute)
         executePriceChain(price_chain, order);
@@ -32,7 +32,7 @@ void OrderBook::VectorOrderBook::placeFokOrder(Order order) {
                                                      order.executableQuantity()));
 }
 
-void OrderBook::VectorOrderBook::placeIocOrder(Order order) {
+void OrderBook::VectorOrderBook::placeIocOrder(Order &order) {
     match(order);
     // In the case of FOK order, if it is not fully filled, it will not be inserted into the orderbook.
     // It is instead cancelled.
@@ -150,7 +150,7 @@ void OrderBook::VectorOrderBook::match(Order &order) {
     }
 }
 
-void OrderBook::VectorOrderBook::insert(Order order) {
+void OrderBook::VectorOrderBook::insert(const Order &order) {
     auto [it, success] = orders.insert({order.id, order});
     if (order.isAsk()) {
         min_ask_price = std::min(min_ask_price, order.price);
@@ -171,7 +171,7 @@ void OrderBook::VectorOrderBook::insert(Order order) {
     }
 }
 
-void OrderBook::VectorOrderBook::remove(Order &order) {
+void OrderBook::VectorOrderBook::remove(const Order &order) {
     if (order.side == OrderSide::Ask) {
         auto orders_at_price_level = ask_price_levels.begin() + order.price;
         auto& order_list = orders_at_price_level->order_list;

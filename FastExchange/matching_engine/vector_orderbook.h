@@ -29,7 +29,7 @@ namespace OrderBook {
        /**
         * @inheritdoc
         */
-        void placeOrder(Order order) override;
+        void placeOrder(Order &order) override;
 
         /**
          * @inheritdoc
@@ -79,27 +79,27 @@ namespace OrderBook {
         /**
          * @inheritdoc
          */
-        void placeGtcOrder(Order order) override;
+        void placeGtcOrder(Order &order) override;
 
         /**
          * @inheritdoc
          */
-        void placeFokOrder(Order order) override;
+        void placeFokOrder(Order &order) override;
 
         /**
          * @inheritdoc;
          */
-        void placeIocOrder(Order order) override;
+        void placeIocOrder(Order &order) override;
 
         /**
          * @inheritdoc
          */
-        void insert(Order order) override;
+        void insert(const Order &order) override;
 
         /**
          * @inheritdoc
          */
-        void remove(Order &order) override;
+        void remove(const Order &order) override;
 
         // IMPORTANT: Note that the declaration of orders MUST be
         // declared before the declaration of the price level vectors.

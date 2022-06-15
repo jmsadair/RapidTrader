@@ -24,7 +24,8 @@ void MatchingEngine::start() {
 void MatchingEngine::processCommand(const Message::Command::PlaceOrder &command) {
     auto it = symbol_to_book.find(command.order_symbol_id);
     if (it != symbol_to_book.end()) {
-        it->second.placeOrder(command.makeOrder());
+        Order order = command.makeOrder();
+        it->second.placeOrder(order);
     }
 }
 

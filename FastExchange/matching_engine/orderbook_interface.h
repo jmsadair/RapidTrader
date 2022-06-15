@@ -12,7 +12,7 @@ namespace OrderBook {
          *
          * @param command an order.
          */
-        virtual void placeOrder(Order order) = 0;
+        virtual void placeOrder(Order &order) = 0;
 
         /**
          * Cancels an order.
@@ -107,35 +107,35 @@ namespace OrderBook {
          *
          * @param order a GTC order.
          */
-        virtual void placeGtcOrder(Order order) = 0;
+        virtual void placeGtcOrder(Order &order) = 0;
 
         /**
          * Handles a FOK order.
          *
          * @param order a FOK order.
          */
-        virtual void placeFokOrder(Order order) = 0;
+        virtual void placeFokOrder(Order &order) = 0;
 
         /**
          * Handles an IOC order.
          *
          * @param order an IOC order.
          */
-        virtual void placeIocOrder(Order order) = 0;
+        virtual void placeIocOrder(Order &order) = 0;
 
         /**
          * Inserts an order into the order book.
          *
          * @param order the order to insert into the order book.
          */
-        virtual void insert(Order order) = 0;
+        virtual void insert(const Order &order) = 0;
 
         /**
          * Removes an order from the order book if it exists.
          *
          * @param order the order to remove.
          */
-        virtual void remove(Order &order) = 0;
+        virtual void remove(const Order &order) = 0;
     };
 }
 #endif //FAST_EXCHANGE_ORDERBOOK_INTERFACE_H
