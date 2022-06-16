@@ -14,12 +14,13 @@ public:
         api(engine_router_ptr)
     {
         engines.reserve(num_engines);
-        threads.reserve(num_engines);
+        threads.reserve(num_engines + 1);
         for (int i = 0; i < num_engines; ++i) {
             engines.push_back(std::make_shared<MatchingEngine>(event_handler.getSender()));
             threads.emplace_back(&MatchingEngine::start, engines.back());
             engine_router_ptr->addSender(engines.back()->getSender());
         }
+        threads.emplace_back(&EventHandler::start, &event_handler);
     }
 
     /**
@@ -27,11 +28,14 @@ public:
      * were running on.
      */
     ~Exchange() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         for (auto& engine : engines) {
             engine->stop();
         }
+        event_handler.stop();
         for (auto& thread : threads) {
-            thread.join();
+            if (thread.joinable())
+                thread.join();
         }
     }
 

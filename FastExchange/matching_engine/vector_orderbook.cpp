@@ -15,6 +15,10 @@ void OrderBook::VectorOrderBook::placeOrder(Order &order) {
         default:
             throw std::logic_error("Default case should never be reached!");
     }
+// Make sure order book is still in valid state after placing order.
+#ifndef NDEBUG
+    checkRep();
+#endif
 }
 
 void OrderBook::VectorOrderBook::placeGtcOrder(Order &order) {
@@ -128,24 +132,42 @@ void OrderBook::VectorOrderBook::match(Order &order) {
     if (order.isAsk()) {
         auto price_level_it = bid_price_levels.begin() +
                 static_cast<std::vector<PriceLevel>::difference_type>(max_bid_price);
-        while (max_bid_price >= order.price) {
+        while (max_bid_price >= order.price && !order.isFilled()) {
             auto& price_level = *price_level_it;
             while (!price_level.order_list.empty() && !order.isFilled()) {
                 execute(order, price_level.order_list.front());
             }
-            max_bid_price -= price_level.order_list.empty();
-            --price_level_it;
+            // Quit if there are no orders left.
+            if (orders.empty()) {
+                min_ask_price = std::numeric_limits<uint32_t>::max();
+                max_bid_price = 0;
+                return;
+            }
+            // Loop until the next non-empty price level is reached, decrementing the maximum bidding price as we go.
+            while (price_level_it->order_list.empty() && price_level_it != bid_price_levels.begin()) {
+                --max_bid_price;
+                --price_level_it;
+            }
         }
     } else {
         auto price_level_it = ask_price_levels.begin() +
                 static_cast<std::vector<PriceLevel>::difference_type>(min_ask_price);
-        while (min_ask_price <= order.price) {
+        while (min_ask_price <= order.price && !order.isFilled()) {
             auto& price_level = *price_level_it;
             while (!price_level.order_list.empty() && !order.isFilled()) {
                 execute(order, price_level.order_list.front());
             }
-            min_ask_price += price_level.order_list.empty();
-            ++price_level_it;
+            // Quit if there are no orders left.
+            if (orders.empty()) {
+                min_ask_price = std::numeric_limits<uint32_t>::max();
+                max_bid_price = 0;
+                return;
+            }
+            // Loop until the next non-empty price level is reached, incrementing the minimum asking price as we go.
+            while (price_level_it->order_list.empty() && price_level_it != ask_price_levels.end()) {
+                ++min_ask_price;
+                ++price_level_it;
+            }
         }
     }
 }
@@ -176,7 +198,7 @@ void OrderBook::VectorOrderBook::remove(const Order &order) {
         auto orders_at_price_level = ask_price_levels.begin() + order.price;
         auto& order_list = orders_at_price_level->order_list;
         auto price_level_it = ask_price_levels.begin() + min_ask_price;
-        orders_at_price_level->volume -= order.quantity;
+        orders_at_price_level->volume -= order.executableQuantity();
         order_list.erase(order_list.iterator_to(order));
         orders.erase(order.id);
         // If the orderbook is empty, reset the min ask and max bid prices.
@@ -195,7 +217,7 @@ void OrderBook::VectorOrderBook::remove(const Order &order) {
         auto orders_at_price_level = bid_price_levels.begin() + order.price;
         auto& order_list = orders_at_price_level->order_list;
         auto price_level_it = bid_price_levels.begin() + max_bid_price;
-        orders_at_price_level->volume -= order.quantity;
+        orders_at_price_level->volume -= order.executableQuantity();
         order_list.erase(order_list.iterator_to(order));
         orders.erase(order.id);
         // If the orderbook is empty, reset the min ask and max bid prices.
@@ -219,5 +241,38 @@ void OrderBook::VectorOrderBook::cancelOrder(uint64_t order_id) {
         remove(it->second);
         outgoing.send(Message::Event::RejectionEvent(it->second.user_id, it->second.id, symbol_id, it->second.price,
                                                      it->second.executableQuantity()));
+    }
+// Make sure order book is still in valid state after order cancellation.
+#ifndef NDEBUG
+    checkRep();
+#endif
+}
+
+void OrderBook::VectorOrderBook::checkRep() {
+    // Check that there are not any ask orders with price lower than
+    // the minimum asking price. Check that each order list contains
+    // only ask GTC orders that all have the same price, and that the price
+    // level has the correct volume.
+    for (uint64_t price = 0; price < ask_price_levels.size(); ++price) {
+        if (price < min_ask_price)
+            assert(ask_price_levels[price].order_list.empty());
+        ask_price_levels[price].checkRep(price, OrderSide::Ask);
+    }
+    // Check that there are not any bid orders with price greater than
+    // the maximum bidding price. Check that each order list contains
+    // only bid GTC orders that all have the same price, and that the price
+    // level has the correct volume.
+    for (uint64_t price = 0; price < bid_price_levels.size(); ++price) {
+        if (price > max_bid_price)
+            assert(bid_price_levels[price].order_list.empty());
+        bid_price_levels[price].checkRep(price, OrderSide::Bid);
+    }
+    // Check that all orders in the orderbook are in either ask_price_levels
+    // or bid_price_levels.
+    for (const auto& it : orders) {
+        if (it.second.isAsk())
+            assert(ask_price_levels[it.second.price].hasOrder(it.second));
+        else
+            assert(bid_price_levels[it.second.price].hasOrder(it.second));
     }
 }

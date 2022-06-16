@@ -1,7 +1,7 @@
 #include "exchange.h"
 
 int main() {
-    Exchange exchange {4};
+    Exchange exchange {1};
     ExchangeApi& api = exchange.getApi();
     Message::Command::AddOrderBook cmd1 {1};
     api.submitCommand(cmd1);
@@ -15,6 +15,6 @@ int main() {
     api.submitCommand(cmd5);
     Message::Command::PlaceOrder cmd6 {1, 1, 1, 200, 200, OrderAction::Limit, OrderSide::Ask, OrderType::GoodTillCancel};
     api.submitCommand(cmd6);
-    Message::Command::PlaceOrder cmd7 {2, 2, 2, 200, 200, OrderAction::Limit, OrderSide::Ask, OrderType::GoodTillCancel};
+    Message::Command::PlaceOrder cmd7 {2, 2, 1, 200, 200, OrderAction::Limit, OrderSide::Bid, OrderType::GoodTillCancel};
     api.submitCommand(cmd7);
 }

@@ -1,4 +1,4 @@
 project(fast_exchange_benchmark)
 find_package(benchmark REQUIRED)
-add_executable(${PROJECT_NAME} order_benchmark.cpp price_level_benchmark.cpp orderbook_benchmark.cpp)
+add_executable(${PROJECT_NAME} order_benchmark.cpp price_level_benchmark.cpp orderbook_benchmark.cpp exchange_bench.cpp)
 target_link_libraries(${PROJECT_NAME} benchmark::benchmark fast_exchange)

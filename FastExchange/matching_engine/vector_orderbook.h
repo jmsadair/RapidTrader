@@ -11,6 +11,22 @@
 constexpr size_t DEFAULT_PRICE_LEVELS_SIZE = 1000;
 
 namespace OrderBook {
+    /**
+     * An implementation of OrderBook using vectors to represent the book. Each index of
+     * ask_price_levels and bid_price_levels represents a price_level, max_bid_price represents
+     * the current maximum bid price, and min_ask_price represents the current minimum asking price.
+     *
+     * Invariants:
+     * 1. For any i such that 0 < i < min_ask_price, ask_price_levels[i].order_list
+     *    must be empty. That is, there must not be any ask orders that have a lower
+     *    price than the current minimum asking price. Furthermore, ask_price_levels[i].order_list
+     *    must only contain ask orders.
+     * 2. For any i such that max_bid_price < i < ask_price_levels.size(), bid_price_levels[i].order_list
+     *    must be empty. That is, there must not be any bid orders that have a higher
+     *    price than the current maximum asking price. Furthermore, bid_price_levels[i].order_list
+     *    must only contain bid orders.
+     * 3. Any value that is in orders must also be in either in ask_price_levels or bid_price_levels.
+     */
     class VectorOrderBook : public OrderBook {
     public:
         /**
@@ -55,6 +71,7 @@ namespace OrderBook {
          * @inheritdoc
          */
         [[nodiscard]] inline uint32_t maxBidPrice() const override { return max_bid_price; }
+
     private:
         /**
          * @inheritdoc
@@ -100,6 +117,16 @@ namespace OrderBook {
          * @inheritdoc
          */
         void remove(const Order &order) override;
+
+        /**
+         * Verifies that the order book satisfies its representation invariants.
+         * @throws Error if there exists an ask order with a price less than the minimum
+         *               asking price, if there exists a bid order with a price greater than
+         *               the maximum bidding price, if there exists an order in orders that
+         *               is not in either ask_price_levels or bid_price_levels, or if any of the
+         *               price levels fail to satisfy their representation invariants.
+         */
+        void checkRep();
 
         // IMPORTANT: Note that the declaration of orders MUST be
         // declared before the declaration of the price level vectors.
