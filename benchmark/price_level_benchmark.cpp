@@ -34,7 +34,7 @@ static void BM_PriceLevelAddOrder(benchmark::State& state) {
     for (auto _ : state) {
         OrderBook::PriceLevel price_level;
         benchmark::DoNotOptimize(price_level);
-        price_level.order_list.push_back(order);
+        price_level.orders.push_back(order);
         benchmark::ClobberMemory();
     }
 }

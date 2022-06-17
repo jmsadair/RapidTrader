@@ -17,15 +17,19 @@ namespace OrderBook {
      * the current maximum bid price, and min_ask_price represents the current minimum asking price.
      *
      * Invariants:
-     * 1. For any i such that 0 < i < min_ask_price, ask_price_levels[i].order_list
+     * 1. For any i such that 0 < i < min_ask_price, ask_price_levels[i].orders
      *    must be empty. That is, there must not be any ask orders that have a lower
-     *    price than the current minimum asking price. Furthermore, ask_price_levels[i].order_list
+     *    price than the current minimum asking price. Furthermore, ask_price_levels[i].orders
      *    must only contain ask orders.
-     * 2. For any i such that max_bid_price < i < ask_price_levels.size(), bid_price_levels[i].order_list
+     * 2. For any i such that max_bid_price < i < ask_price_levels.size(), bid_price_levels[i].orders
      *    must be empty. That is, there must not be any bid orders that have a higher
-     *    price than the current maximum asking price. Furthermore, bid_price_levels[i].order_list
+     *    price than the current maximum asking price. Furthermore, bid_price_levels[i].orders
      *    must only contain bid orders.
      * 3. Any value that is in orders must also be in either in ask_price_levels or bid_price_levels.
+     * 4. All orders in a price level must have the same price.
+     * 5. All orders in a price level must be on the same side - all orders are ask or all are bid.
+     * 6. The sum of the quantities of the orders in a price level must be equal to the price level volume.
+     * 7. The orders in a price level must be GTC orders, there cannot be any FOK or IOC orders in the price level.
      */
     class VectorOrderBook : public OrderBook {
     public:
@@ -71,6 +75,14 @@ namespace OrderBook {
          * @inheritdoc
          */
         [[nodiscard]] inline uint32_t maxBidPrice() const override { return max_bid_price; }
+
+        /**
+        * Verifies that the order book satisfies its representation invariants.
+        *
+        * @throws Error if any of the price levels or in an invalid state or if there exists an
+         *              order in orders that is not also in a price level.
+        */
+        void verifyOrderBookState() const;
 
     private:
         /**
@@ -119,14 +131,17 @@ namespace OrderBook {
         void remove(const Order &order) override;
 
         /**
-         * Verifies that the order book satisfies its representation invariants.
-         * @throws Error if there exists an ask order with a price less than the minimum
-         *               asking price, if there exists a bid order with a price greater than
-         *               the maximum bidding price, if there exists an order in orders that
-         *               is not in either ask_price_levels or bid_price_levels, or if any of the
-         *               price levels fail to satisfy their representation invariants.
+         * Verifies the validity of a price level in the order book.
+         *
+         * @param price_level the price level to verify.
+         * @param expected_price the expected price of all orders in the price level.
+         * @param expected_order_side the expected side - ask or bid - of all orders in the price level.
+         * @throws Error if not all orders in the price level have the same price, not all order are GTC orders,
+         *               not all orders are on the same side, or if the price level corresponds to a price lower
+         *               than the minimum asking price (or greater than the maximum bidding price) and is non-empty.
          */
-        void checkRep();
+        void verifyPriceLevelState(const PriceLevel &price_level, uint32_t expected_price,
+                                   OrderSide expected_order_side) const;
 
         // IMPORTANT: Note that the declaration of orders MUST be
         // declared before the declaration of the price level vectors.
