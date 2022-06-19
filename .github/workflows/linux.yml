@@ -25,7 +25,6 @@ jobs:
         ninja --version
         cmake --version
         gcc --version
-        sudo apt-get install libboost-all-dev
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
