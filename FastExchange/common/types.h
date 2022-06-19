@@ -1,9 +1,7 @@
 #ifndef FAST_EXCHANGE_TYPES_H
 #define FAST_EXCHANGE_TYPES_H
 #include <array>
-#include <chrono>
 #include <string>
-
 // Represents the different actions of orders.
 enum class OrderAction {Limit = 0, Market = 1};
 constexpr std::array order_action_to_string {"LIMIT", "MARKET"};
@@ -22,9 +20,4 @@ constexpr std::array order_type_to_string {"GTC", "FOK", "IOC"};
 // Represents the side of the order.
 enum class OrderSide {Bid = 0, Ask = 1};
 constexpr std::array order_side_to_string {"BID", "ASK"};
-
-// Represents the status of an order.
-enum class OrderStatus {Accepted = 0, Rejected = 1, PartiallyFilled = 1, Filled = 2, Cancelled = 3};
-constexpr std::array order_status_to_string {"ACCEPTED", "REJECTED", "PARTIALLY FILLED", "FILLED", "CANCELLED"};
-
 #endif //FAST_EXCHANGE_TYPES_H

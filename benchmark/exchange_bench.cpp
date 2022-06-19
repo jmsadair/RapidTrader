@@ -3,14 +3,15 @@
 #include <thread>
 #include <atomic>
 #include "exchange.h"
+
 std::atomic<int> counter {1};
 
-void placeOrders(ExchangeApi& api, uint32_t max_symbol_id, uint32_t num_commands) {
+void placeOrders(FastExchange::ExchangeApi& api, uint32_t max_symbol_id, uint32_t num_commands) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::discrete_distribution<int> order_command_dist({80, 20});
     std::discrete_distribution<int> order_side_dist({60, 40});
-    std::discrete_distribution<int> order_type_dist({70, 10, 10});
+    std::discrete_distribution<int> order_type_dist({70, 10, 20});
     std::uniform_int_distribution<uint32_t> price_dist {1, 500};
     std::uniform_int_distribution<uint64_t> quantity_dist {1, 20000};
     std::uniform_int_distribution<uint32_t> symbol_dist {1, max_symbol_id};
@@ -42,10 +43,10 @@ static void BM_Exchange(benchmark::State& state) {
     uint32_t num_commands = 1000000;
     uint32_t num_symbols = 3000;
     std::vector<std::thread> threads;
-    std::vector<ExchangeApi> apis;
+    std::vector<FastExchange::ExchangeApi> apis;
     threads.reserve(num_threads);
     apis.reserve(num_threads);
-    Exchange exchange(num_engines);
+    FastExchange::Exchange exchange(num_engines);
     for (int i = 0; i < num_threads; ++i)
         apis.push_back(exchange.getApi());
     for (uint32_t i = 0; i < num_symbols; ++i) {

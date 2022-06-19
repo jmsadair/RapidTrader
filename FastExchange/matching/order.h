@@ -35,9 +35,8 @@ struct Order : public list_base_hook<> {
      */
     inline Order(OrderAction action_, OrderSide side_, OrderType type_, uint64_t quantity_, uint32_t price_,
                  uint64_t id_, uint64_t user_id_, uint32_t symbol_id_) :
-          action(action_), side(side_), type(type_), quantity(quantity_), price(price_), id(id_),
-          user_id(user_id_), symbol_id(symbol_id_), quantity_executed(0)
-    {}
+            action(action_), side(side_), type(type_), quantity(quantity_), price(price_), id(id_),
+            user_id(user_id_), symbol_id(symbol_id_), quantity_executed(0) {}
 
     /**
      * @return the quantity of the order that remains to be executed.
@@ -119,9 +118,9 @@ struct Order : public list_base_hook<> {
      * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
      * @return a new order.
      */
-    static inline Order askLimit(OrderType type_, uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
-                          uint32_t symbol_id_)
-    {
+    static inline Order
+    askLimit(OrderType type_, uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
+             uint32_t symbol_id_) {
         return {OrderAction::Limit, OrderSide::Ask, type_, quantity_, price_, id_, user_id_, symbol_id_};
     }
 
@@ -136,9 +135,9 @@ struct Order : public list_base_hook<> {
      * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
      * @return a new order.
      */
-    static inline Order bidLimit(OrderType type_, uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
-                                 uint32_t symbol_id_)
-    {
+    static inline Order
+    bidLimit(OrderType type_, uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
+             uint32_t symbol_id_) {
         return {OrderAction::Limit, OrderSide::Bid, type_, quantity_, price_, id_, user_id_, symbol_id_};
     }
 
@@ -153,8 +152,7 @@ struct Order : public list_base_hook<> {
      * @return a new order.
      */
     static inline Order askMarket(uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
-                                  uint32_t symbol_id_)
-    {
+                                  uint32_t symbol_id_) {
         return {OrderAction::Market, OrderSide::Ask, OrderType::ImmediateOrCancel, quantity_, price_, id_, user_id_,
                 symbol_id_};
     }
@@ -170,10 +168,10 @@ struct Order : public list_base_hook<> {
      * @return a new order.
      */
     static inline Order bidMarket(uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
-                                 uint32_t symbol_id_)
-    {
+                                  uint32_t symbol_id_) {
         return {OrderAction::Limit, OrderSide::Bid, OrderType::ImmediateOrCancel, quantity_, price_, id_, user_id_,
                 symbol_id_};
     }
 };
+
 #endif //FAST_EXCHANGE_ORDER_H

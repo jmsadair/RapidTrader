@@ -1,6 +1,8 @@
 #include "matching_engine.h"
 #include <iostream>
 
+using namespace Matching;
+
 void MatchingEngine::start() {
     try {
         while (true) {

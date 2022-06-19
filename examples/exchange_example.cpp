@@ -1,8 +1,8 @@
 #include "exchange.h"
 
 int main() {
-    Exchange exchange {1};
-    ExchangeApi& api = exchange.getApi();
+    FastExchange::Exchange exchange {1};
+    FastExchange::ExchangeApi& api = exchange.getApi();
     Message::Command::AddOrderBook cmd1 {1};
     api.submitCommand(cmd1);
     Message::Command::AddOrderBook cmd2 {2};

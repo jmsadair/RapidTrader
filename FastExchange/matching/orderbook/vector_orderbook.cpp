@@ -8,6 +8,7 @@
     #define ORDERBOOK_CHECK_INVARIANTS
 #endif
 
+
 void OrderBook::VectorOrderBook::placeOrder(Order &order) {
     switch(order.type) {
         case OrderType::GoodTillCancel:
@@ -278,8 +279,8 @@ void OrderBook::VectorOrderBook::verifyOrderBookState() const {
     }
 }
 
-void OrderBook::VectorOrderBook::verifyPriceLevelState(const PriceLevel &price_level,
-                                                       uint32_t expected_price, OrderSide expected_order_side) const
+void OrderBook::VectorOrderBook::verifyPriceLevelState(const PriceLevel &price_level, uint32_t expected_price,
+                                                       OrderSide expected_order_side) const
 {
     if (expected_order_side == OrderSide::Ask && expected_price < min_ask_price)
         assert (price_level.orders.empty());

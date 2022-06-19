@@ -57,7 +57,7 @@ namespace OrderBook {
 
         /**
          * Given a newly placed order command and an existing order fills each
-         * as much as possible. Mutates the orders and potentially the matching_engine.
+         * as much as possible. Mutates the orders and potentially the matching.
          * Require that the orders are on opposite sides of the book.
          *
          * @param incoming the newly placed order that.

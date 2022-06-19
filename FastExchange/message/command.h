@@ -54,11 +54,11 @@ namespace Message::Command {
             os << "Order ID: " << cmd.order_id << "\n";
             os << "Order Symbol ID: " << cmd.order_symbol_id << "\n";
             os << "Order Action: " <<
-               order_action_to_string[static_cast<std::underlying_type<OrderStatus>::type>(cmd.order_action)] << "\n";
-            os << "Order Side: " << order_side_to_string[static_cast<std::underlying_type<OrderSide>::type>(cmd.order_side)] <<
-               "\n";
-            os << "Order Type: " << order_type_to_string[static_cast<std::underlying_type<OrderType>::type>(cmd.order_type)] <<
-               "\n";
+               order_action_to_string[static_cast<std::underlying_type<OrderAction>::type>(cmd.order_action)] << "\n";
+            os << "Order Side: " <<
+                order_side_to_string[static_cast<std::underlying_type<OrderSide>::type>(cmd.order_side)] << "\n";
+            os << "Order Type: " <<
+                order_type_to_string[static_cast<std::underlying_type<OrderType>::type>(cmd.order_type)] << "\n";
             os << "Order Price: " << cmd.order_price << "\n";
             os << "Order Quantity: " << cmd.order_quantity << "\n";
             return os;

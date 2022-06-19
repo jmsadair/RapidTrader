@@ -6,9 +6,12 @@
 struct Symbol {
     std::string name;
     uint32_t id;
+
     inline Symbol(std::string name_, uint32_t id_) : name(std::move(name_)), id(id_) {}
-    [[nodiscard]] inline bool operator==(const Symbol& other) const { return name == other.name && id == other.id; }
-    [[nodiscard]] inline bool operator!=(const Symbol& other) const { return !(*this == other); }
+
+    [[nodiscard]] inline bool operator==(const Symbol &other) const { return name == other.name && id == other.id; }
+
+    [[nodiscard]] inline bool operator!=(const Symbol &other) const { return !(*this == other); }
 };
 
 std::ostream& operator<<(std::ostream& os, const Symbol& symbol) {

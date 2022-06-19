@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <thread>
-#include "vector_orderbook.h"
+#include "orderbook/vector_orderbook.h"
 
 struct OrderBookReceiver {
     Messaging::Receiver receiver;
