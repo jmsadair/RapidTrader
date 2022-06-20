@@ -3,8 +3,9 @@
 #include "types.h"
 
 namespace Message::Result {
-    struct Result {
-        virtual ~Result() = default;
-    };
-}
-#endif //FAST_EXCHANGE_RESULT_H
+struct Result
+{
+    virtual ~Result() = default;
+};
+} // namespace Message::Result
+#endif // FAST_EXCHANGE_RESULT_H

@@ -9,7 +9,8 @@ using namespace boost::intrusive;
 /**
  * A mutable order ADT.
  */
-struct Order : public list_base_hook<> {
+struct Order : public list_base_hook<>
+{
     const OrderAction action;
     const OrderSide side;
     const OrderType type;
@@ -33,50 +34,82 @@ struct Order : public list_base_hook<> {
      * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
      * @param status_ the status of the order - accepted, partially filled, filled, or rejected.
      */
-    inline Order(OrderAction action_, OrderSide side_, OrderType type_, uint64_t quantity_, uint32_t price_,
-                 uint64_t id_, uint64_t user_id_, uint32_t symbol_id_) :
-            action(action_), side(side_), type(type_), quantity(quantity_), price(price_), id(id_),
-            user_id(user_id_), symbol_id(symbol_id_), quantity_executed(0) {}
+    inline Order(OrderAction action_, OrderSide side_, OrderType type_, uint64_t quantity_, uint32_t price_, uint64_t id_,
+        uint64_t user_id_, uint32_t symbol_id_)
+        : action(action_)
+        , side(side_)
+        , type(type_)
+        , quantity(quantity_)
+        , price(price_)
+        , id(id_)
+        , user_id(user_id_)
+        , symbol_id(symbol_id_)
+        , quantity_executed(0)
+    {}
 
     /**
      * @return the quantity of the order that remains to be executed.
      */
-    [[nodiscard]] inline uint64_t executableQuantity() const { return quantity - quantity_executed; }
+    [[nodiscard]] inline uint64_t executableQuantity() const
+    {
+        return quantity - quantity_executed;
+    }
 
     /**
      * @return true if the order is on the ask side and false otherwise.
      */
-    [[nodiscard]] inline bool isAsk() const { return side == OrderSide::Ask; }
+    [[nodiscard]] inline bool isAsk() const
+    {
+        return side == OrderSide::Ask;
+    }
 
     /**
      * @return true if the order is on the bid side and false otherwise.
      */
-    [[nodiscard]] inline bool isBid() const { return side == OrderSide::Bid; }
+    [[nodiscard]] inline bool isBid() const
+    {
+        return side == OrderSide::Bid;
+    }
 
     /**
      * @return true if the order is a limit order and false otherwise.
      */
-    [[nodiscard]] inline bool isLimit() const { return action == OrderAction::Limit; }
+    [[nodiscard]] inline bool isLimit() const
+    {
+        return action == OrderAction::Limit;
+    }
 
     /**
      * @return true if the order is a market order and false otherwise.
      */
-    [[nodiscard]] inline bool isMarket() const { return action == OrderAction::Market; }
+    [[nodiscard]] inline bool isMarket() const
+    {
+        return action == OrderAction::Market;
+    }
 
     /**
      * @return true if the order is of type IOC and false otherwise.
      */
-    [[nodiscard]] inline bool isIoc() const { return type == OrderType::ImmediateOrCancel; }
+    [[nodiscard]] inline bool isIoc() const
+    {
+        return type == OrderType::ImmediateOrCancel;
+    }
 
     /**
      * @return true if the order is of type GTC and false otherwise.
      */
-    [[nodiscard]] inline bool isGtc() const { return type == OrderType::GoodTillCancel; }
+    [[nodiscard]] inline bool isGtc() const
+    {
+        return type == OrderType::GoodTillCancel;
+    }
 
     /**
      * @return true if the complete quantity of the order has been executed and false otherwise.
      */
-    [[nodiscard]] inline bool isFilled() const { return quantity_executed == quantity; }
+    [[nodiscard]] inline bool isFilled() const
+    {
+        return quantity_executed == quantity;
+    }
 
     /**
      * Indicates whether two orders are equal. Two orders are equal if and only if they have
@@ -86,15 +119,10 @@ struct Order : public list_base_hook<> {
      * @param other another order.
      * @return true if the orders are equal and false otherwise.
      */
-    inline bool operator==(const Order &other) const {
-        return action == other.action &&
-               type == other.type &&
-               side == other.side &&
-               id == other.id &&
-               user_id == other.user_id &&
-               quantity == other.quantity &&
-               quantity_executed == other.quantity_executed &&
-               price == other.price;
+    inline bool operator==(const Order &other) const
+    {
+        return action == other.action && type == other.type && side == other.side && id == other.id && user_id == other.user_id &&
+               quantity == other.quantity && quantity_executed == other.quantity_executed && price == other.price;
     }
 
     /**
@@ -105,7 +133,10 @@ struct Order : public list_base_hook<> {
      * @param other another order.
      * @return true if the orders are not equal and false otherwise.
      */
-    inline bool operator!=(const Order &other) const { return !(*this == other); }
+    inline bool operator!=(const Order &other) const
+    {
+        return !(*this == other);
+    }
 
     /**
      * Creates an order on the ask side with a limit action.
@@ -118,9 +149,8 @@ struct Order : public list_base_hook<> {
      * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
      * @return a new order.
      */
-    static inline Order
-    askLimit(OrderType type_, uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
-             uint32_t symbol_id_) {
+    static inline Order askLimit(OrderType type_, uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_, uint32_t symbol_id_)
+    {
         return {OrderAction::Limit, OrderSide::Ask, type_, quantity_, price_, id_, user_id_, symbol_id_};
     }
 
@@ -135,9 +165,8 @@ struct Order : public list_base_hook<> {
      * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
      * @return a new order.
      */
-    static inline Order
-    bidLimit(OrderType type_, uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
-             uint32_t symbol_id_) {
+    static inline Order bidLimit(OrderType type_, uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_, uint32_t symbol_id_)
+    {
         return {OrderAction::Limit, OrderSide::Bid, type_, quantity_, price_, id_, user_id_, symbol_id_};
     }
 
@@ -151,10 +180,9 @@ struct Order : public list_base_hook<> {
      * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
      * @return a new order.
      */
-    static inline Order askMarket(uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
-                                  uint32_t symbol_id_) {
-        return {OrderAction::Market, OrderSide::Ask, OrderType::ImmediateOrCancel, quantity_, price_, id_, user_id_,
-                symbol_id_};
+    static inline Order askMarket(uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_, uint32_t symbol_id_)
+    {
+        return {OrderAction::Market, OrderSide::Ask, OrderType::ImmediateOrCancel, quantity_, price_, id_, user_id_, symbol_id_};
     }
 
     /**
@@ -167,11 +195,10 @@ struct Order : public list_base_hook<> {
      * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
      * @return a new order.
      */
-    static inline Order bidMarket(uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_,
-                                  uint32_t symbol_id_) {
-        return {OrderAction::Limit, OrderSide::Bid, OrderType::ImmediateOrCancel, quantity_, price_, id_, user_id_,
-                symbol_id_};
+    static inline Order bidMarket(uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_, uint32_t symbol_id_)
+    {
+        return {OrderAction::Limit, OrderSide::Bid, OrderType::ImmediateOrCancel, quantity_, price_, id_, user_id_, symbol_id_};
     }
 };
 
-#endif //FAST_EXCHANGE_ORDER_H
+#endif // FAST_EXCHANGE_ORDER_H

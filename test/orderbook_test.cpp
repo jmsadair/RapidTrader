@@ -2,28 +2,31 @@
 #include <thread>
 #include "orderbook/vector_orderbook.h"
 
-struct OrderBookReceiver {
+struct OrderBookReceiver
+{
     Messaging::Receiver receiver;
-    std::vector<Message::Event::TradeEvent> trade_events {};
-    std::vector<Message::Event::OrderExecuted> orders_executed {};
-    std::vector<Message::Event::RejectionEvent> orders_rejected {};
-    void start() {
-        try {
-            while (true) {
+    std::vector<Message::Event::TradeEvent> trade_events{};
+    std::vector<Message::Event::OrderExecuted> orders_executed{};
+    std::vector<Message::Event::RejectionEvent> orders_rejected{};
+    void start()
+    {
+        try
+        {
+            while (true)
+            {
                 receiver.wait()
-                        .handle<Message::Event::TradeEvent>([&](const Message::Event::TradeEvent& msg) {
-                            trade_events.push_back(msg);
-                        })
-                        .handle<Message::Event::OrderExecuted>([&](const Message::Event::OrderExecuted& msg) {
-                            orders_executed.push_back(msg);
-                        })
-                        .handle<Message::Event::RejectionEvent>([&](const Message::Event::RejectionEvent& msg) {
-                            orders_rejected.push_back(msg);
-                        });
+                    .handle<Message::Event::TradeEvent>([&](const Message::Event::TradeEvent &msg) { trade_events.push_back(msg); })
+                    .handle<Message::Event::OrderExecuted>(
+                        [&](const Message::Event::OrderExecuted &msg) { orders_executed.push_back(msg); })
+                    .handle<Message::Event::RejectionEvent>(
+                        [&](const Message::Event::RejectionEvent &msg) { orders_rejected.push_back(msg); });
             }
-        } catch(const Messaging::CloseQueue&) {}
+        }
+        catch (const Messaging::CloseQueue &)
+        {}
     }
-    void stop() {
+    void stop()
+    {
         auto sender = static_cast<Messaging::Sender>(receiver);
         sender.send(Messaging::CloseQueue());
     }
@@ -34,15 +37,16 @@ struct OrderBookReceiver {
  * Order should be unmatched since there are no other orders to match with and
  * should be inserted into the order book.
  */
-TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders1) {
+TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders1)
+{
     // Create a GTC order.
     Order order = Order::askLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
-    std::thread t1 {&OrderBookReceiver::start, &result_receiver};
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
     // Create the order book.
-    OrderBook::VectorOrderBook book {1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
     // Place a new order.
     book.placeOrder(order);
     // Close out the message queue.
@@ -63,15 +67,16 @@ TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders1) {
  * Order should be unmatched since there are no other orders to match with and
  * should then be cancelled.
  */
-TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders2) {
+TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders2)
+{
     // Create an IOC order.
     Order order = Order::askLimit(OrderType::ImmediateOrCancel, 200, 100, 1, 1, 1);
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
-    std::thread t1 {&OrderBookReceiver::start, &result_receiver};
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
     // Create the order book.
-    OrderBook::VectorOrderBook book {1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
     // Place the IOC order.
     book.placeOrder(order);
     // Close out the message queue.
@@ -96,16 +101,17 @@ TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders2) {
  * Order book should handle placing GTC orders when the book is not empty.
  * Orders should be unmatched since they are on the same side of the book.
  */
-TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders3) {
+TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders3)
+{
     // Create GTC orders on same side of book.
     Order order1 = Order::askLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
     Order order2 = Order::askLimit(OrderType::GoodTillCancel, 120, 200, 2, 2, 1);
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
-    std::thread t1 {&OrderBookReceiver::start, &result_receiver};
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
     // Create the order book.
-    OrderBook::VectorOrderBook book {1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
     // Place new orders.
     book.placeOrder(order1);
     book.placeOrder(order2);
@@ -128,16 +134,17 @@ TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders3) {
  * Order book should handle placing GTC orders on the same side of the book.
  * Orders should not be matched since they are not at matchable prices.
  */
-TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders4) {
+TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders4)
+{
     // Create GTC orders on different sides of the book, but unmatchable price levels.
     Order order1 = Order::askLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
     Order order2 = Order::askLimit(OrderType::GoodTillCancel, 120, 50, 2, 2, 1);
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
-    std::thread t1 {&OrderBookReceiver::start, &result_receiver};
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
     // Create the order book.
-    OrderBook::VectorOrderBook book {1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
     // Place new orders.
     book.placeOrder(order1);
     book.placeOrder(order2);
@@ -160,7 +167,8 @@ TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders4) {
  * Order book should handle placing a FOK order that cannot be filled in its entirety.
  * The order should be rejected and none of the GTC orders should have been modified.
  */
-TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders5) {
+TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders5)
+{
     // Create GTC orders.
     Order order1 = Order::askLimit(OrderType::GoodTillCancel, 40, 100, 1, 1, 1);
     Order order2 = Order::askLimit(OrderType::GoodTillCancel, 120, 50, 2, 2, 1);
@@ -170,9 +178,9 @@ TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders5) {
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
-    std::thread t1 {&OrderBookReceiver::start, &result_receiver};
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
     // Create the order book.
-    OrderBook::VectorOrderBook book {1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
     // Place new GTC orders.
     book.placeOrder(order1);
     book.placeOrder(order2);
@@ -206,15 +214,16 @@ TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders5) {
 /**
  * Order book should handle cancelling an order when it is the only order in the book.
  */
-TEST(VectorOrderBookTest, BookShouldCancelOrders1) {
+TEST(VectorOrderBookTest, BookShouldCancelOrders1)
+{
     // Create a GTC order.
     Order order = Order::askLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
-    std::thread t1 {&OrderBookReceiver::start, &result_receiver};
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
     // Create the order book.
-    OrderBook::VectorOrderBook book {1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
     // Place a new GTC order.
     book.placeOrder(order);
     // Order should be inserted into the book since there are no other orders to match with.
@@ -241,7 +250,8 @@ TEST(VectorOrderBookTest, BookShouldCancelOrders1) {
 /**
  * Order book should handle cancelling an order when there are multiple orders in the book.
  */
-TEST(VectorOrderBookTest, BookShouldCancelOrders2) {
+TEST(VectorOrderBookTest, BookShouldCancelOrders2)
+{
     // Create GTC orders on the same side of the book.
     Order order1 = Order::bidLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
     Order order2 = Order::bidLimit(OrderType::GoodTillCancel, 200, 100, 2, 2, 1);
@@ -249,9 +259,9 @@ TEST(VectorOrderBookTest, BookShouldCancelOrders2) {
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
-    std::thread t1 {&OrderBookReceiver::start, &result_receiver};
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
     // Create the order book.
-    OrderBook::VectorOrderBook book {1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
     // Place the GTC orders - all orders should be inserted since there are no orders to match with.
     book.placeOrder(order1);
     ASSERT_TRUE(book.hasOrder(1));
@@ -281,16 +291,17 @@ TEST(VectorOrderBookTest, BookShouldCancelOrders2) {
 /**
  * Order book should handle a single match between GTC orders where both orders are fully executed.
  */
-TEST(VectorOrderBookTest, BookShouldMatchOrders1) {
+TEST(VectorOrderBookTest, BookShouldMatchOrders1)
+{
     // Create GTC orders on different sides of the book, with matchable price levels.
     Order order1 = Order::askLimit(OrderType::GoodTillCancel, 100, 100, 1, 1, 1);
     Order order2 = Order::bidLimit(OrderType::GoodTillCancel, 100, 100, 2, 2, 1);
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
-    std::thread t1 {&OrderBookReceiver::start, &result_receiver};
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
     // Create the order book.
-    OrderBook::VectorOrderBook book {1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
     // Place new order.
     book.placeOrder(order1);
     // Book should now contain the first order since it has no match.
@@ -327,16 +338,17 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders1) {
  * Order book should be able to handle a single match between GTC orders where one order is fully executed and
  * the other other is only partially executed.
  */
-TEST(VectorOrderBookTest, BookShouldMatchOrders2) {
+TEST(VectorOrderBookTest, BookShouldMatchOrders2)
+{
     // Create GTC orders on different sides of the book, with matchable price levels.
     Order order1 = Order::askLimit(OrderType::GoodTillCancel, 90, 100, 1, 1, 1);
     Order order2 = Order::bidLimit(OrderType::GoodTillCancel, 100, 100, 2, 2, 1);
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
-    std::thread t1 {&OrderBookReceiver::start, &result_receiver};
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
     // Create the order book.
-    OrderBook::VectorOrderBook book {1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
     // Place new GTC order.
     book.placeOrder(order1);
     // Book should now contain the first order since it has no match.
@@ -369,7 +381,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders2) {
     ASSERT_EQ(trade_event1.matched_order_id, 1);
     ASSERT_EQ(trade_event1.matched_order_price, 100);
     ASSERT_EQ(trade_event1.quantity, 90);
-    // There should not be any other messages. 
+    // There should not be any other messages.
     ASSERT_TRUE(result_receiver.trade_events.empty());
     ASSERT_TRUE(result_receiver.orders_executed.empty());
     ASSERT_TRUE(result_receiver.orders_rejected.empty());
@@ -379,7 +391,8 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders2) {
  * Order book should be able to handle multiple matches between GTC orders - a GTC order is placed that matches with
  * multiple orders at different price levels.
  */
-TEST(VectorOrderBookTest, BookShouldMatchOrders3) {
+TEST(VectorOrderBookTest, BookShouldMatchOrders3)
+{
     // Create GTC orders on different sides of the book with multiple matchable price levels.
     Order order1 = Order::askLimit(OrderType::GoodTillCancel, 90, 100, 1, 1, 1);
     Order order2 = Order::askLimit(OrderType::GoodTillCancel, 200, 120, 2, 2, 1);
@@ -387,9 +400,9 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders3) {
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
-    std::thread t1 {&OrderBookReceiver::start, &result_receiver};
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
     // Create the order book.
-    OrderBook::VectorOrderBook book {1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
     // Place new GTC order.
     book.placeOrder(order1);
     // Book should now contain the first order since it has no match.
@@ -400,7 +413,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders3) {
     // Book should now contain the second order since it has no match.
     ASSERT_TRUE(book.hasOrder(2));
     ASSERT_EQ(book.getOrder(2).quantity_executed, 0);
-    // Place new GTC order on the opposite side of the book as the previous two orders. 
+    // Place new GTC order on the opposite side of the book as the previous two orders.
     // This order should match with the previous two orders.
     book.placeOrder(order3);
     // Order should have been executed and therefore never inserted into the book.
@@ -455,7 +468,8 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders3) {
  * Order book should be able to handle an IOC order that is matches with GTC orders at multiple
  * price levels and is fully filled.
  */
-TEST(VectorOrderBookTest, BookShouldMatchOrders4) {
+TEST(VectorOrderBookTest, BookShouldMatchOrders4)
+{
     // Create GTC orders on same side of the book with different price levels.
     Order order1 = Order::askLimit(OrderType::GoodTillCancel, 90, 100, 1, 1, 1);
     Order order2 = Order::askLimit(OrderType::GoodTillCancel, 100, 110, 2, 2, 1);
@@ -464,9 +478,9 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders4) {
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
-    std::thread t1 {&OrderBookReceiver::start, &result_receiver};
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
     // Create the order book.
-    OrderBook::VectorOrderBook book {1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
     // Place the first GTC order.
     book.placeOrder(order1);
     // Book should now contain the first order since it has no match.
@@ -527,7 +541,8 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders4) {
 /**
  * Order book should be able to handle an FOK order that is fully executable.
  */
-TEST(VectorOrderBookTest, BookShouldMatchOrders5) {
+TEST(VectorOrderBookTest, BookShouldMatchOrders5)
+{
     // Create GTC orders on same side of the book with different price levels.
     Order order1 = Order::askLimit(OrderType::GoodTillCancel, 90, 100, 1, 1, 1);
     Order order2 = Order::askLimit(OrderType::GoodTillCancel, 100, 110, 2, 2, 1);
@@ -537,9 +552,9 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders5) {
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
-    std::thread t1 {&OrderBookReceiver::start, &result_receiver};
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
     // Create the order book.
-    OrderBook::VectorOrderBook book {1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
     // Place the first GTC order.
     book.placeOrder(order1);
     // Book should now contain the first order since it has no match.

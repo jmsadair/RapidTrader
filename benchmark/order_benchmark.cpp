@@ -1,7 +1,8 @@
 #include <benchmark/benchmark.h>
 #include "order.h"
 
-static void BM_OrderCreation(benchmark::State& state) {
+static void BM_OrderCreation(benchmark::State &state)
+{
     const auto order_action = OrderAction::Limit;
     const auto order_side = OrderSide::Ask;
     const auto order_type = OrderType::GoodTillCancel;
@@ -11,8 +12,7 @@ static void BM_OrderCreation(benchmark::State& state) {
     const auto order_user_id = 1;
 
     for (auto _ : state)
-        benchmark::DoNotOptimize(Order(order_action, order_side, order_type, order_quantity, 0,
-                                       order_price, order_id, order_user_id));
+        benchmark::DoNotOptimize(Order(order_action, order_side, order_type, order_quantity, 0, order_price, order_id, order_user_id));
 }
 
 BENCHMARK(BM_OrderCreation);

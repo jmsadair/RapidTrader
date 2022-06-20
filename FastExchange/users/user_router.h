@@ -4,6 +4,7 @@
 #include "user.h"
 #include "command.h"
 
-class UserRouter {};
+class UserRouter
+{};
 
-#endif //FAST_EXCHANGE_USER_ROUTER_H
+#endif // FAST_EXCHANGE_USER_ROUTER_H

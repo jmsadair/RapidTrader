@@ -4,27 +4,36 @@
 #include "receiver.h"
 
 // Messages for testing.
-struct AddMessage {};
-struct SubtractMessage {};
+struct AddMessage
+{};
+struct SubtractMessage
+{};
 
-struct MessagingTester {
+struct MessagingTester
+{
     Messaging::Receiver receiver;
     int num = 0;
-    void start() {
-        try {
-            while (true) {
+    void start()
+    {
+        try
+        {
+            while (true)
+            {
                 receiver.wait()
-                        .handle<AddMessage>([&](const AddMessage &msg) { ++num; })
-                        .handle<SubtractMessage>([&](const SubtractMessage &msg) { --num; });
+                    .handle<AddMessage>([&](const AddMessage &msg) { ++num; })
+                    .handle<SubtractMessage>([&](const SubtractMessage &msg) { --num; });
             }
-        } catch(const Messaging::CloseQueue&) {}
+        }
+        catch (const Messaging::CloseQueue &)
+        {}
     }
 };
 
-TEST(MessagingTest, SenderAndRecieverShouldWork) {
+TEST(MessagingTest, SenderAndRecieverShouldWork)
+{
     MessagingTester tester;
     auto sender = static_cast<Messaging::Sender>(tester.receiver);
-    std::thread t1 {&MessagingTester::start, &tester};
+    std::thread t1{&MessagingTester::start, &tester};
     // Initialize some message for testing.
     AddMessage test_msg1;
     SubtractMessage test_msg2;

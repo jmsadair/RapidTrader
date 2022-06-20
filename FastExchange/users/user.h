@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <string>
 
-struct User {};
+struct User
+{};
 
-#endif //FAST_EXCHANGE_USER_H
+#endif // FAST_EXCHANGE_USER_H

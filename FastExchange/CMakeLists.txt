@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 find_package(Boost)
-if(Boost_FOUND)
+if (Boost_FOUND)
     include(FetchContent)
     FetchContent_Declare(
             spdlog
@@ -52,4 +52,4 @@ if(Boost_FOUND)
             .)
     target_link_libraries(${PROJECT_NAME} spdlog)
     target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
-endif()
+endif ()
