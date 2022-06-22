@@ -8,7 +8,7 @@
 #include "receiver.h"
 #include "orderbook_interface.h"
 
-constexpr size_t DEFAULT_PRICE_LEVELS_SIZE = 1000;
+constexpr size_t DEFAULT_PRICE_LEVELS_SIZE = 1;
 
 namespace OrderBook {
 /**

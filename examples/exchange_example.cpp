@@ -1,20 +1,20 @@
 #include "exchange.h"
+#include "orderbook/price_level.h"
 
 int main() {
-    FastExchange::Exchange exchange {1};
-    FastExchange::ExchangeApi& api = exchange.getApi();
+    FastExchange::Exchange exchange {3, 3};
+    exchange.start();
+    auto api = exchange.getApi();
     Message::Command::AddOrderBook cmd1 {1};
     api.submitCommand(cmd1);
     Message::Command::AddOrderBook cmd2 {2};
     api.submitCommand(cmd2);
-    Message::Command::AddOrderBook cmd3 {3};
+    Message::Command::PlaceOrder cmd3 {1, 1, 1, 200, 200, OrderAction::Limit, OrderSide::Ask, OrderType::GoodTillCancel};
     api.submitCommand(cmd3);
-    Message::Command::AddOrderBook cmd4 {4};
+    Message::Command::PlaceOrder cmd4 {2, 2, 1, 200, 200, OrderAction::Limit, OrderSide::Bid, OrderType::GoodTillCancel};
     api.submitCommand(cmd4);
-    Message::Command::AddOrderBook cmd5 {5};
+    Message::Command::PlaceOrder cmd5 {3, 3, 2, 200, 250, OrderAction::Limit, OrderSide::Bid, OrderType::GoodTillCancel};
     api.submitCommand(cmd5);
-    Message::Command::PlaceOrder cmd6 {1, 1, 1, 200, 200, OrderAction::Limit, OrderSide::Ask, OrderType::GoodTillCancel};
+    Message::Command::PlaceOrder cmd6 {4, 4, 3, 100, 100, OrderAction::Limit, OrderSide::Bid, OrderType::GoodTillCancel};
     api.submitCommand(cmd6);
-    Message::Command::PlaceOrder cmd7 {2, 2, 1, 200, 200, OrderAction::Limit, OrderSide::Bid, OrderType::GoodTillCancel};
-    api.submitCommand(cmd7);
 }

@@ -14,7 +14,10 @@ if (Boost_FOUND)
     set(TARGET_SRC
             matching/matching_engine.cpp
             matching/order.cpp
-            matching/orderbook/vector_orderbook.cpp)
+            matching/orderbook/vector_orderbook.cpp
+            #common/log.cpp
+            event_handler.cpp
+            exchange.cpp)
 
     set(TARGET_H
             common/types.h

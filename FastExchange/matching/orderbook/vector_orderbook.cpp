@@ -10,6 +10,7 @@
 
 void OrderBook::VectorOrderBook::placeOrder(Order &order)
 {
+    assert(orders.find(order.id) == orders.end());
     switch (order.type)
     {
     case OrderType::GoodTillCancel:
@@ -158,14 +159,12 @@ void OrderBook::VectorOrderBook::match(Order &order)
         auto price_level_it = bid_price_levels.begin() + static_cast<std::vector<PriceLevel>::difference_type>(max_bid_price);
         while (max_bid_price >= order.price && !order.isFilled())
         {
-            auto &price_level = *price_level_it;
-            while (!price_level.orders.empty() && !order.isFilled())
+            while (!price_level_it->orders.empty() && !order.isFilled())
             {
-                execute(order, price_level.orders.front());
+                //assert(max_bid_price > 0 && max_bid_price < bid_price_levels.size());
+                execute(order, price_level_it->orders.front());
             }
             // Quit if there are no orders left.
-            // TODO: Make a volume variable for ask orders that is modified as orders are executed, cancelled, or
-            //       inserted. Quit if this variable is zero.
             if (orders.empty())
             {
                 min_ask_price = std::numeric_limits<uint32_t>::max();
@@ -173,11 +172,13 @@ void OrderBook::VectorOrderBook::match(Order &order)
                 return;
             }
             // Loop until the next non-empty price level is reached, decrementing the maximum bidding price as we go.
-            while (price_level_it->orders.empty() && price_level_it != bid_price_levels.begin())
+            while (price_level_it != bid_price_levels.begin() && price_level_it->orders.empty())
             {
                 --max_bid_price;
                 --price_level_it;
             }
+            if (price_level_it == bid_price_levels.begin())
+                return;
         }
     }
     else
@@ -185,10 +186,9 @@ void OrderBook::VectorOrderBook::match(Order &order)
         auto price_level_it = ask_price_levels.begin() + static_cast<std::vector<PriceLevel>::difference_type>(min_ask_price);
         while (min_ask_price <= order.price && !order.isFilled())
         {
-            auto &price_level = *price_level_it;
-            while (!price_level.orders.empty() && !order.isFilled())
+            while (!price_level_it->orders.empty() && !order.isFilled())
             {
-                execute(order, price_level.orders.front());
+                execute(order, price_level_it->orders.front());
             }
             // Quit if there are no orders left.
             if (orders.empty())
@@ -198,10 +198,15 @@ void OrderBook::VectorOrderBook::match(Order &order)
                 return;
             }
             // Loop until the next non-empty price level is reached, incrementing the minimum asking price as we go.
-            while (price_level_it->orders.empty() && price_level_it != ask_price_levels.end())
+            while (price_level_it != ask_price_levels.end() && price_level_it->orders.empty())
             {
-                ++min_ask_price;
                 ++price_level_it;
+                ++min_ask_price;
+            }
+            if (price_level_it == ask_price_levels.end()) {
+                // Over incremented minimum asking price.
+                --min_ask_price;
+                return;
             }
         }
     }
@@ -215,20 +220,18 @@ void OrderBook::VectorOrderBook::insert(const Order &order)
         min_ask_price = std::min(min_ask_price, order.price);
         if (order.price >= ask_price_levels.size())
             ask_price_levels.resize(order.price + 1);
-        auto &price_level = *(ask_price_levels.begin() + order.price);
-        price_level.orders.push_back(it->second);
+        ask_price_levels[order.price].orders.push_back(it->second);
         // Update the total volume of the price level with the executable quantity of the order.
-        price_level.volume += order.executableQuantity();
+        ask_price_levels[order.price].volume += order.executableQuantity();
     }
     else
     {
         max_bid_price = std::max(max_bid_price, order.price);
         if (order.price >= bid_price_levels.size())
             bid_price_levels.resize(order.price + 1);
-        auto &price_level = *(bid_price_levels.begin() + order.price);
-        price_level.orders.push_back(it->second);
+        bid_price_levels[order.price].orders.push_back(it->second);
         // Update the total volume of the price level with the executable quantity of the order.
-        price_level.volume += order.executableQuantity();
+        bid_price_levels[order.price].volume += order.executableQuantity();
     }
 }
 

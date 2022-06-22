@@ -61,7 +61,7 @@ private:
     void processCommand(const Message::Command::AddOrderBook &command);
 
     // Maps a symbol to its corresponding order book.
-    std::unordered_map<uint32_t, OrderBook::VectorOrderBook> symbol_to_book;
+    std::vector<std::unique_ptr<OrderBook::VectorOrderBook>> symbol_to_book;
     // Receives incoming command messages.
     Messaging::Receiver receiver;
     // Sends messages from each order book to the event handler.

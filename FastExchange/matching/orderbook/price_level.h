@@ -22,6 +22,9 @@ public:
      * an empty PriceLevel.
      */
     PriceLevel() = default;
+    PriceLevel(PriceLevel&& other)  noexcept :
+        volume(other.volume), orders(std::move(other.orders))
+    {}
 
     /**
      * A constructor for the PriceLevel ADT, initializes

@@ -21,25 +21,21 @@ void MatchingEngine::start()
 
 void MatchingEngine::processCommand(const Message::Command::PlaceOrder &command)
 {
-    auto it = symbol_to_book.find(command.order_symbol_id);
-    if (it != symbol_to_book.end())
+    if (command.order_symbol_id < symbol_to_book.size())
     {
         Order order = command.makeOrder();
-        it->second.placeOrder(order);
+        symbol_to_book[command.order_symbol_id]->placeOrder(order);
     }
 }
 
 void MatchingEngine::processCommand(const Message::Command::CancelOrder &command)
 {
-    auto it = symbol_to_book.find(command.order_symbol_id);
-    if (it != symbol_to_book.end())
-        it->second.cancelOrder(command.order_id);
+    if (command.order_symbol_id < symbol_to_book.size())
+        symbol_to_book[command.order_symbol_id]->cancelOrder(command.order_id);
 }
 
 void MatchingEngine::processCommand(const Message::Command::AddOrderBook &command)
 {
-    auto it = symbol_to_book.find(command.orderbook_symbol_id);
-    if (it == symbol_to_book.end())
-        symbol_to_book.emplace(std::piecewise_construct, std::forward_as_tuple(command.orderbook_symbol_id),
-            std::forward_as_tuple(command.orderbook_symbol_id, orderbook_sender));
+    if (command.orderbook_symbol_id >= symbol_to_book.size())
+        symbol_to_book.push_back(std::make_unique<OrderBook::VectorOrderBook>(command.orderbook_symbol_id, orderbook_sender));
 }
