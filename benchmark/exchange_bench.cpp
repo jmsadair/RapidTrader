@@ -40,7 +40,6 @@ void placeOrders(FastExchange::Exchange &exchange, uint32_t max_symbol_id, uint3
     }
 }
 
-
 static void BM_Exchange(benchmark::State &state)
 {
     int num_engines = 4;
@@ -64,11 +63,10 @@ static void BM_Exchange(benchmark::State &state)
         }
         state.ResumeTiming();
         for (int i = 0; i < num_threads; ++i)
-            threads.emplace_back([&]{ placeOrders(exchange, num_symbols, num_commands); });
+            threads.emplace_back([&] { placeOrders(exchange, num_symbols, num_commands); });
         for (int i = 0; i < num_threads; ++i)
             threads[i].join();
         threads.clear();
-
     }
 }
 

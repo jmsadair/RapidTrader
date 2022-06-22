@@ -10,7 +10,6 @@
 
 void OrderBook::VectorOrderBook::placeOrder(Order &order)
 {
-    assert(orders.find(order.id) == orders.end());
     switch (order.type)
     {
     case OrderType::GoodTillCancel:
@@ -161,7 +160,6 @@ void OrderBook::VectorOrderBook::match(Order &order)
         {
             while (!price_level_it->orders.empty() && !order.isFilled())
             {
-                //assert(max_bid_price > 0 && max_bid_price < bid_price_levels.size());
                 execute(order, price_level_it->orders.front());
             }
             // Quit if there are no orders left.
@@ -203,7 +201,8 @@ void OrderBook::VectorOrderBook::match(Order &order)
                 ++price_level_it;
                 ++min_ask_price;
             }
-            if (price_level_it == ask_price_levels.end()) {
+            if (price_level_it == ask_price_levels.end())
+            {
                 // Over incremented minimum asking price.
                 --min_ask_price;
                 return;

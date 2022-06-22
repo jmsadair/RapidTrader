@@ -22,8 +22,9 @@ public:
      * an empty PriceLevel.
      */
     PriceLevel() = default;
-    PriceLevel(PriceLevel&& other)  noexcept :
-        volume(other.volume), orders(std::move(other.orders))
+    PriceLevel(PriceLevel &&other) noexcept
+        : volume(other.volume)
+        , orders(std::move(other.orders))
     {}
 
     /**
