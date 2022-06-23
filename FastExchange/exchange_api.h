@@ -1,7 +1,5 @@
 #ifndef FAST_EXCHANGE_EXCHANGE_API_H
 #define FAST_EXCHANGE_EXCHANGE_API_H
-#include <utility>
-#include "matching_engine_router.h"
 #include "command.h"
 
 namespace FastExchange {
@@ -14,8 +12,8 @@ public:
      * @param orderbook_router_sender_ a messenger that is capable of sending
      *                                 messages to the event handler.
      */
-    explicit ExchangeApi(std::shared_ptr<Matching::MatchingEngineRouter> engine_router_ptr_)
-        : engine_router_ptr(std::move(engine_router_ptr_))
+    explicit ExchangeApi(Messaging::Sender matching_engine_sender_)
+        : matching_engine_sender(matching_engine_sender_)
     {}
 
     /**
@@ -25,7 +23,7 @@ public:
      */
     inline void submitCommand(Message::Command::AddOrderBook &command)
     {
-        engine_router_ptr->submitCommand(command);
+        matching_engine_sender.send(command);
     }
 
     /**
@@ -35,7 +33,17 @@ public:
      */
     inline void submitCommand(Message::Command::PlaceOrder &command)
     {
-        engine_router_ptr->submitCommand(command);
+        matching_engine_sender.send(command);
+    }
+
+    /**
+     * Handles a user submitted command to reduce an order.
+     *
+     * @param command a command to reduce an order.
+     */
+    inline void submitCommand(Message::Command::ReduceOrder &command)
+    {
+        matching_engine_sender.send(command);
     }
 
     /**
@@ -45,11 +53,11 @@ public:
      */
     inline void submitCommand(Message::Command::CancelOrder &command)
     {
-        engine_router_ptr->submitCommand(command);
+        matching_engine_sender.send(command);
     }
 
 private:
-    std::shared_ptr<Matching::MatchingEngineRouter> engine_router_ptr;
+    Messaging::Sender matching_engine_sender;
 };
 } // namespace FastExchange
 #endif // FAST_EXCHANGE_EXCHANGE_API_H

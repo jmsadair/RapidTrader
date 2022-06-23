@@ -42,19 +42,16 @@ void placeOrders(FastExchange::Exchange &exchange, uint32_t max_symbol_id, uint3
 
 static void BM_Exchange(benchmark::State &state)
 {
-    int num_engines = 4;
-    int num_event_handlers = 4;
-    int num_threads = 3;
-    uint32_t num_symbols = 5000;
-    uint32_t num_commands = 3000000;
+    int num_threads = 1;
+    uint32_t num_symbols = 10000;
+    uint32_t num_commands = 1000000;
     for (auto _ : state)
     {
         state.PauseTiming();
         std::vector<std::thread> threads;
         threads.reserve(num_threads);
         counter.store(1);
-        FastExchange::Exchange exchange(num_engines, num_event_handlers);
-        exchange.start();
+        FastExchange::Exchange exchange;
         auto api = exchange.getApi();
         for (uint32_t i = 0; i < num_symbols; ++i)
         {

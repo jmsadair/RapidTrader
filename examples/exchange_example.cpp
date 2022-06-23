@@ -2,8 +2,7 @@
 #include "orderbook/price_level.h"
 
 int main() {
-    FastExchange::Exchange exchange {3, 3};
-    exchange.start();
+    FastExchange::Exchange exchange;
     auto api = exchange.getApi();
     Message::Command::AddOrderBook cmd1 {1};
     api.submitCommand(cmd1);

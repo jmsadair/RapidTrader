@@ -102,6 +102,38 @@ struct CancelOrder : public Command
 };
 
 /**
+ * A message to reduce an existing order.
+ */
+struct ReduceOrder : public Command
+{
+    const uint64_t order_id;
+    const uint32_t order_symbol_id;
+    const uint64_t quantity_to_reduce_by;
+
+    /**
+     * A constructor for the CancelOrder command.
+     *
+     * @param order_id_ the order ID associated with the order to be cancelled.
+     * @param order_symbol_id_ the symbol ID associated with the order to be reduced.
+     * @param quantity_to_reduce_by_ the quantity to reduce the order by, require that quantity_to_reduce_by_
+     *                               is less than the current quantity of the order.
+     */
+    inline ReduceOrder(uint64_t order_id_, uint32_t order_symbol_id_, uint64_t quantity_to_reduce_by_)
+        : order_id(order_id_)
+        , order_symbol_id(order_symbol_id_)
+        , quantity_to_reduce_by(quantity_to_reduce_by_)
+    {}
+
+    friend std::ostream &operator<<(std::ostream &os, const ReduceOrder &cmd)
+    {
+        os << "Order ID: " << cmd.order_id << "\n";
+        os << "Order Symbol ID: " << cmd.order_symbol_id << "\n";
+        os << "Quantity To Reduce Order By: " << cmd.quantity_to_reduce_by << "\n";
+        return os;
+    }
+};
+
+/**
  * A message to create a new order book for the provided symbol.
  */
 struct AddOrderBook : public Command

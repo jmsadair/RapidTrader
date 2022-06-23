@@ -10,39 +10,25 @@ namespace FastExchange {
 class Exchange
 {
 public:
-    /**
-     * A constructor for the Exchange ADT - spawns threads for the order matching engine and
-     * the event handler.
-     *
-     * @param num_engines_ the number of matching engines that the exchange will spawn, require that
-     *                     num_engines_ is positive.
-     * @param num_event_handlers_ the number of event handlers that the exchange will spawn, require that
-     *                            num_event_handlers_ is positive.
-     */
-    explicit Exchange(uint8_t num_engines_ = 1, uint8_t num_event_handlers_ = 1)
-        : engine_router_ptr(std::make_shared<Matching::MatchingEngineRouter>()), api(engine_router_ptr), num_engines(num_engines_),
-            num_event_handlers(num_event_handlers_), started(false)
-    {}
+
+    Exchange() : event_handler(std::make_shared<FastExchange::EventHandler>()),
+        matching_engine(std::make_shared<Matching::MatchingEngine>(event_handler->getSender())),
+        api(matching_engine->getSender())
+    {
+        matching_engine_thread = std::thread(&Matching::MatchingEngine::start, matching_engine);
+        event_handler_thread = std::thread(&FastExchange::EventHandler::start, event_handler);
+    }
 
     /**
      * A destructor for the Exchange ADT - kills the threads that order matching engine and event handler
      * were running on.
      */
-    ~Exchange();
-
-    /**
-     * Prepares the exchange to receive incoming commands, require that the exchange has
-     * not already been started.
-     */
-    void start();
-
-    /**
-     * Indicates whether the exchange has been started.
-     *
-     * @return true if exchange has been started and false otherwise.
-     */
-    [[nodiscard]] inline bool isStarted() const {
-        return started;
+    ~Exchange() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        matching_engine->stop();
+        event_handler->stop();
+        matching_engine_thread.join();
+        event_handler_thread.join();
     }
 
     /**
@@ -54,19 +40,13 @@ public:
     }
 
 private:
+    std::shared_ptr<FastExchange::EventHandler> event_handler;
+    std::shared_ptr<Matching::MatchingEngine> matching_engine;
     // Directs incoming commands to correct matching engine.
-    std::shared_ptr<Matching::MatchingEngineRouter> engine_router_ptr;
     ExchangeApi api;
-    // Number of matching engines that will be running.
-    const uint8_t num_engines;
-    // Number of event handlers that will be running.
-    const uint8_t num_event_handlers;
     // True if engine has been started and false otherwise.
-    bool started;
-    std::vector<std::shared_ptr<Matching::MatchingEngine>> engines;
-    std::vector<std::shared_ptr<EventHandler>> event_handlers;
-    std::vector<std::thread> engine_threads;
-    std::vector<std::thread> event_handler_threads;
+    std::thread matching_engine_thread;
+    std::thread event_handler_thread;
 };
 } // namespace FastExchange
 #endif // FAST_EXCHANGE_EXCHANGE_H

@@ -23,6 +23,17 @@ public:
     virtual void cancelOrder(uint64_t order_id) = 0;
 
     /**
+     * Reduces the order by the provided quantity.
+     *
+     * @param order_id the ID of order to reduce, require that there exist an order
+     *                 in the book with order_id.
+     * @param quantity_to_reduce_by the quantity to reduce the order by, require that
+     *                              quantity_to_reduce by is less than the the current
+     *                              quantity of the order.
+     */
+    virtual void reduceOrder(uint64_t order_id, uint64_t quantity_to_reduce_by) = 0;
+
+    /**
      * Indicates whether an order is in the order book or not.
      *
      * @param order the order that may or may not be in the order book.

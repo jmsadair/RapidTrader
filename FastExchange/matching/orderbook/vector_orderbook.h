@@ -56,6 +56,11 @@ public:
     /**
      * @inheritdoc
      */
+    void reduceOrder(uint64_t order_id, uint64_t quantity_to_reduce_by) override;
+
+    /**
+     * @inheritdoc
+     */
     void cancelOrder(uint64_t order_id) override;
 
     /**

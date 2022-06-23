@@ -28,6 +28,23 @@ void OrderBook::VectorOrderBook::placeOrder(Order &order)
     ORDERBOOK_CHECK_INVARIANTS;
 }
 
+void OrderBook::VectorOrderBook::reduceOrder(uint64_t order_id, uint64_t quantity_to_reduce_by)
+{
+    auto it = orders.find(order_id);
+    if (it != orders.end()) {
+        // Reducing the order quantity by the requested amount would mean that the order
+        // has been fully executed. Remove the order from the book and notify the event
+        // handler.
+        if (it->second.quantity - quantity_to_reduce_by <= it->second.quantity_executed) {
+            outgoing.send(Message::Event::OrderExecuted(it->second.user_id, it->second.id, it->second.price, it->second.quantity_executed));
+            remove(it->second);
+            return;
+        }
+        // Reduce the quantity by the desired amount;
+        it->second.quantity -= quantity_to_reduce_by;
+    }
+}
+
 void OrderBook::VectorOrderBook::placeGtcOrder(Order &order)
 {
     match(order);
@@ -116,7 +133,8 @@ void OrderBook::VectorOrderBook::executePriceChain(const std::vector<uint32_t> &
             auto &price_level = ask_price_levels[price];
             while (!price_level.orders.empty() && !order.isFilled())
                 execute(order, price_level.orders.front());
-            min_ask_price += price_level.orders.empty();
+            if (price_level.orders.empty() && min_ask_price + 1 < ask_price_levels.size())
+                ++min_ask_price;
         }
     }
 }
@@ -199,14 +217,11 @@ void OrderBook::VectorOrderBook::match(Order &order)
             while (price_level_it != ask_price_levels.end() && price_level_it->orders.empty())
             {
                 ++price_level_it;
-                ++min_ask_price;
+                if (min_ask_price + 1 < ask_price_levels.size())
+                    ++min_ask_price;
             }
             if (price_level_it == ask_price_levels.end())
-            {
-                // Over incremented minimum asking price.
-                --min_ask_price;
                 return;
-            }
         }
     }
 }

@@ -54,6 +54,13 @@ private:
     void processCommand(const Message::Command::CancelOrder &command);
 
     /**
+     * Processes a command for reducing an order.
+     *
+     * @param command a command to reduce an order.
+     */
+    void processCommand(const Message::Command::ReduceOrder &command);
+
+    /**
      * Processes a command for adding creating a new order book.
      *
      * @param command a command to create a new order book.

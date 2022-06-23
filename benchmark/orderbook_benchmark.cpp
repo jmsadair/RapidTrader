@@ -26,7 +26,7 @@ static void BM_OrderBookPlaceOrder(benchmark::State &state)
     std::vector<OrderType> order_types{OrderType::GoodTillCancel, OrderType::FillOrKill, OrderType::ImmediateOrCancel};
     std::vector<Order> orders;
     Messaging::Receiver rec;
-    orders.reserve(1000000);
+    orders.reserve(100);
     for (auto _ : state)
     {
         state.PauseTiming();

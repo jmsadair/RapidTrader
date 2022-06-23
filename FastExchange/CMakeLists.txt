@@ -15,16 +15,15 @@ if (Boost_FOUND)
             matching/matching_engine.cpp
             matching/order.cpp
             matching/orderbook/vector_orderbook.cpp
-            #common/log.cpp
+            common/log.cpp
             event_handler.cpp
-            exchange.cpp)
+            )
 
     set(TARGET_H
             common/types.h
             common/log.h
             common/robin_hood.h
             matching/matching_engine.h
-            matching/matching_engine_router.h
             matching/order.h
             matching/symbol.h
             matching/orderbook/orderbook_interface.h

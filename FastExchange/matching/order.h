@@ -11,14 +11,14 @@ using namespace boost::intrusive;
  */
 struct Order : public list_base_hook<>
 {
-    const OrderAction action;
-    const OrderSide side;
-    const OrderType type;
-    const uint64_t quantity;
-    const uint32_t price;
-    const uint64_t id;
-    const uint64_t user_id;
-    const uint32_t symbol_id;
+    OrderAction action;
+    OrderSide side;
+    OrderType type;
+    uint32_t price;
+    uint64_t id;
+    uint64_t user_id;
+    uint32_t symbol_id;
+    uint64_t quantity;
     uint64_t quantity_executed;
 
     /**
