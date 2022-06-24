@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+
+    name: ${{ matrix.toolchain }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        toolchain:
+          - linux-gcc
+
+        configuration:
+          - Debug
+
+        include:
+          - toolchain: linux-gcc
+            os: ubuntu-latest
+            compiler: gcc
+            
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v2
+
+    - name: Configure (${{ matrix.configuration }})
+      run: cmake -S . -Bbuild -DCMAKE_BUILD_TYPE=${{ matrix.configuration }}
+      
+    - name: Install Dependencies
+      run: sudo apt-get install libboost-all-dev
+      if: matrix.operating-system == 'linux-gcc'
+
+    - name: Build with ${{ matrix.compiler }}
+      run: cmake --build build
+
+    - name: Test
+      working-directory: build
+      env:
+        CTEST_OUTPUT_ON_FAILURE: 1
+      run: ctest -C ${{ matrix.configuration }}
+      
