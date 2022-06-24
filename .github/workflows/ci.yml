@@ -32,7 +32,7 @@ jobs:
       
     - name: Install Dependencies
       run: sudo apt-get install libboost-all-dev
-      if: matrix.operating-system == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-latest'
 
     - name: Build with ${{ matrix.compiler }}
       run: cmake --build build
