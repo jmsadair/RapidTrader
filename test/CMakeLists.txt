@@ -10,13 +10,12 @@ set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-project(test_tests LANGUAGES CXX)
+project(fast_exchange_tests LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
-
-project(fast_exchange_tests)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+set(CMAKE_CXX_FLAGS --coverage)
 
 add_executable(${PROJECT_NAME} order_test.cpp message_queue_test.cpp messaging_test.cpp orderbook_test.cpp)
 target_link_libraries(${PROJECT_NAME} gtest_main fast_exchange)
