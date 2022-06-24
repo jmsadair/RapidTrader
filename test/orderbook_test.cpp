@@ -212,6 +212,97 @@ TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders5)
 }
 
 /**
+ * Order book should handle reducing an order.
+ */
+TEST(VectorOrderBookTest, BookShouldReduceOrders1)
+{
+    // Create a GTC order.
+    Order order = Order::askLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
+    // Create a messenger for the order book.
+    OrderBookReceiver result_receiver;
+    // Start up a worker waiting for results.
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
+    // Create the order book.
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    // Place a new GTC order.
+    book.placeOrder(order);
+    // Order should be inserted into the book since there are no other orders to match with.
+    ASSERT_TRUE(book.hasOrder(1));
+    // Cancel the order that was just placed.
+    book.reduceOrder(1, 50);
+    // The order was reduced by 50 but should still be in the book.
+    ASSERT_TRUE(book.hasOrder(1));
+    // Order should now have quantity of 150.
+    ASSERT_EQ(book.getOrder(1).quantity, 150);
+    // Close out the message queue.
+    result_receiver.stop();
+    t1.join();
+    // Order should not have been traded, so no other messages should have been sent.
+    ASSERT_TRUE(result_receiver.trade_events.empty());
+    ASSERT_TRUE(result_receiver.orders_executed.empty());
+    ASSERT_TRUE(result_receiver.orders_rejected.empty());
+}
+
+/**
+ * Order book should handle reducing an order that is partially executed.
+ * The order's quantity is reduced by an amount that places the quantity below the
+ * executed quantity, and so the order should be removed from the book.
+ */
+TEST(VectorOrderBookTest, BookShouldReduceOrders2)
+{
+    // Create GTC orders that can match.
+    Order order1 = Order::askLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
+    Order order2 = Order::bidLimit(OrderType::GoodTillCancel, 100, 250, 2, 2, 1);
+    // Create a messenger for the order book.
+    OrderBookReceiver result_receiver;
+    // Start up a worker waiting for results.
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
+    // Create the order book.
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    // Place a new GTC order.
+    book.placeOrder(order1);
+    // Order should be inserted into the book since there are no other orders to match with.
+    ASSERT_TRUE(book.hasOrder(1));
+    // Place a new GTC order that can match with the first order placed.
+    book.placeOrder(order2);
+    // Order should be filled in full and therefore not inserted into the book.
+    ASSERT_FALSE(book.hasOrder(2));
+    // Reduce the first order by 150. The order has an original quantity of 200 and 100 of those were executed.
+    // Because reducing the order by 150 would mean its new quantity is 50, it is removed from the book.
+    book.reduceOrder(1, 150);
+    ASSERT_FALSE(book.hasOrder(1));
+    // Close out the message queue.
+    result_receiver.stop();
+    t1.join();
+    // Trade event for first order matching with second.
+    auto trade_event1 = result_receiver.trade_events.back();
+    result_receiver.trade_events.pop_back();
+    ASSERT_EQ(trade_event1.order_id, 1);
+    ASSERT_EQ(trade_event1.user_id, 1);
+    ASSERT_EQ(trade_event1.matched_order_id, 2);
+    ASSERT_EQ(trade_event1.matched_order_price, 250);
+    ASSERT_EQ(trade_event1.quantity, 100);
+    // First order was executed completely due to reduction.
+    auto execution_event1 = result_receiver.orders_executed.back();
+    result_receiver.orders_executed.pop_back();
+    ASSERT_EQ(execution_event1.order_id, 1);
+    ASSERT_EQ(execution_event1.user_id, 1);
+    ASSERT_EQ(execution_event1.order_price, 100);
+    ASSERT_EQ(execution_event1.order_quantity, 100);
+    // Second order was executed completely.
+    auto execution_event2 = result_receiver.orders_executed.back();
+    result_receiver.orders_executed.pop_back();
+    ASSERT_EQ(execution_event2.order_id, 2);
+    ASSERT_EQ(execution_event2.user_id, 2);
+    ASSERT_EQ(execution_event2.order_price, 250);
+    ASSERT_EQ(execution_event2.order_quantity, 100);
+    // Order should not have been traded, so no other messages should have been sent.
+    ASSERT_TRUE(result_receiver.trade_events.empty());
+    ASSERT_TRUE(result_receiver.orders_executed.empty());
+    ASSERT_TRUE(result_receiver.orders_rejected.empty());
+}
+
+/**
  * Order book should handle cancelling an order when it is the only order in the book.
  */
 TEST(VectorOrderBookTest, BookShouldCancelOrders1)
