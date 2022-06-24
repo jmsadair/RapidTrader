@@ -35,7 +35,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
 
     - name: Build with ${{ matrix.compiler }}
-      run: cmake --build build
+      run: cmake --build ${{github.workspace}}/build --config ${{ matrix.configuration }}
 
     - name: Test
       working-directory: build
