@@ -34,7 +34,8 @@ void MatchingEngine::processCommand(const Message::Command::CancelOrder &command
         symbol_to_book[command.order_symbol_id]->cancelOrder(command.order_id);
 }
 
-void MatchingEngine::processCommand(const Message::Command::ReduceOrder &command) {
+void MatchingEngine::processCommand(const Message::Command::ReduceOrder &command)
+{
     if (command.order_symbol_id < symbol_to_book.size())
         symbol_to_book[command.order_symbol_id]->reduceOrder(command.order_id, command.quantity_to_reduce_by);
 }

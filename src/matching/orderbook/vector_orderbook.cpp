@@ -31,11 +31,13 @@ void OrderBook::VectorOrderBook::placeOrder(Order &order)
 void OrderBook::VectorOrderBook::reduceOrder(uint64_t order_id, uint64_t quantity_to_reduce_by)
 {
     auto it = orders.find(order_id);
-    if (it != orders.end()) {
+    if (it != orders.end())
+    {
         // Reducing the order quantity by the requested amount would mean that the order
         // has been fully executed. Remove the order from the book and notify the event
         // handler.
-        if (it->second.quantity - quantity_to_reduce_by <= it->second.quantity_executed) {
+        if (it->second.quantity - quantity_to_reduce_by <= it->second.quantity_executed)
+        {
             outgoing.send(Message::Event::OrderExecuted(it->second.user_id, it->second.id, it->second.price, it->second.quantity_executed));
             remove(it->second);
             return;

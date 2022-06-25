@@ -10,10 +10,10 @@ namespace FastExchange {
 class Exchange
 {
 public:
-
-    Exchange() : event_handler(std::make_shared<FastExchange::EventHandler>()),
-        matching_engine(std::make_shared<Matching::MatchingEngine>(event_handler->getSender())),
-        api(matching_engine->getSender())
+    Exchange()
+        : event_handler(std::make_shared<FastExchange::EventHandler>())
+        , matching_engine(std::make_shared<Matching::MatchingEngine>(event_handler->getSender()))
+        , api(matching_engine->getSender())
     {
         matching_engine_thread = std::thread(&Matching::MatchingEngine::start, matching_engine);
         event_handler_thread = std::thread(&FastExchange::EventHandler::start, event_handler);
@@ -23,7 +23,8 @@ public:
      * A destructor for the Exchange ADT - kills the threads that order matching engine and event handler
      * were running on.
      */
-    ~Exchange() {
+    ~Exchange()
+    {
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
         matching_engine->stop();
         event_handler->stop();
