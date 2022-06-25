@@ -174,30 +174,29 @@ struct Order : public list_base_hook<>
      * Creates an order on the ask side with a market action.
      *
      * @param quantity_ the quantity of the order, require that quantity_ is positive.
-     * @param price_ the price of the order, require that price_ is positive.
      * @param id_ the ID associated with the order, require that id_ is positive.
      * @param user_id_ the user ID associated with the order, require that user_id_ is positive.
      * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
      * @return a new order.
      */
-    static inline Order askMarket(uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_, uint32_t symbol_id_)
+    static inline Order askMarket(uint64_t quantity_, uint64_t id_, uint64_t user_id_, uint32_t symbol_id_)
     {
-        return {OrderAction::Market, OrderSide::Ask, OrderType::ImmediateOrCancel, quantity_, price_, id_, user_id_, symbol_id_};
+        return {OrderAction::Market, OrderSide::Ask, OrderType::ImmediateOrCancel, quantity_, 1, id_, user_id_, symbol_id_};
     }
 
     /**
      * Creates an order on the bid side with a market action.
      *
      * @param quantity_ the quantity of the order, require that quantity_ is positive.
-     * @param price_ the price of the order, require that price_ is positive.
      * @param id_ the ID associated with the order, require that id_ is positive.
      * @param user_id_ the user ID associated with the order, require that user_id_ is positive.
      * @param symbol_id_ the symbol ID associated with the order, require that symbol_id_ is positive.
      * @return a new order.
      */
-    static inline Order bidMarket(uint64_t quantity_, uint32_t price_, uint64_t id_, uint64_t user_id_, uint32_t symbol_id_)
+    static inline Order bidMarket(uint64_t quantity_, uint64_t id_, uint64_t user_id_, uint32_t symbol_id_)
     {
-        return {OrderAction::Limit, OrderSide::Bid, OrderType::ImmediateOrCancel, quantity_, price_, id_, user_id_, symbol_id_};
+        return {OrderAction::Limit, OrderSide::Bid, OrderType::ImmediateOrCancel, quantity_, std::numeric_limits<uint32_t>::max(), id_,
+            user_id_, symbol_id_};
     }
 };
 

@@ -146,7 +146,10 @@ std::pair<std::vector<uint32_t>, bool> OrderBook::VectorOrderBook::getPriceChain
     if (order.isAsk())
     {
         uint32_t price = max_bid_price;
-        while (price >= order.price && quantity_can_fill < order.quantity && price > 0)
+        // The lowest bid price that the order can match with. If is a limit order, it is
+        // the provided price of the order. If it is a market order, there is no minimum.
+        const uint32_t minimum_price = order.action == OrderAction::Limit ? order.price : 1;
+        while (price >= minimum_price && quantity_can_fill < order.quantity && price > 0)
         {
             quantity_can_fill += bid_price_levels[price].volume;
             if (!bid_price_levels[price].orders.empty())
@@ -157,7 +160,10 @@ std::pair<std::vector<uint32_t>, bool> OrderBook::VectorOrderBook::getPriceChain
     else
     {
         uint32_t price = min_ask_price;
-        while (price <= order.price && quantity_can_fill < order.quantity && price < ask_price_levels.size())
+        // The highest ask price that the order can match with. If is a limit order, it is
+        // the provided price of the order. If it is a market order, there is no maximum.
+        const uint32_t maximum_price = order.action == OrderAction::Limit ? order.price : std::numeric_limits<uint32_t>::max();
+        while (price <= maximum_price && quantity_can_fill < order.quantity && price < ask_price_levels.size())
         {
             quantity_can_fill += ask_price_levels[price].volume;
             if (!ask_price_levels[price].orders.empty())
