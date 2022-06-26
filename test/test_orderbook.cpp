@@ -33,7 +33,7 @@ struct OrderBookReceiver
 };
 
 /**
- * Order book should handle placing a GTC order when the book is empty.
+ * Order book should handle placing a GTC limit order when the book is empty.
  * Order should be unmatched since there are no other orders to match with and
  * should be inserted into the order book.
  */
@@ -63,7 +63,7 @@ TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders1)
 }
 
 /**
- * Order book should handle placing a IOC order when the book is empty.
+ * Order book should handle placing a IOC limit order when the book is empty.
  * Order should be unmatched since there are no other orders to match with and
  * should then be cancelled.
  */
@@ -98,7 +98,7 @@ TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders2)
 }
 
 /**
- * Order book should handle placing GTC orders when the book is not empty.
+ * Order book should handle placing GTC limit orders when the book is not empty.
  * Orders should be unmatched since they are on the same side of the book.
  */
 TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders3)
@@ -131,7 +131,7 @@ TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders3)
 }
 
 /**
- * Order book should handle placing GTC orders on the same side of the book.
+ * Order book should handle placing GTC limit orders on the same side of the book.
  * Orders should not be matched since they are not at matchable prices.
  */
 TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders4)
@@ -164,7 +164,7 @@ TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders4)
 }
 
 /**
- * Order book should handle placing a FOK order that cannot be filled in its entirety.
+ * Order book should handle placing a FOK limit order that cannot be filled in its entirety.
  * The order should be rejected and none of the GTC orders should have been modified.
  */
 TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders5)
@@ -212,7 +212,41 @@ TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders5)
 }
 
 /**
- * Order book should handle reducing an order.
+ * Order book should handle placing a market order that cannot be filled (not enough volume for the
+ * symbol). The entire quantity of the order should be cancelled.
+ */
+TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders6)
+{
+    // Create a market order.
+    Order order1 = Order::askMarket(100, 1, 1, 1);
+    // Create a messenger for the order book.
+    OrderBookReceiver result_receiver;
+    // Start up a worker waiting for results.
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
+    // Create the order book.
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    // Place the market order.
+    book.placeOrder(order1);
+    // Close out the message queue.
+    result_receiver.stop();
+    t1.join();
+    // Book should not contain order since it was cancelled.
+    ASSERT_FALSE(book.hasOrder(1));
+    // Entire Quantity of the order should have been rejected since the book was empty.
+    auto rejection_event1 = result_receiver.orders_rejected.back();
+    result_receiver.orders_rejected.pop_back();
+    ASSERT_EQ(1, rejection_event1.order_id);
+    ASSERT_EQ(1, rejection_event1.user_id);
+    ASSERT_EQ(100, rejection_event1.quantity_rejected);
+    ASSERT_EQ(1, rejection_event1.symbol_id);
+    // There should not be any other messages.
+    ASSERT_TRUE(result_receiver.trade_events.empty());
+    ASSERT_TRUE(result_receiver.orders_executed.empty());
+    ASSERT_TRUE(result_receiver.orders_rejected.empty());
+}
+
+/**
+ * Order book should handle reducing limit orders.
  */
 TEST(VectorOrderBookTest, BookShouldReduceOrders1)
 {
@@ -244,7 +278,7 @@ TEST(VectorOrderBookTest, BookShouldReduceOrders1)
 }
 
 /**
- * Order book should handle reducing an order that is partially executed.
+ * Order book should handle reducing a limit order that is partially executed.
  * The order's quantity is reduced by an amount that places the quantity below the
  * executed quantity, and so the order should be removed from the book.
  */
@@ -303,7 +337,7 @@ TEST(VectorOrderBookTest, BookShouldReduceOrders2)
 }
 
 /**
- * Order book should handle cancelling an order when it is the only order in the book.
+ * Order book should handle cancelling a limit order when it is the only order in the book.
  */
 TEST(VectorOrderBookTest, BookShouldCancelOrders1)
 {
@@ -339,7 +373,7 @@ TEST(VectorOrderBookTest, BookShouldCancelOrders1)
 }
 
 /**
- * Order book should handle cancelling an order when there are multiple orders in the book.
+ * Order book should handle cancelling a limit order when there are multiple orders in the book.
  */
 TEST(VectorOrderBookTest, BookShouldCancelOrders2)
 {
@@ -380,7 +414,7 @@ TEST(VectorOrderBookTest, BookShouldCancelOrders2)
 }
 
 /**
- * Order book should handle a single match between GTC orders where both orders are fully executed.
+ * Order book should handle a single match between GTC limit orders where both orders are fully executed.
  */
 TEST(VectorOrderBookTest, BookShouldMatchOrders1)
 {
@@ -426,7 +460,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders1)
 }
 
 /**
- * Order book should be able to handle a single match between GTC orders where one order is fully executed and
+ * Order book should be able to handle a single match between GTC limit orders where one order is fully executed and
  * the other other is only partially executed.
  */
 TEST(VectorOrderBookTest, BookShouldMatchOrders2)
@@ -479,7 +513,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders2)
 }
 
 /**
- * Order book should be able to handle multiple matches between GTC orders - a GTC order is placed that matches with
+ * Order book should be able to handle multiple matches between GTC limit orders - a GTC order is placed that matches with
  * multiple orders at different price levels.
  */
 TEST(VectorOrderBookTest, BookShouldMatchOrders3)
@@ -556,7 +590,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders3)
 }
 
 /**
- * Order book should be able to handle an IOC order that is matches with GTC orders at multiple
+ * Order book should be able to handle an IOC order that is matches with GTC limit orders at multiple
  * price levels and is fully filled.
  */
 TEST(VectorOrderBookTest, BookShouldMatchOrders4)
@@ -630,7 +664,7 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders4)
 }
 
 /**
- * Order book should be able to handle an FOK order that is fully executable.
+ * Order book should be able to handle an FOK limit order that is fully executable.
  */
 TEST(VectorOrderBookTest, BookShouldMatchOrders5)
 {
@@ -714,6 +748,104 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders5)
     ASSERT_EQ(trade_event2.matched_order_price, 110);
     ASSERT_EQ(trade_event2.quantity, 100);
     // There should be a message indicating that the FOK order was traded with the first GTC order.
+    auto trade_event3 = result_receiver.trade_events.back();
+    result_receiver.trade_events.pop_back();
+    ASSERT_EQ(trade_event3.order_id, 4);
+    ASSERT_EQ(trade_event3.user_id, 4);
+    ASSERT_EQ(trade_event3.matched_order_id, 1);
+    ASSERT_EQ(trade_event3.matched_order_price, 100);
+    ASSERT_EQ(trade_event3.quantity, 90);
+    // There should not be any other messages.
+    ASSERT_TRUE(result_receiver.trade_events.empty());
+    ASSERT_TRUE(result_receiver.orders_executed.empty());
+    ASSERT_TRUE(result_receiver.orders_rejected.empty());
+}
+
+/**
+ * Order book should be able to handle a market order that is fully executable.
+ */
+TEST(VectorOrderBookTest, BookShouldMatchOrders6)
+{
+    // Create GTC orders on same side of the book with different price levels.
+    Order order1 = Order::askLimit(OrderType::GoodTillCancel, 90, 100, 1, 1, 1);
+    Order order2 = Order::askLimit(OrderType::GoodTillCancel, 100, 110, 2, 2, 1);
+    Order order3 = Order::askLimit(OrderType::GoodTillCancel, 50, 110, 3, 3, 1);
+    // Create market order on opposite side of book as GTC orders.
+    Order order4 = Order::bidMarket(200, 4, 4, 1);
+    // Create a messenger for the order book.
+    OrderBookReceiver result_receiver;
+    // Start up a worker waiting for results.
+    std::thread t1{&OrderBookReceiver::start, &result_receiver};
+    // Create the order book.
+    OrderBook::VectorOrderBook book{1, static_cast<Messaging::Sender>(result_receiver.receiver)};
+    // Place the first GTC order.
+    book.placeOrder(order1);
+    // Book should now contain the first order since it has no match.
+    ASSERT_TRUE(book.hasOrder(1));
+    // Get the first order and check that it is unmodified.
+    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
+    // Place a second GTC order.
+    book.placeOrder(order2);
+    // Book should now contain the second order since it has no match.
+    ASSERT_TRUE(book.hasOrder(2));
+    // Get the second order and check that it is unmodified.
+    ASSERT_EQ(book.getOrder(2).quantity_executed, 0);
+    // Place a third GTC order.
+    book.placeOrder(order3);
+    // Book should now contain the third order since it has no match.
+    ASSERT_TRUE(book.hasOrder(3));
+    // Get the second order and check that it is unmodified.
+    ASSERT_EQ(book.getOrder(3).quantity_executed, 0);
+    // Place the market order - should match with the previous GTC orders.
+    book.placeOrder(order4);
+    // Book should not contain the market order or the orders that it was executed with.
+    ASSERT_FALSE(book.hasOrder(4));
+    ASSERT_FALSE(book.hasOrder(2));
+    ASSERT_FALSE(book.hasOrder(1));
+    // This order should not have been fully filled and should still be in the book.
+    ASSERT_TRUE(book.hasOrder(3));
+    ASSERT_EQ(book.getOrder(3).quantity_executed, 200 - 90 - 100);
+    // Close out the queue.
+    result_receiver.stop();
+    t1.join();
+    // There should be a message indicating that the market order was executed.
+    auto execution_event3 = result_receiver.orders_executed.back();
+    result_receiver.orders_executed.pop_back();
+    ASSERT_EQ(execution_event3.order_id, 4);
+    ASSERT_EQ(execution_event3.user_id, 4);
+    ASSERT_EQ(execution_event3.order_quantity, 200);
+    ASSERT_EQ(execution_event3.order_price, 110);
+    // There should be a message indicating that the second GTC order was executed.
+    auto execution_event2 = result_receiver.orders_executed.back();
+    result_receiver.orders_executed.pop_back();
+    ASSERT_EQ(execution_event2.order_id, 2);
+    ASSERT_EQ(execution_event2.user_id, 2);
+    ASSERT_EQ(execution_event2.order_quantity, 100);
+    ASSERT_EQ(execution_event2.order_price, 110);
+    // There should be a message indicating that the first GTC order was executed.
+    auto execution_event1 = result_receiver.orders_executed.back();
+    result_receiver.orders_executed.pop_back();
+    ASSERT_EQ(execution_event1.order_id, 1);
+    ASSERT_EQ(execution_event1.user_id, 1);
+    ASSERT_EQ(execution_event1.order_quantity, 90);
+    ASSERT_EQ(execution_event1.order_price, 100);
+    // There should be a message indicating that the market order was traded with the third GTC order.
+    auto trade_event1 = result_receiver.trade_events.back();
+    result_receiver.trade_events.pop_back();
+    ASSERT_EQ(trade_event1.order_id, 3);
+    ASSERT_EQ(trade_event1.user_id, 3);
+    ASSERT_EQ(trade_event1.matched_order_id, 4);
+    ASSERT_EQ(trade_event1.matched_order_price, 110);
+    ASSERT_EQ(trade_event1.quantity, 200 - 90 - 100);
+    // There should be a message indicating that the market order was traded with the second GTC order.
+    auto trade_event2 = result_receiver.trade_events.back();
+    result_receiver.trade_events.pop_back();
+    ASSERT_EQ(trade_event2.order_id, 4);
+    ASSERT_EQ(trade_event2.user_id, 4);
+    ASSERT_EQ(trade_event2.matched_order_id, 2);
+    ASSERT_EQ(trade_event2.matched_order_price, 110);
+    ASSERT_EQ(trade_event2.quantity, 100);
+    // There should be a message indicating that the market order was traded with the first GTC order.
     auto trade_event3 = result_receiver.trade_events.back();
     result_receiver.trade_events.pop_back();
     ASSERT_EQ(trade_event3.order_id, 4);

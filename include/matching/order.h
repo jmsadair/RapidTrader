@@ -196,7 +196,7 @@ struct Order : public list_base_hook<>
      */
     static inline Order bidMarket(uint64_t quantity_, uint64_t id_, uint64_t user_id_, uint32_t symbol_id_)
     {
-        return {OrderAction::Limit, OrderSide::Bid, OrderType::ImmediateOrCancel, quantity_, std::numeric_limits<uint32_t>::max(), id_,
+        return {OrderAction::Market, OrderSide::Bid, OrderType::ImmediateOrCancel, quantity_, std::numeric_limits<uint32_t>::max(), id_,
             user_id_, symbol_id_};
     }
 };

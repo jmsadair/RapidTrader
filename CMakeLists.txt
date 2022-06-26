@@ -148,13 +148,19 @@ target_link_libraries(fast_exchange spdlog)
 # ------------------------------------------------------------------------------
 add_executable(fast_exchange_example examples/exchange_example.cpp)
 target_link_libraries(fast_exchange_example fast_exchange)
+install(TARGETS fast_exchange_example DESTINATION ${EXCHANGE_INSTALL_BIN_DIR}/examples)
 
 # ------------------------------------------------------------------------------
 # Fast Exchange Benchmark
 # ------------------------------------------------------------------------------
-file(GLOB_RECURSE BENCH_SOURCE_FILES "benchmark/*.cpp")
-add_executable(fast_exchange_bench ${BENCH_SOURCE_FILES})
-target_link_libraries(fast_exchange_bench benchmark::benchmark fast_exchange)
+add_executable(fast_exchange_benchmark
+        benchmark/bench_exchange.cpp
+        benchmark/bench_order.cpp
+        benchmark/bench_orderbook.cpp
+        benchmark/bench_price_level.cpp
+        )
+target_link_libraries(fast_exchange_benchmark benchmark::benchmark fast_exchange)
+install(TARGETS fast_exchange_benchmark DESTINATION ${EXCHANGE_INSTALL_BIN_DIR}/benchmarks)
 
 # ------------------------------------------------------------------------------
 # Fast Exchange Tests
@@ -171,5 +177,5 @@ add_executable(fast_exchange_tests
 target_link_libraries(fast_exchange_tests fast_exchange)
 target_link_libraries(fast_exchange_tests gtest_main)
 gtest_discover_tests(fast_exchange_tests)
-install(TARGETS ${PROJECT_NAME} DESTINATION ${EXCHANGE_INSTALL_BIN_DIR})
+install(TARGETS fast_exchange_tests DESTINATION ${EXCHANGE_INSTALL_BIN_DIR}/tests)
 

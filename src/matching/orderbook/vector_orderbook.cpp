@@ -78,6 +78,7 @@ void OrderBook::VectorOrderBook::execute(Order &incoming, Order &existing)
     const uint64_t matched_quantity = std::min(incoming.executableQuantity(), existing.executableQuantity());
     const uint64_t existing_id = existing.id;
     const uint32_t existing_price = existing.price;
+    const uint32_t incoming_price = incoming.isMarket() ? existing_price : incoming.price;
     incoming.quantity_executed += matched_quantity;
     existing.quantity_executed += matched_quantity;
     if (existing.isAsk())
@@ -89,11 +90,13 @@ void OrderBook::VectorOrderBook::execute(Order &incoming, Order &existing)
     {
         // Notify event handler that the existing order has been traded.
         outgoing.send(
-            Message::Event::TradeEvent(existing.user_id, existing.id, incoming.id, existing.price, incoming.price, matched_quantity));
+            Message::Event::TradeEvent(existing.user_id, existing.id, incoming.id, existing.price, incoming_price, matched_quantity));
         // Notify that incoming order has been completely filled.
         if (incoming.isFilled())
-            outgoing.send(Message::Event::OrderExecuted(incoming.user_id, incoming.id, incoming.price, incoming.quantity));
-        // Existing order could be completely filled.
+        {
+            outgoing.send(Message::Event::OrderExecuted(incoming.user_id, incoming.id, incoming_price, incoming.quantity));
+        }
+    // Existing order could be completely filled.
     }
     else
     {
@@ -106,11 +109,11 @@ void OrderBook::VectorOrderBook::execute(Order &incoming, Order &existing)
         orders.erase(existing_id);
         // Notify that incoming order has been completely filled.
         if (incoming.isFilled())
-            outgoing.send(Message::Event::OrderExecuted(incoming.user_id, incoming.id, incoming.price, incoming.quantity));
+            outgoing.send(Message::Event::OrderExecuted(incoming.user_id, incoming.id, incoming_price, incoming.quantity));
         // Notify that incoming order has been traded.
         else
             outgoing.send(
-                Message::Event::TradeEvent(incoming.user_id, incoming.id, existing_id, incoming.price, existing_price, matched_quantity));
+                Message::Event::TradeEvent(incoming.user_id, incoming.id, existing_id, incoming_price, existing_price, matched_quantity));
     }
 }
 
