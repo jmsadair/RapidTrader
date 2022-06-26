@@ -419,8 +419,8 @@ TEST(VectorOrderBookTest, BookShouldCancelOrders2)
 TEST(VectorOrderBookTest, BookShouldMatchOrders1)
 {
     // Create GTC orders on different sides of the book, with matchable price levels.
-    Order order1 = Order::askLimit(OrderType::GoodTillCancel, 100, 100, 1, 1, 1);
-    Order order2 = Order::bidLimit(OrderType::GoodTillCancel, 100, 100, 2, 2, 1);
+    Order order1 = Order::bidLimit(OrderType::GoodTillCancel, 100, 100, 1, 1, 1);
+    Order order2 = Order::askLimit(OrderType::GoodTillCancel, 100, 100, 2, 2, 1);
     // Create a messenger for the order book.
     OrderBookReceiver result_receiver;
     // Start up a worker waiting for results.
