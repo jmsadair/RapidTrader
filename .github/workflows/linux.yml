@@ -8,7 +8,7 @@ on:
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+  BUILD_TYPE: Debug
 
 jobs:
   build:
@@ -26,9 +26,9 @@ jobs:
         cmake --version
         gcc --version
         sudo apt-get install libboost-all-dev
-
+        sudo apt-get install lcov
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_COVERAGE=ON
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
@@ -36,4 +36,18 @@ jobs:
     - name: Test
       working-directory: ${{github.workspace}}/build
       run: ctest -C ${{env.BUILD_TYPE}}
+      
+    - name: Generate coverage reports
+      working-directory: ${{github.workspace}}
+      run: |
+        lcov --directory . --capture --output-file coverage.info
+        lcov --remove coverage.info '*/test/*' '*/include/utils/*' '*/src/utils/*' --output-file coverage.info
+      
+    - name: Upload reports to codecov
+      env:
+        CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
+      run: | 
+       curl -Os https://uploader.codecov.io/latest/linux/codecov
+       chmod +x codecov 
+       ./codecov -t ${CODECOV_TOKEN}
       
