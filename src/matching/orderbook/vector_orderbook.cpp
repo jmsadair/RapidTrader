@@ -1,5 +1,5 @@
-#include <iostream>
 #include "vector_orderbook.h"
+#include "log.h"
 
 // Only check the order book invariants in debug mode.
 #ifndef NDEBUG
@@ -22,7 +22,7 @@ void OrderBook::VectorOrderBook::placeOrder(Order &order)
         placeFokOrder(order);
         break;
     default:
-        throw std::logic_error("Default case should never be reached!");
+        LOG_WARN("Failed to place order - order type not supported.");
     }
 
     ORDERBOOK_CHECK_INVARIANTS;
@@ -31,20 +31,26 @@ void OrderBook::VectorOrderBook::placeOrder(Order &order)
 void OrderBook::VectorOrderBook::reduceOrder(uint64_t order_id, uint64_t quantity_to_reduce_by)
 {
     auto it = orders.find(order_id);
-    if (it != orders.end())
+    if (it == orders.end())
     {
-        // Reducing the order quantity by the requested amount would mean that the order
-        // has been fully executed. Remove the order from the book and notify the event
-        // handler.
-        if (it->second.quantity - quantity_to_reduce_by <= it->second.quantity_executed)
-        {
-            outgoing.send(Message::Event::OrderExecuted(it->second.user_id, it->second.id, it->second.price, it->second.quantity_executed));
-            remove(it->second);
-            return;
-        }
-        // Reduce the quantity by the desired amount;
-        it->second.quantity -= quantity_to_reduce_by;
+        LOG_WARN("Failed to reduce order - order does not exist");
+        return;
     }
+    if (it->second.quantity <= quantity_to_reduce_by) {
+        LOG_WARN("Failed to reduce order - order cannot be reduced to non-positive quantity.");
+        return;
+    }
+    // Reducing the order quantity by the requested amount would mean that the order
+    // has been fully executed. Remove the order from the book and notify the event
+    // handler.
+    if (it->second.quantity - quantity_to_reduce_by <= it->second.quantity_executed)
+    {
+        outgoing.send(Message::Event::OrderExecuted(it->second.user_id, it->second.id, it->second.price, it->second.quantity_executed));
+        remove(it->second);
+        return;
+    }
+    // Reduce the quantity by the desired amount;
+    it->second.quantity -= quantity_to_reduce_by;
 }
 
 void OrderBook::VectorOrderBook::placeGtcOrder(Order &order)
@@ -96,10 +102,9 @@ void OrderBook::VectorOrderBook::execute(Order &incoming, Order &existing)
         {
             outgoing.send(Message::Event::OrderExecuted(incoming.user_id, incoming.id, incoming_price, incoming.quantity));
         }
-    // Existing order could be completely filled.
+    //Existing order could be completely filled.
     }
-    else
-    {
+    else {
         outgoing.send(Message::Event::OrderExecuted(existing.user_id, existing.id, existing.price, existing.quantity));
         // Remove existing order from the order book.
         if (existing.isAsk())

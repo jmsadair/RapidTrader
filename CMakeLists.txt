@@ -16,9 +16,6 @@ set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 set(EXCHANGE_INSTALL_LIB_DIR ${PROJECT_SOURCE_DIR}/lib)
 set(EXCHANGE_INSTALL_BIN_DIR ${CMAKE_INSTALL_BINDIR})
 
-set(ENABLE_COVERAGE ON)
-set(ENABLE_ASAN ON)
-
 # ------------------------------------------------------------------------------
 # Includes
 # ------------------------------------------------------------------------------

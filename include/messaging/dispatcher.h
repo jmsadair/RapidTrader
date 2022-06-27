@@ -23,7 +23,7 @@ public:
      *
      * @param other another Dispatcher.
      */
-    Dispatcher(Dispatcher &&other) noexcept
+    inline Dispatcher(Dispatcher &&other) noexcept
         : msg_queue_ptr(other.msg_queue_ptr)
         , chained(other.chained)
     {
@@ -35,7 +35,7 @@ public:
      *
      * @param msg_queue_ptr_ a pointer to a message queue.
      */
-    explicit Dispatcher(MessageQueue *msg_queue_ptr_)
+    inline explicit Dispatcher(MessageQueue *msg_queue_ptr_)
         : msg_queue_ptr(msg_queue_ptr_)
         , chained(false)
     {}
@@ -49,7 +49,7 @@ public:
      * @return a TemplateDispatcher capable of handling the message.
      */
     template<typename Message, typename Func>
-    TemplateDispatcher<Dispatcher, Message, Func> handle(Func &&func)
+    inline TemplateDispatcher<Dispatcher, Message, Func> handle(Func &&func)
     {
         return TemplateDispatcher<Dispatcher, Message, Func>(msg_queue_ptr, this, std::forward<Func>(func));
     }
@@ -72,7 +72,7 @@ private:
     /**
      * Waits for and dispatches message.
      */
-    [[noreturn]] void waitAndDispatch()
+    [[noreturn]] inline void waitAndDispatch()
     {
         while (true)
         {
@@ -88,7 +88,7 @@ private:
      * @return false if the message was unhandled.
      * @throws Exception if a CloseQueue Message is received.
      */
-    static bool dispatch(const std::shared_ptr<BaseMessage> &msg)
+    static inline bool dispatch(const std::shared_ptr<BaseMessage> &msg)
     {
         if (dynamic_cast<WrappedMessage<CloseQueue> *>(msg.get()))
         {

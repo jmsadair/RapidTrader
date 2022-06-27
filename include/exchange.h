@@ -15,8 +15,10 @@ public:
         , matching_engine(std::make_shared<Matching::MatchingEngine>(event_handler->getSender()))
         , api(matching_engine->getSender())
     {
+        //Log::init();
         matching_engine_thread = std::thread(&Matching::MatchingEngine::start, matching_engine);
         event_handler_thread = std::thread(&FastExchange::EventHandler::start, event_handler);
+        LOG_INFO("Exchange started...");
     }
 
     /**
@@ -30,6 +32,7 @@ public:
         event_handler->stop();
         matching_engine_thread.join();
         event_handler_thread.join();
+        LOG_INFO("Exchange stopped...");
     }
 
     /**

@@ -8,7 +8,7 @@ enum class OrderAction
     Limit = 0,
     Market = 1
 };
-constexpr std::array order_action_to_string{"LIMIT", "MARKET"};
+static constexpr std::array order_action_to_string{"LIMIT", "MARKET"};
 
 // Represents the different types of orders.
 //  Good 'Til Cancelled: A good-til-canceled order will remain active until
@@ -24,7 +24,7 @@ enum class OrderType
     FillOrKill = 1,
     ImmediateOrCancel = 2
 };
-constexpr std::array order_type_to_string{"GTC", "FOK", "IOC"};
+static constexpr std::array order_type_to_string{"GTC", "FOK", "IOC"};
 
 // Represents the side of the order.
 enum class OrderSide
@@ -32,5 +32,5 @@ enum class OrderSide
     Bid = 0,
     Ask = 1
 };
-constexpr std::array order_side_to_string{"BID", "ASK"};
+static constexpr std::array order_side_to_string{"BID", "ASK"};
 #endif // FAST_EXCHANGE_TYPES_H

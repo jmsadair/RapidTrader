@@ -24,7 +24,7 @@ public:
      *
      * @param other another TemplateDispatcher.
      */
-    TemplateDispatcher(TemplateDispatcher &&other) noexcept
+    inline TemplateDispatcher(TemplateDispatcher &&other) noexcept
         : msg_queue_ptr(other.msg_queue_ptr)
         , prev_dispatcher_ptr(other.prev_dispatcher_ptr)
         , func(std::move(other.func))
@@ -40,7 +40,7 @@ public:
      * @param prev_dispatcher_ptr_ a pointer to another dispatcher.
      * @param func_ the function that will handle the message.
      */
-    TemplateDispatcher(MessageQueue *msg_queue_ptr_, PreviousDispatcher *prev_dispatcher_ptr_, Func &&func_)
+    inline TemplateDispatcher(MessageQueue *msg_queue_ptr_, PreviousDispatcher *prev_dispatcher_ptr_, Func &&func_)
         : msg_queue_ptr(msg_queue_ptr_)
         , prev_dispatcher_ptr(prev_dispatcher_ptr_)
         , func(std::forward<Func>(func_))
@@ -58,7 +58,7 @@ public:
      * @return a new TemplateDispatcher.
      */
     template<typename OtherMsg, typename OtherFunc>
-    TemplateDispatcher<TemplateDispatcher, OtherMsg, OtherFunc> handle(OtherFunc &&other_func)
+    inline TemplateDispatcher<TemplateDispatcher, OtherMsg, OtherFunc> handle(OtherFunc &&other_func)
     {
         return TemplateDispatcher<TemplateDispatcher, OtherMsg, OtherFunc>(msg_queue_ptr, this, std::forward<OtherFunc>(other_func));
     }
@@ -85,7 +85,7 @@ private:
     /**
      * Waits for a message and attempts to handle it.
      */
-    void waitAndDispatch()
+    inline void waitAndDispatch()
     {
         while (true)
         {
@@ -103,7 +103,7 @@ private:
      * @param msg the message that the supplied function will be called on.
      * @return true if the if the message is a match.
      */
-    bool dispatch(const std::shared_ptr<BaseMessage> &msg)
+    inline bool dispatch(const std::shared_ptr<BaseMessage> &msg)
     {
         auto *wrapped = dynamic_cast<WrappedMessage<Msg> *>(msg.get());
         if (wrapped)

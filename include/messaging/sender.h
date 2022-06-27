@@ -13,7 +13,7 @@ public:
     /**
      * A constructor for the Sender ADT.
      */
-    Sender()
+    inline Sender()
         : message_queue_ptr(nullptr)
     {}
 
@@ -22,7 +22,7 @@ public:
      *
      * @param queue_ptr a pointer to a message queue.
      */
-    explicit Sender(MessageQueue *queue_ptr)
+    inline explicit Sender(MessageQueue *queue_ptr)
         : message_queue_ptr(queue_ptr)
     {}
 
@@ -33,7 +33,7 @@ public:
      * @param msg the message that is to be sent.
      */
     template<typename Msg>
-    void send(const Msg &msg)
+    inline void send(const Msg &msg)
     {
         if (message_queue_ptr)
             message_queue_ptr->push(msg);

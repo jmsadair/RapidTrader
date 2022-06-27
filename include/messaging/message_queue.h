@@ -42,7 +42,7 @@ public:
      * @param msg the message to push onto the queue.
      */
     template<typename T>
-    void push(const T &msg)
+    inline void push(const T &msg)
     {
         std::lock_guard<std::mutex> lk(m);
         message_queue.push(std::make_shared<WrappedMessage<T>>(msg));
@@ -54,7 +54,7 @@ public:
      *
      * @return the oldest message from the queue.
      */
-    std::shared_ptr<BaseMessage> waitAndPop()
+    inline std::shared_ptr<BaseMessage> waitAndPop()
     {
         std::unique_lock<std::mutex> lk(m);
         // Checks if queue is empty.

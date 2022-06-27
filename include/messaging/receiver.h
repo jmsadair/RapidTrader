@@ -13,7 +13,7 @@ public:
     /**
      * @return a sender that references the message queue.
      */
-    explicit operator Sender()
+    inline explicit operator Sender()
     {
         return Sender(&msg_queue);
     }
@@ -21,7 +21,7 @@ public:
     /**
      * @return a dispatcher that references the message queue.
      */
-    Dispatcher wait()
+    inline Dispatcher wait()
     {
         return Dispatcher(&msg_queue);
     }

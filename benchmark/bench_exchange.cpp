@@ -43,7 +43,7 @@ void placeOrders(FastExchange::Exchange &exchange, uint32_t max_symbol_id, uint3
 static void BM_Exchange(benchmark::State &state)
 {
     int num_threads = 1;
-    uint32_t num_symbols = 10000;
+    uint32_t num_symbols = 3000;
     uint32_t num_commands = 1000000;
     for (auto _ : state)
     {
