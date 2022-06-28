@@ -41,7 +41,7 @@ jobs:
       working-directory: ${{github.workspace}}
       run: |
         lcov --directory . --capture --output-file coverage.info
-        lcov --remove coverage.info '*/test/*' '*/include/utils/*' '*/src/utils/*' --output-file coverage.info
+        lcov --remove coverage.info '*/test/*' '*/include/utils/*' '*/src/utils/*' '*/src/messaging/*' --output-file coverage.info
       
     - name: Upload reports to codecov
       env:

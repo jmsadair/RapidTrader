@@ -614,9 +614,9 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders4)
     ASSERT_TRUE(handler.execution_events.empty());
     ASSERT_TRUE(handler.rejection_events.empty());
 }
-
 /**
- * Order book should be able to handle an FOK limit order that is fully executable.
+ * Order book should be able to handle FOK orders that are matched with GTC limit orders at multiple
+ * price levels and are fully filled.
  */
 TEST(VectorOrderBookTest, BookShouldMatchOrders5)
 {
@@ -627,9 +627,11 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders5)
     // Create GTC orders on same side of the book with different price levels.
     Order order1 = Order::askLimit(OrderType::GoodTillCancel, 90, 100, 1, 1, 1);
     Order order2 = Order::askLimit(OrderType::GoodTillCancel, 100, 110, 2, 2, 1);
-    Order order3 = Order::askLimit(OrderType::GoodTillCancel, 50, 110, 3, 3, 1);
-    // Create FOK order on opposite side of book as GTC orders.
-    Order order4 = Order::bidLimit(OrderType::FillOrKill, 200, 150, 4, 4, 1);
+    Order order3 = Order::bidLimit(OrderType::GoodTillCancel, 200, 90, 3, 3, 1);
+    // Create IOC order on opposite side of book as GTC ask orders.
+    Order order4 = Order::bidLimit(OrderType::FillOrKill, 190, 150, 4, 4, 1);
+    // Create IOC order on opposite side of book as GTC bid orders.
+    Order order5 = Order::askLimit(OrderType::FillOrKill, 200, 80, 5, 5, 1);
     // Place the first GTC order.
     book.placeOrder(order1);
     // Book should now contain the first order since it has no match.
@@ -639,70 +641,71 @@ TEST(VectorOrderBookTest, BookShouldMatchOrders5)
     // Place a second GTC order.
     book.placeOrder(order2);
     // Book should now contain the second order since it has no match.
-    ASSERT_TRUE(book.hasOrder(2));
+    ASSERT_TRUE(book.hasOrder(1));
     // Get the second order and check that it is unmodified.
-    ASSERT_EQ(book.getOrder(2).quantity_executed, 0);
+    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
     // Place a third GTC order.
     book.placeOrder(order3);
-    // Book should now contain the third order since it has no match.
+    // Book should now contain third order since it has no match.
     ASSERT_TRUE(book.hasOrder(3));
-    // Get the second order and check that it is unmodified.
-    ASSERT_EQ(book.getOrder(3).quantity_executed, 0);
-    // Place the FOK order - should match with the previous GTC orders.
+    // PLace the first IOC order - it should match with the first two orders placed.
     book.placeOrder(order4);
-    // Book should not contain the FOK order or the orders that it was executed with.
+    // Third GTC order should still be in the book since it was on the opposite side.
+    ASSERT_TRUE(book.hasOrder(3));
+    // IOC orders and first two GTC orders should not been in the book.
     ASSERT_FALSE(book.hasOrder(4));
     ASSERT_FALSE(book.hasOrder(2));
     ASSERT_FALSE(book.hasOrder(1));
-    // This order should not have been fully filled and should still be in the book.
-    ASSERT_TRUE(book.hasOrder(3));
-    ASSERT_EQ(book.getOrder(3).quantity_executed, 200 - 90 - 100);
-    // There should be a message indicating that the FOK order was executed.
+    // PLace the second IOC order - it should match with the third GTC order placed.
+    book.placeOrder(order5);
+    // IOC order and third GTC order should have matched and should not be in the book.
+    ASSERT_FALSE(book.hasOrder(5));
+    ASSERT_FALSE(book.hasOrder(3));
+
+    // Notification that second IOC order was executed.
+    auto execution_event1 = handler.execution_events.back();
+    handler.execution_events.pop_back();
+    ASSERT_EQ(execution_event1.order_id, 5);
+    ASSERT_EQ(execution_event1.user_id, 5);
+    ASSERT_EQ(execution_event1.order_quantity, 200);
+    ASSERT_EQ(execution_event1.order_price, 80);
+    // Notification that third GTC order was executed.
+    auto execution_event2 = handler.execution_events.back();
+    handler.execution_events.pop_back();
+    ASSERT_EQ(execution_event2.order_id, 3);
+    ASSERT_EQ(execution_event2.user_id, 3);
+    ASSERT_EQ(execution_event2.order_quantity, 200);
+    ASSERT_EQ(execution_event2.order_price, 90);
+    // Notification that first IOC order was executed.
     auto execution_event3 = handler.execution_events.back();
     handler.execution_events.pop_back();
     ASSERT_EQ(execution_event3.order_id, 4);
     ASSERT_EQ(execution_event3.user_id, 4);
-    ASSERT_EQ(execution_event3.order_quantity, 200);
+    ASSERT_EQ(execution_event3.order_quantity, 190);
     ASSERT_EQ(execution_event3.order_price, 150);
-    // There should be a message indicating that the second GTC order was executed.
-    auto execution_event2 = handler.execution_events.back();
+    // Notification that second GTC order was executed.
+    auto execution_event4 = handler.execution_events.back();
     handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event2.order_id, 2);
-    ASSERT_EQ(execution_event2.user_id, 2);
-    ASSERT_EQ(execution_event2.order_quantity, 100);
-    ASSERT_EQ(execution_event2.order_price, 110);
-    // There should be a message indicating that the first GTC order was executed.
-    auto execution_event1 = handler.execution_events.back();
+    ASSERT_EQ(execution_event4.order_id, 2);
+    ASSERT_EQ(execution_event4.user_id, 2);
+    ASSERT_EQ(execution_event4.order_quantity, 100);
+    ASSERT_EQ(execution_event4.order_price, 110);
+    // Notification that first GTC order was executed.
+    auto execution_event5 = handler.execution_events.back();
     handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event1.order_id, 1);
-    ASSERT_EQ(execution_event1.user_id, 1);
-    ASSERT_EQ(execution_event1.order_quantity, 90);
-    ASSERT_EQ(execution_event1.order_price, 100);
-    // There should be a message indicating that the FOK order was traded with the third GTC order.
+    ASSERT_EQ(execution_event5.order_id, 1);
+    ASSERT_EQ(execution_event5.user_id, 1);
+    ASSERT_EQ(execution_event5.order_quantity, 90);
+    ASSERT_EQ(execution_event5.order_price, 100);
+    // Notification that the first GTC order was traded with first IOC order.
     auto trade_event1 = handler.trade_events.back();
     handler.trade_events.pop_back();
-    ASSERT_EQ(trade_event1.order_id, 3);
-    ASSERT_EQ(trade_event1.user_id, 3);
-    ASSERT_EQ(trade_event1.matched_order_id, 4);
-    ASSERT_EQ(trade_event1.matched_order_price, 150);
-    ASSERT_EQ(trade_event1.quantity, 200 - 90 - 100);
-    // There should be a message indicating that the FOK order was traded with the second GTC order.
-    auto trade_event2 = handler.trade_events.back();
-    handler.trade_events.pop_back();
-    ASSERT_EQ(trade_event2.order_id, 4);
-    ASSERT_EQ(trade_event2.user_id, 4);
-    ASSERT_EQ(trade_event2.matched_order_id, 2);
-    ASSERT_EQ(trade_event2.matched_order_price, 110);
-    ASSERT_EQ(trade_event2.quantity, 100);
-    // There should be a message indicating that the FOK order was traded with the first GTC order.
-    auto trade_event3 = handler.trade_events.back();
-    handler.trade_events.pop_back();
-    ASSERT_EQ(trade_event3.order_id, 4);
-    ASSERT_EQ(trade_event3.user_id, 4);
-    ASSERT_EQ(trade_event3.matched_order_id, 1);
-    ASSERT_EQ(trade_event3.matched_order_price, 100);
-    ASSERT_EQ(trade_event3.quantity, 90);
-    // There should not be any other messages.
+    ASSERT_EQ(trade_event1.order_id, 4);
+    ASSERT_EQ(trade_event1.user_id, 4);
+    ASSERT_EQ(trade_event1.matched_order_id, 1);
+    ASSERT_EQ(trade_event1.matched_order_price, 100);
+    ASSERT_EQ(trade_event1.quantity, 90);
+    // There should not be any other notifications.
     ASSERT_TRUE(handler.trade_events.empty());
     ASSERT_TRUE(handler.execution_events.empty());
     ASSERT_TRUE(handler.rejection_events.empty());
