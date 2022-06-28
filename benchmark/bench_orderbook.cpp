@@ -1,8 +1,8 @@
 #include <random>
 #include <benchmark/benchmark.h>
 #include <thread>
-#include <iostream>
-#include "orderbook/vector_orderbook.h"
+#include "vector_orderbook.h"
+#include "basic_event_handler.h"
 
 void placeOrder(OrderBook::VectorOrderBook &book, std::vector<Order> &orders, uint64_t numOrders)
 {
@@ -20,19 +20,19 @@ static void BM_OrderBookPlaceOrder(benchmark::State &state)
     std::discrete_distribution<int> order_command_dist({80, 20});
     std::discrete_distribution<int> order_side_dist({50, 50});
     std::discrete_distribution<int> order_type_dist({70, 10, 20});
-    std::uniform_int_distribution<uint32_t> price_dist{1, 100};
+    std::uniform_int_distribution<uint32_t> price_dist{1, 500};
     std::uniform_int_distribution<uint64_t> quantity_dist{1, 20000};
     std::vector<OrderSide> order_sides{OrderSide::Ask, OrderSide::Bid};
     std::vector<OrderType> order_types{OrderType::GoodTillCancel, OrderType::FillOrKill, OrderType::ImmediateOrCancel};
     std::vector<Order> orders;
-    Messaging::Receiver rec;
-    orders.reserve(100);
+    orders.reserve(1000000);
     for (auto _ : state)
     {
         state.PauseTiming();
         uint32_t symbol = 1;
+        BasicEventHandler handler;
         orders.clear();
-        OrderBook::VectorOrderBook book(symbol, static_cast<Messaging::Sender>(rec));
+        OrderBook::VectorOrderBook book(symbol, handler);
         benchmark::DoNotOptimize(book);
         for (uint32_t i = 0; i < 1000000; ++i)
         {

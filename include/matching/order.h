@@ -1,6 +1,5 @@
 #ifndef FAST_EXCHANGE_ORDER_H
 #define FAST_EXCHANGE_ORDER_H
-#include <iomanip>
 #include <boost/intrusive/list.hpp>
 #include <limits>
 #include "types.h"

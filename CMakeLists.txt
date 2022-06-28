@@ -24,6 +24,7 @@ include_directories(include/matching)
 include_directories(include/matching/orderbook)
 include_directories(include/message)
 include_directories(include/messaging)
+include_directories(include/event_handler)
 include_directories(include/utils)
 include_directories(${Boost_INCLUDE_DIRS})
 

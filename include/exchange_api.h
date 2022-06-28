@@ -21,7 +21,7 @@ public:
      *
      * @param command a command to an order book.
      */
-    inline void submitCommand(Message::Command::AddOrderBook &command)
+    inline void submitCommand(Command::AddOrderBook &command)
     {
         matching_engine_sender.send(command);
     }
@@ -31,7 +31,7 @@ public:
      *
      * @param command a command to place an order.
      */
-    inline void submitCommand(Message::Command::PlaceOrder &command)
+    inline void submitCommand(Command::PlaceOrder &command)
     {
         matching_engine_sender.send(command);
     }
@@ -41,7 +41,7 @@ public:
      *
      * @param command a command to reduce an order.
      */
-    inline void submitCommand(Message::Command::ReduceOrder &command)
+    inline void submitCommand(Command::ReduceOrder &command)
     {
         matching_engine_sender.send(command);
     }
@@ -51,7 +51,7 @@ public:
      *
      * @param command a command to cancel an order.
      */
-    inline void submitCommand(Message::Command::CancelOrder &command)
+    inline void submitCommand(Command::CancelOrder &command)
     {
         matching_engine_sender.send(command);
     }

@@ -4,9 +4,8 @@
 #include <limits>
 #include "robin_hood.h"
 #include "price_level.h"
-#include "event.h"
-#include "receiver.h"
 #include "orderbook_interface.h"
+#include "event_handler_interface.h"
 
 constexpr size_t DEFAULT_PRICE_LEVELS_SIZE = 1;
 
@@ -40,9 +39,9 @@ public:
      * @param symbol_ the symbol associated with the order book.
      * @param outgoing_ a message sender used to communicate with users.
      */
-    inline VectorOrderBook(uint32_t symbol_id_, Messaging::Sender outgoing_)
+    inline VectorOrderBook(uint32_t symbol_id_, EventHandler &handler_)
         : symbol_id(symbol_id_)
-        , outgoing(outgoing_)
+        , handler(handler_)
     {
         ask_price_levels.resize(DEFAULT_PRICE_LEVELS_SIZE);
         bid_price_levels.resize(DEFAULT_PRICE_LEVELS_SIZE);
@@ -172,7 +171,7 @@ private:
     uint32_t min_ask_price = std::numeric_limits<uint32_t>::max();
     uint32_t max_bid_price = 0;
     uint32_t symbol_id;
-    Messaging::Sender outgoing;
+    EventHandler &handler;
 };
 } // namespace OrderBook
 

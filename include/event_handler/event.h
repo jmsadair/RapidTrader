@@ -2,7 +2,7 @@
 #define FAST_EXCHANGE_EVENT_H
 #include "types.h"
 
-namespace Message::Event {
+namespace Event {
 struct Event
 {
     virtual ~Event() = default;
@@ -31,25 +31,9 @@ struct TradeEvent : public Event
      * @param quantity_ the quantity of the the orders that were traded.
      */
     TradeEvent(uint64_t user_id_, uint64_t order_id_, uint64_t matched_order_id_, uint32_t order_price_, uint32_t matched_order_price_,
-        uint64_t quantity_)
-        : user_id(user_id_)
-        , order_id(order_id_)
-        , matched_order_id(matched_order_id_)
-        , order_price(order_price_)
-        , matched_order_price(matched_order_price_)
-        , quantity(quantity_)
-    {}
+        uint64_t quantity_);
 
-    friend std::ostream &operator<<(std::ostream &os, const TradeEvent &event)
-    {
-        os << "User ID: " << event.user_id << "\n";
-        os << "Order ID: " << event.order_id << "\n";
-        os << "Matched Order ID: " << event.matched_order_id << "\n";
-        os << "Order Price: " << event.order_price << "\n";
-        os << "Matched Order Price: " << event.matched_order_price << "\n";
-        os << "Matched Quantity: " << event.quantity << "\n";
-        return os;
-    }
+    friend std::ostream &operator<<(std::ostream &os, const TradeEvent &event);
 };
 
 /**
@@ -58,10 +42,10 @@ struct TradeEvent : public Event
  */
 struct OrderExecuted : public Event
 {
-    uint64_t user_id;
-    uint64_t order_id;
-    uint32_t order_price;
-    uint64_t order_quantity;
+    const uint64_t user_id;
+    const uint64_t order_id;
+    const uint32_t order_price;
+    const uint64_t order_quantity;
 
     /**
      * A constructor for the OrderExecuted event.
@@ -71,21 +55,9 @@ struct OrderExecuted : public Event
      * @param order_price_ the price of the executed order.
      * @param order_quantity_ the quantity of the executed order.
      */
-    OrderExecuted(uint64_t user_id_, uint64_t order_id_, uint32_t order_price_, uint64_t order_quantity_)
-        : user_id(user_id_)
-        , order_id(order_id_)
-        , order_price(order_price_)
-        , order_quantity(order_quantity_)
-    {}
+    OrderExecuted(uint64_t user_id_, uint64_t order_id_, uint32_t order_price_, uint64_t order_quantity_);
 
-    friend std::ostream &operator<<(std::ostream &os, const OrderExecuted &event)
-    {
-        os << "User ID: " << event.user_id << "\n";
-        os << "Order ID: " << event.order_id << "\n";
-        os << "Order Price: " << event.order_price << "\n";
-        os << "Order Quantity: " << event.order_quantity << "\n";
-        return os;
-    }
+    friend std::ostream &operator<<(std::ostream &os, const OrderExecuted &event);
 };
 
 /**
@@ -108,23 +80,9 @@ struct RejectionEvent : public Event
      * @param order_price_ the price of the order that was rejected.
      * @param quantity_rejected_ the quantity of the order that was not executed.
      */
-    RejectionEvent(uint64_t user_id_, uint64_t order_id_, uint32_t symbol_id_, uint32_t order_price_, uint64_t quantity_rejected_)
-        : user_id(user_id_)
-        , order_id(order_id_)
-        , symbol_id(symbol_id_)
-        , order_price(order_price_)
-        , quantity_rejected(quantity_rejected_)
-    {}
+    RejectionEvent(uint64_t user_id_, uint64_t order_id_, uint32_t symbol_id_, uint32_t order_price_, uint64_t quantity_rejected_);
 
-    friend std::ostream &operator<<(std::ostream &os, const RejectionEvent &event)
-    {
-        os << "User ID: " << event.user_id << "\n";
-        os << "Order ID: " << event.order_id << "\n";
-        os << "Order Symbol ID: " << event.symbol_id << "\n";
-        os << "Order Price: " << event.order_price << "\n";
-        os << "Order Quantity Rejected: " << event.quantity_rejected << "\n";
-        return os;
-    }
+    friend std::ostream &operator<<(std::ostream &os, const RejectionEvent &event);
 };
-} // namespace Message::Event
+} // namespace Command::Event
 #endif // FAST_EXCHANGE_EVENT_H

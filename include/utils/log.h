@@ -5,12 +5,18 @@
 class Log
 {
 public:
+    /**
+     * Initializes the logger.
+     */
     static void init();
+
+    /**
+     * @return a reference to the logger.
+     */
     inline static std::shared_ptr<spdlog::logger> &getLogger()
     {
         return logger;
     }
-
 private:
     static std::shared_ptr<spdlog::logger> logger;
 };

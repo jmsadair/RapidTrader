@@ -4,7 +4,7 @@
 #include <exception>
 
 namespace Messaging {
-// Message for closing the queue.
+// Command for closing the queue.
 struct CloseQueue : std::exception
 {};
 
@@ -86,7 +86,7 @@ private:
      *
      * @param msg the message to be dispatched.
      * @return false if the message was unhandled.
-     * @throws Exception if a CloseQueue Message is received.
+     * @throws Exception if a CloseQueue Command is received.
      */
     static inline bool dispatch(const std::shared_ptr<BaseMessage> &msg)
     {

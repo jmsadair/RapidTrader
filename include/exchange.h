@@ -3,37 +3,21 @@
 #include <thread>
 #include "matching_engine.h"
 #include "exchange_api.h"
-#include "event_handler.h"
-#include "log.h"
+#include "basic_event_handler.h"
 
 namespace FastExchange {
 class Exchange
 {
 public:
-    Exchange()
-        : event_handler(std::make_shared<FastExchange::EventHandler>())
-        , matching_engine(std::make_shared<Matching::MatchingEngine>(event_handler->getSender()))
-        , api(matching_engine->getSender())
-    {
-        //Log::init();
-        matching_engine_thread = std::thread(&Matching::MatchingEngine::start, matching_engine);
-        event_handler_thread = std::thread(&FastExchange::EventHandler::start, event_handler);
-        LOG_INFO("Exchange started...");
-    }
+    /**
+     * A constructor for the Exchange ADT - spawns the thread that the matching engine will run on.
+     */
+    Exchange();
 
     /**
-     * A destructor for the Exchange ADT - kills the threads that order matching engine and event handler
-     * were running on.
+     * A destructor for the Exchange ADT - kills the threads that the matching engine is running on.
      */
-    ~Exchange()
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        matching_engine->stop();
-        event_handler->stop();
-        matching_engine_thread.join();
-        event_handler_thread.join();
-        LOG_INFO("Exchange stopped...");
-    }
+    ~Exchange();
 
     /**
      * @return an API for the exchange.
@@ -44,13 +28,11 @@ public:
     }
 
 private:
-    std::shared_ptr<FastExchange::EventHandler> event_handler;
+    BasicEventHandler matching_engine_event_handler;
     std::shared_ptr<Matching::MatchingEngine> matching_engine;
-    // Directs incoming commands to correct matching engine.
+    // Directs incoming commands to correct matching engine - thread safe.
     ExchangeApi api;
-    // True if engine has been started and false otherwise.
     std::thread matching_engine_thread;
-    std::thread event_handler_thread;
 };
 } // namespace FastExchange
 #endif // FAST_EXCHANGE_EXCHANGE_H

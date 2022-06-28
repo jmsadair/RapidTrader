@@ -1,4 +1,5 @@
 #include "vector_orderbook.h"
+#include "event.h"
 #include "log.h"
 
 // Only check the order book invariants in debug mode.
@@ -45,7 +46,8 @@ void OrderBook::VectorOrderBook::reduceOrder(uint64_t order_id, uint64_t quantit
     // handler.
     if (it->second.quantity - quantity_to_reduce_by <= it->second.quantity_executed)
     {
-        outgoing.send(Message::Event::OrderExecuted(it->second.user_id, it->second.id, it->second.price, it->second.quantity_executed));
+        handler.handleExecutionEvent(Event::OrderExecuted(
+            it->second.user_id, it->second.id, it->second.price, it->second.quantity_executed));
         remove(it->second);
         return;
     }
@@ -68,7 +70,7 @@ void OrderBook::VectorOrderBook::placeFokOrder(Order &order)
     if (can_execute)
         executePriceChain(price_chain, order);
     else
-        outgoing.send(Message::Event::RejectionEvent(order.user_id, order.id, symbol_id, order.price, order.executableQuantity()));
+        handler.handleRejectEvent(Event::RejectionEvent(order.user_id, order.id, symbol_id, order.price, order.executableQuantity()));
 }
 
 void OrderBook::VectorOrderBook::placeIocOrder(Order &order)
@@ -76,7 +78,7 @@ void OrderBook::VectorOrderBook::placeIocOrder(Order &order)
     match(order);
     // IOC orders are cancelled if they are not fully executed.
     if (!order.isFilled())
-        outgoing.send(Message::Event::RejectionEvent(order.user_id, order.id, symbol_id, order.price, order.executableQuantity()));
+        handler.handleRejectEvent(Event::RejectionEvent(order.user_id, order.id, symbol_id, order.price, order.executableQuantity()));
 }
 
 void OrderBook::VectorOrderBook::execute(Order &incoming, Order &existing)
@@ -95,17 +97,17 @@ void OrderBook::VectorOrderBook::execute(Order &incoming, Order &existing)
     if (!existing.isFilled())
     {
         // Notify event handler that the existing order has been traded.
-        outgoing.send(
-            Message::Event::TradeEvent(existing.user_id, existing.id, incoming.id, existing.price, incoming_price, matched_quantity));
+        handler.handleTradeEvent(Event::TradeEvent(
+            existing.user_id, existing.id, incoming.id, existing.price, incoming_price, matched_quantity));
         // Notify that incoming order has been completely filled.
         if (incoming.isFilled())
         {
-            outgoing.send(Message::Event::OrderExecuted(incoming.user_id, incoming.id, incoming_price, incoming.quantity));
+            handler.handleExecutionEvent(Event::OrderExecuted(incoming.user_id, incoming.id, incoming_price, incoming.quantity));
         }
     //Existing order could be completely filled.
     }
     else {
-        outgoing.send(Message::Event::OrderExecuted(existing.user_id, existing.id, existing.price, existing.quantity));
+        handler.handleExecutionEvent(Event::OrderExecuted(existing.user_id, existing.id, existing.price, existing.quantity));
         // Remove existing order from the order book.
         if (existing.isAsk())
             ask_price_levels[existing.price].orders.pop_front();
@@ -114,11 +116,11 @@ void OrderBook::VectorOrderBook::execute(Order &incoming, Order &existing)
         orders.erase(existing_id);
         // Notify that incoming order has been completely filled.
         if (incoming.isFilled())
-            outgoing.send(Message::Event::OrderExecuted(incoming.user_id, incoming.id, incoming_price, incoming.quantity));
+            handler.handleExecutionEvent(Event::OrderExecuted(incoming.user_id, incoming.id, incoming_price, incoming.quantity));
         // Notify that incoming order has been traded.
         else
-            outgoing.send(
-                Message::Event::TradeEvent(incoming.user_id, incoming.id, existing_id, incoming_price, existing_price, matched_quantity));
+            handler.handleTradeEvent(Event::TradeEvent(
+                incoming.user_id, incoming.id, existing_id, incoming_price, existing_price, matched_quantity));
     }
 }
 
@@ -321,7 +323,7 @@ void OrderBook::VectorOrderBook::cancelOrder(uint64_t order_id)
     if (it != orders.end())
     {
         remove(it->second);
-        outgoing.send(Message::Event::RejectionEvent(
+        handler.handleRejectEvent(Event::RejectionEvent(
             it->second.user_id, it->second.id, symbol_id, it->second.price, it->second.executableQuantity()));
     }
     ORDERBOOK_CHECK_INVARIANTS;

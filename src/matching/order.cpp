@@ -1,3 +1,4 @@
+#include <iostream>
 #include "order.h"
 
 std::ostream &operator<<(std::ostream &os, const Order &order)
