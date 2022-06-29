@@ -13,7 +13,7 @@ TEST(MessageQueueTest, QueueShouldHandlePushAndPop)
     Messaging::MessageQueue queue;
     TestMessage msg1{"test1"};
     // The queue is empty - no message can be popped until message are pushed onto the queue.
-    std::future<std::shared_ptr<Messaging::BaseMessage>> msg1_future =
+    std::future<std::unique_ptr<Messaging::BaseMessage>> msg1_future =
         std::async(std::launch::async, &Messaging::MessageQueue::waitAndPop, &queue);
     queue.push(msg1);
     // BaseMessage has been added to the queue - calling get() on the future should return a pointer to msg1.

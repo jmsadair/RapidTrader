@@ -53,7 +53,7 @@ void placeOrders(FastExchange::Exchange &exchange, std::vector<Command::PlaceOrd
 
 static void BM_Exchange(benchmark::State &state)
 {
-    auto commands = generateOrderCommands(3000000, 2500);
+    auto commands = generateOrderCommands(4000000, 5000);
     for (auto _ : state)
     {
         state.PauseTiming();

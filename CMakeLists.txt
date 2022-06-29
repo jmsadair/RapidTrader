@@ -104,7 +104,6 @@ endif()
 # ------------------------------------------------------------------------------
 # Google Sanitizers
 # ------------------------------------------------------------------------------
-
 if(ENABLE_ASAN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1")
@@ -127,7 +126,6 @@ endif()
 # ------------------------------------------------------------------------------
 # Valgrind
 # ------------------------------------------------------------------------------
-
 set(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --leak-check=full")
 set(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --track-fds=yes")
 set(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --trace-children=yes")

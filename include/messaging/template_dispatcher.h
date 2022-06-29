@@ -89,9 +89,8 @@ private:
     {
         while (true)
         {
-            auto msg = msg_queue_ptr->waitAndPop();
             // Break if the message was successfully handled.
-            if (dispatch(msg))
+            if (dispatch(std::move(msg_queue_ptr->waitAndPop())))
                 break;
         }
     }
@@ -103,7 +102,7 @@ private:
      * @param msg the message that the supplied function will be called on.
      * @return true if the if the message is a match.
      */
-    inline bool dispatch(const std::shared_ptr<BaseMessage> &msg)
+    inline bool dispatch(std::unique_ptr<BaseMessage> msg)
     {
         auto *wrapped = dynamic_cast<WrappedMessage<Msg> *>(msg.get());
         if (wrapped)
@@ -113,7 +112,7 @@ private:
         }
         else
         {
-            return prev_dispatcher_ptr->dispatch(msg);
+            return prev_dispatcher_ptr->dispatch(std::move(msg));
         }
     }
 };

@@ -5,7 +5,7 @@ FastExchange::Exchange::Exchange()
     : matching_engine(std::make_shared<Matching::MatchingEngine>(matching_engine_event_handler))
     , api(matching_engine->getSender())
 {
-    Log::init();
+    //Log::init();
     matching_engine_thread = std::thread(&Matching::MatchingEngine::start, matching_engine);
     LOG_INFO("Exchange started...");
 }

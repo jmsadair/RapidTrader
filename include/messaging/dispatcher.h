@@ -76,8 +76,8 @@ private:
     {
         while (true)
         {
-            auto msg = msg_queue_ptr->waitAndPop();
-            dispatch(msg);
+            // Gives up ownership of the message.
+            dispatch(std::move(msg_queue_ptr->waitAndPop()));
         }
     }
 
@@ -88,9 +88,9 @@ private:
      * @return false if the message was unhandled.
      * @throws Exception if a CloseQueue Command is received.
      */
-    static inline bool dispatch(const std::shared_ptr<BaseMessage> &msg)
+    static inline bool dispatch(std::unique_ptr<BaseMessage> msg)
     {
-        if (dynamic_cast<WrappedMessage<CloseQueue> *>(msg.get()))
+        if (dynamic_cast<WrappedMessage<CloseQueue>*>(msg.get()))
         {
             throw CloseQueue();
         }

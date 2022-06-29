@@ -45,7 +45,7 @@ public:
     inline void push(const T &msg)
     {
         std::lock_guard<std::mutex> lk(m);
-        message_queue.push(std::make_shared<WrappedMessage<T>>(msg));
+        message_queue.push(std::make_unique<WrappedMessage<T>>(msg));
         c.notify_all();
     }
 
@@ -54,23 +54,21 @@ public:
      *
      * @return the oldest message from the queue.
      */
-    inline std::shared_ptr<BaseMessage> waitAndPop()
+    inline std::unique_ptr<BaseMessage> waitAndPop()
     {
         std::unique_lock<std::mutex> lk(m);
-        // Checks if queue is empty.
-        const auto is_not_empty = [&] { return !message_queue.empty(); };
         // Wait until queue is not empty.
-        c.wait(lk, is_not_empty);
-        auto msg = message_queue.front();
+        c.wait(lk, [&]{ return !message_queue.empty(); });
+        auto msg_ptr = std::move(message_queue.front());
         message_queue.pop();
-        return msg;
+        return msg_ptr;
     }
 
 private:
     std::mutex m;
     std::condition_variable c;
     // Stores pointers to message.
-    std::queue<std::shared_ptr<BaseMessage>> message_queue;
+    std::queue<std::unique_ptr<BaseMessage>> message_queue;
 };
 } // namespace Messaging
 #endif // FAST_EXCHANGE_MESSAGE_QUEUE_H
