@@ -1,5 +1,5 @@
-#ifndef FAST_EXCHANGE_TEMPLATE_DISPATCHER_H
-#define FAST_EXCHANGE_TEMPLATE_DISPATCHER_H
+#ifndef RAPID_TRADER_TEMPLATE_DISPATCHER_H
+#define RAPID_TRADER_TEMPLATE_DISPATCHER_H
 #include "message_queue.h"
 
 namespace Messaging {
@@ -117,4 +117,4 @@ private:
     }
 };
 } // namespace Messaging
-#endif // FAST_EXCHANGE_TEMPLATE_DISPATCHER_H
+#endif // RAPID_TRADER_TEMPLATE_DISPATCHER_H

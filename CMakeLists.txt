@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.6)
-project(fast_exchange LANGUAGES CXX)
+project(rapid_trader LANGUAGES CXX)
 
 include(FetchContent)
 find_package(Git REQUIRED)
@@ -13,8 +13,8 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
-set(EXCHANGE_INSTALL_LIB_DIR ${PROJECT_SOURCE_DIR}/lib)
-set(EXCHANGE_INSTALL_BIN_DIR ${CMAKE_INSTALL_BINDIR})
+set(TRADER_INSTALL_LIB_DIR ${PROJECT_SOURCE_DIR}/lib)
+set(TRADER_INSTALL_BIN_DIR ${CMAKE_INSTALL_BINDIR})
 
 # ------------------------------------------------------------------------------
 # Includes
@@ -22,9 +22,8 @@ set(EXCHANGE_INSTALL_BIN_DIR ${CMAKE_INSTALL_BINDIR})
 include_directories(include)
 include_directories(include/matching)
 include_directories(include/matching/orderbook)
-include_directories(include/message)
-include_directories(include/messaging)
-include_directories(include/event_handler)
+include_directories(include/concurrent)
+include_directories(include/result_handler)
 include_directories(include/utils)
 include_directories(${Boost_INCLUDE_DIRS})
 
@@ -132,46 +131,43 @@ set(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --trace-children
 set(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --error-exitcode=1")
 
 # ------------------------------------------------------------------------------
-# Fast Exchange Library
+# RapidTrader Library
 # ------------------------------------------------------------------------------
 file(GLOB_RECURSE LIB_HEADER_FILES "include/*.h")
 file(GLOB_RECURSE LIB_SOURCE_FILES "src/*.cpp")
-add_library(fast_exchange ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES})
-target_link_libraries(fast_exchange spdlog)
+add_library(rapid_trader ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES})
+target_link_libraries(rapid_trader spdlog)
 
 # ------------------------------------------------------------------------------
-# Fast Exchange Example
+# Rapid Trader Example
 # ------------------------------------------------------------------------------
-add_executable(fast_exchange_example examples/exchange_example.cpp)
-target_link_libraries(fast_exchange_example fast_exchange)
-install(TARGETS fast_exchange_example DESTINATION ${EXCHANGE_INSTALL_BIN_DIR}/examples)
+#add_executable(rapid_trader_example examples/rapid_trader_example.cpp)
+#target_link_libraries(rapid_trader_example rapid_trader)
+#install(TARGETS rapid_trader_example DESTINATION ${TRADER_INSTALL_BIN_DIR}/examples)
 
 # ------------------------------------------------------------------------------
-# Fast Exchange Benchmark
+# Rapid Trader Benchmark
 # ------------------------------------------------------------------------------
-add_executable(fast_exchange_benchmark
-        benchmark/bench_exchange.cpp
-        benchmark/bench_order.cpp
-        benchmark/bench_orderbook.cpp
-        benchmark/bench_price_level.cpp
-        )
-target_link_libraries(fast_exchange_benchmark benchmark::benchmark fast_exchange)
-install(TARGETS fast_exchange_benchmark DESTINATION ${EXCHANGE_INSTALL_BIN_DIR}/benchmarks)
+#add_executable(rapid_trader_benchmark)
+#target_link_libraries(rapid_trader_benchmark benchmark::benchmark rapid_trader)
+#install(TARGETS rapid_trader_benchmark DESTINATION ${TRADER_INSTALL_BIN_DIR}/benchmarks)
 
 # ------------------------------------------------------------------------------
-# Fast Exchange Tests
+# Rapid Trader Tests
 # ------------------------------------------------------------------------------
 include(CTest)
 include(GoogleTest)
 
-add_executable(fast_exchange_tests
+add_executable(rapid_trader_tests
+        test/test_level.cpp
+        test/test_market.cpp
         test/test_message_queue.cpp
         test/test_messaging.cpp
         test/test_order.cpp
         test/test_orderbook.cpp
         )
-target_link_libraries(fast_exchange_tests fast_exchange)
-target_link_libraries(fast_exchange_tests gtest_main)
-gtest_discover_tests(fast_exchange_tests)
-install(TARGETS fast_exchange_tests DESTINATION ${EXCHANGE_INSTALL_BIN_DIR}/tests)
+target_link_libraries(rapid_trader_tests rapid_trader)
+target_link_libraries(rapid_trader_tests gtest_main)
+gtest_discover_tests(rapid_trader_tests)
+install(TARGETS rapid_trader_tests DESTINATION ${TRADER_INSTALL_BIN_DIR}/tests)
 

@@ -1,5 +1,5 @@
-#ifndef FAST_EXCHANGE_RECEIVER_H
-#define FAST_EXCHANGE_RECEIVER_H
+#ifndef RAPID_TRADER_RECEIVER_H
+#define RAPID_TRADER_RECEIVER_H
 #include "dispatcher.h"
 #include "sender.h"
 
@@ -31,4 +31,4 @@ private:
     MessageQueue msg_queue;
 };
 } // namespace Messaging
-#endif // FAST_EXCHANGE_RECEIVER_H
+#endif // RAPID_TRADER_RECEIVER_H

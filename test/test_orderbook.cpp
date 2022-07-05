@@ -1,805 +1,496 @@
 #include <gtest/gtest.h>
-#include <thread>
-#include "orderbook/vector_orderbook.h"
+#include <queue>
+#include "map_orderbook.h"
+#include "order.h"
 
-class DebugEventHandler : public EventHandler
+TEST(OrderBookTest, BookEmptyShoudWork1)
 {
-public:
-
-    void handleTradeEvent(const Event::TradeEvent &trade_event) override
-    {
-        trade_events.push_back(trade_event);
-    };
-
-    void handleRejectEvent(const Event::RejectionEvent &reject_event) override
-    {
-        rejection_events.push_back(reject_event);
-    };
-
-    void handleExecutionEvent(const Event::OrderExecuted &execution_event) override
-    {
-        execution_events.push_back(execution_event);
-    };
-
-    std::vector<Event::OrderExecuted> execution_events;
-    std::vector<Event::RejectionEvent> rejection_events;
-    std::vector<Event::TradeEvent> trade_events;
-};
-
-/**
- * Order book should handle placing a GTC limit order when the book is empty.
- * Order should be unmatched since there are no other orders to match with and
- * should be inserted into the order book.
- */
-TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders1)
-{
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create a GTC order.
-    Order order = Order::askLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
-    // Place a new order.
-    book.placeOrder(order);
-    // Book should now contain the order since it is a GTC order and has no match.
-    ASSERT_TRUE(book.hasOrder(1));
-    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
-    // No events have occurred because the order placed was GTC and because it was unmatched.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
+    uint32_t symbol = 1;
+    MapOrderBook book{symbol};
+    // Book should be empty.
+    ASSERT_TRUE(book.empty());
 }
 
-/**
- * Order book should handle placing a IOC limit order when the book is empty.
- * Order should be unmatched since there are no other orders to match with and
- * should then be cancelled.
- */
-TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders2)
+TEST(OrderBookTest, BookIsEmptyShoudWork1)
 {
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create an IOC order.
-    Order order = Order::askLimit(OrderType::ImmediateOrCancel, 200, 100, 1, 1, 1);
-    // Place the IOC order.
-    book.placeOrder(order);
-    // Book should not contain the order since it is an IOC order - IOC orders are never inserted into the book.
-    ASSERT_FALSE(book.hasOrder(1));
-    // Order should have been rejected since it was unmatched.
-    auto rejection_event1 = handler.rejection_events.back();
-    ASSERT_EQ(1, rejection_event1.order_id);
-    ASSERT_EQ(1, rejection_event1.user_id);
-    ASSERT_EQ(200, rejection_event1.quantity_rejected);
-    ASSERT_EQ(1, rejection_event1.symbol_id);
-    handler.rejection_events.pop_back();
-    // There should not be any other messages other than the single rejection.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
+    uint32_t symbol = 1;
+    MapOrderBook book{symbol};
+
+    // Create LIMIT BID GTC order.
+    OrderAction action1 = OrderAction::Limit;
+    OrderSide side1 = OrderSide::Bid;
+    OrderType type1 = OrderType::GoodTillCancel;
+    uint32_t quantity1 = 200;
+    uint32_t price1 = 350;
+    uint64_t id1 = 1;
+    Order order1{action1, side1, type1, symbol, price1, quantity1, id1};
+    book.addOrder(order1);
+
+    // Book should not be empty.
+    ASSERT_FALSE(book.empty());
 }
 
-/**
- * Order book should handle placing GTC limit orders when the book is not empty.
- * Orders should be unmatched since they are on the same side of the book.
- */
-TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders3)
+TEST(OrderBookTest, BookBestAskPriceShouldWork1)
 {
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create GTC orders on same side of book.
-    Order order1 = Order::askLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
-    Order order2 = Order::askLimit(OrderType::GoodTillCancel, 120, 200, 2, 2, 1);
-    // Place new orders.
-    book.placeOrder(order1);
-    book.placeOrder(order2);
-    // Book should now contain both orders since they are GTC orders that have no match.
-    // Orders on the same side of the book should never match with one another.
-    ASSERT_TRUE(book.hasOrder(1));
-    ASSERT_TRUE(book.hasOrder(2));
-    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
-    ASSERT_EQ(book.getOrder(2).quantity_executed, 0);
-    // Neither order should have been matched nor rejected - there should not be any messages.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
+    uint32_t symbol = 1;
+    MapOrderBook book{symbol};
+
+    // Best ask price should be 0 when book is empty.
+    ASSERT_EQ(book.bestAsk(), std::numeric_limits<uint32_t>::max());
+
+    // Create LIMIT BID GTC order.
+    OrderAction action1 = OrderAction::Limit;
+    OrderSide side1 = OrderSide::Ask;
+    OrderType type1 = OrderType::GoodTillCancel;
+    uint32_t quantity1 = 200;
+    uint32_t price1 = 350;
+    uint64_t id1 = 1;
+    Order order1{action1, side1, type1, symbol, price1, quantity1, id1};
+    book.addOrder(order1);
+
+    // Best ask price should now be thew price of the order that was added.
+    ASSERT_EQ(book.bestAsk(), price1);
 }
 
-/**
- * Order book should handle placing GTC limit orders on the same side of the book.
- * Orders should not be matched since they are not at matchable prices.
- */
-TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders4)
+TEST(OrderBookTest, BookExecuteWorks1)
 {
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create GTC orders on different sides of the book, but unmatchable price levels.
-    Order order1 = Order::askLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
-    Order order2 = Order::askLimit(OrderType::GoodTillCancel, 120, 50, 2, 2, 1);
-    // Place new orders.
-    book.placeOrder(order1);
-    book.placeOrder(order2);
-    // Book should now contain both orders since they are GTC orders that have no match.
-    // Orders on the same side of the book should never match with one another.
-    ASSERT_TRUE(book.hasOrder(1));
-    ASSERT_TRUE(book.hasOrder(2));
-    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
-    ASSERT_EQ(book.getOrder(2).quantity_executed, 0);
-    // Neither order should have been rejected nor traded - there should not be any messages.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
+    uint32_t symbol = 1;
+    MapOrderBook book{symbol};
+
+    // Create LIMIT BID GTC order.
+    OrderAction action1 = OrderAction::Limit;
+    OrderSide side1 = OrderSide::Ask;
+    OrderType type1 = OrderType::GoodTillCancel;
+    uint32_t quantity1 = 200;
+    uint32_t price1 = 350;
+    uint64_t id1 = 1;
+    Order order1{action1, side1, type1, symbol, price1, quantity1, id1};
+    book.addOrder(order1);
+
+    // Execution data.
+    uint64_t executed_quantity = 100;
+    uint32_t executed_price = 250;
+
+    // Execute the order.
+    book.executeOrder(id1, executed_quantity, executed_price);
+
+    // Open quantity should now be 100.
+    ASSERT_EQ(book.getOrder(id1).getOpenQuantity(), quantity1 - executed_quantity);
+    // Executed quantity should now be 100.
+    ASSERT_EQ(book.getOrder(id1).getExecutedQuantity(), executed_quantity);
+    // Last executed price should now be 250.
+    ASSERT_EQ(book.getOrder(id1).getLastExecutedPrice(), executed_price);
 }
 
-/**
- * Order book should handle placing a FOK limit order that cannot be filled in its entirety.
- * The order should be rejected and none of the GTC orders should have been modified.
- */
-TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders5)
+TEST(OrderBookTest, BookExecuteWorks2)
 {
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create GTC orders.
-    Order order1 = Order::askLimit(OrderType::GoodTillCancel, 40, 100, 1, 1, 1);
-    Order order2 = Order::askLimit(OrderType::GoodTillCancel, 120, 50, 2, 2, 1);
-    Order order3 = Order::askLimit(OrderType::GoodTillCancel, 200, 110, 3, 3, 1);
-    // Create FOK order that cannot be filled in its entirety.
-    Order order4 = Order::bidLimit(OrderType::FillOrKill, 175, 105, 4, 4, 1);
-    // Place new GTC orders.
-    book.placeOrder(order1);
-    book.placeOrder(order2);
-    book.placeOrder(order3);
-    // Place FOK order.
-    book.placeOrder(order4);
-    // Book should contain all GTC orders since the FOK order could not be executed in full.
-    ASSERT_TRUE(book.hasOrder(1));
-    ASSERT_TRUE(book.hasOrder(2));
-    ASSERT_TRUE(book.hasOrder(3));
-    // None of the GTC order should have been traded.
-    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
-    ASSERT_EQ(book.getOrder(2).quantity_executed, 0);
-    ASSERT_EQ(book.getOrder(3).quantity_executed, 0);
-    // FOK should have been rejected since it could not be executed in full.
-    auto rejection_event1 = handler.rejection_events.back();
-    handler.rejection_events.pop_back();
-    ASSERT_EQ(4, rejection_event1.order_id);
-    ASSERT_EQ(4, rejection_event1.user_id);
-    ASSERT_EQ(175, rejection_event1.quantity_rejected);
-    ASSERT_EQ(1, rejection_event1.symbol_id);
-    // There should not be any other messages.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
+    uint32_t symbol = 1;
+    MapOrderBook book{symbol};
+
+    // Create LIMIT BID GTC order.
+    OrderAction action1 = OrderAction::Limit;
+    OrderSide side1 = OrderSide::Ask;
+    OrderType type1 = OrderType::GoodTillCancel;
+    uint32_t quantity1 = 200;
+    uint32_t price1 = 350;
+    uint64_t id1 = 1;
+    Order order1{action1, side1, type1, symbol, price1, quantity1, id1};
+    book.addOrder(order1);
+
+    // Execution data.
+    uint64_t executed_quantity = 100;
+
+    // Execute the order.
+    book.executeOrder(id1, executed_quantity);
+
+    // Open quantity should now be 100.
+    ASSERT_EQ(book.getOrder(id1).getOpenQuantity(), quantity1 - executed_quantity);
+    // Executed quantity should now be 100.
+    ASSERT_EQ(book.getOrder(id1).getExecutedQuantity(), executed_quantity);
+    // Last executed price should be the price of the order.
+    ASSERT_EQ(book.getOrder(id1).getLastExecutedPrice(), price1);
 }
 
-/**
- * Order book should handle placing a market order that cannot be filled (not enough volume for the
- * symbol). The entire quantity of the order should be cancelled.
- */
-TEST(VectorOrderBookTest, BookShouldHandleUnmatchedOrders6)
+TEST(OrderBookTest, BookCancelWorks1)
 {
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create a market order.
-    Order order1 = Order::askMarket(100, 1, 1, 1);
-    // Place the market order.
-    book.placeOrder(order1);
-    // Book should not contain order since it was cancelled.
-    ASSERT_FALSE(book.hasOrder(1));
-    // Entire Quantity of the order should have been rejected since the book was empty.
-    auto rejection_event1 = handler.rejection_events.back();
-    handler.rejection_events.pop_back();
-    ASSERT_EQ(1, rejection_event1.order_id);
-    ASSERT_EQ(1, rejection_event1.user_id);
-    ASSERT_EQ(100, rejection_event1.quantity_rejected);
-    ASSERT_EQ(1, rejection_event1.symbol_id);
-    // There should not be any other messages.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
+    uint32_t symbol = 1;
+    MapOrderBook book{symbol};
+
+    // Create LIMIT BID GTC order.
+    OrderAction action1 = OrderAction::Limit;
+    OrderSide side1 = OrderSide::Ask;
+    OrderType type1 = OrderType::GoodTillCancel;
+    uint32_t quantity1 = 200;
+    uint32_t price1 = 350;
+    uint64_t id1 = 1;
+    Order order1{action1, side1, type1, symbol, price1, quantity1, id1};
+    book.addOrder(order1);
+
+    // Quantity to cancel.
+    uint64_t cancel_quantity = 100;
+
+    // Cancel the order.
+    book.cancelOrder(id1, cancel_quantity);
+
+    // Open quantity should now be 100.
+    ASSERT_EQ(book.getOrder(id1).getOpenQuantity(), quantity1 - cancel_quantity);
+    // Executed quantity should still be 0.
+    ASSERT_EQ(book.getOrder(id1).getExecutedQuantity(), 0);
 }
 
-/**
- * Order book should handle reducing limit orders.
- */
-TEST(VectorOrderBookTest, BookShouldReduceOrders1)
+TEST(OrderBookTest, BookDeleteWorks1)
 {
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create a GTC order.
-    Order order = Order::askLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
-    // Place a new GTC order.
-    book.placeOrder(order);
-    // Order should be inserted into the book since there are no other orders to match with.
-    ASSERT_TRUE(book.hasOrder(1));
-    // Cancel the order that was just placed.
-    book.reduceOrder(1, 50);
-    // The order was reduced by 50 but should still be in the book.
-    ASSERT_TRUE(book.hasOrder(1));
-    // Order should now have quantity of 150.
-    ASSERT_EQ(book.getOrder(1).quantity, 150);
-    // Order should not have been traded, so no other messages should have been sent.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
+    uint32_t symbol = 1;
+    MapOrderBook book{symbol};
+
+    // Create LIMIT BID GTC order.
+    OrderAction action1 = OrderAction::Limit;
+    OrderSide side1 = OrderSide::Ask;
+    OrderType type1 = OrderType::GoodTillCancel;
+    uint32_t quantity1 = 200;
+    uint32_t price1 = 350;
+    uint64_t id1 = 1;
+    Order order1{action1, side1, type1, symbol, price1, quantity1, id1};
+    book.addOrder(order1);
+
+    // Create LIMIT BID GTC order.
+    OrderAction action2 = OrderAction::Limit;
+    OrderSide side2 = OrderSide::Ask;
+    OrderType type2 = OrderType::GoodTillCancel;
+    uint32_t quantity2 = 100;
+    uint32_t price2 = 400;
+    uint64_t id2 = 2;
+    Order order2{action2, side2, type2, symbol, price2, quantity2, id2};
+    book.addOrder(order2);
+
+    // Delete the second order.
+    book.deleteOrder(id2);
+
+    // Order should not be in book.
+    ASSERT_FALSE(book.hasOrder(id2));
+    // Best price should be price of first order.
+    ASSERT_EQ(book.bestAsk(), price1);
 }
 
-/**
- * Order book should handle reducing a limit order that is partially executed.
- * The order's quantity is reduced by an amount that places the quantity below the
- * executed quantity, and so the order should be removed from the book.
- */
-TEST(VectorOrderBookTest, BookShouldReduceOrders2)
+TEST(OrderBookTest, BookBestBidPriceShouldWork1)
 {
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create GTC orders that can match.
-    Order order1 = Order::askLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
-    Order order2 = Order::bidLimit(OrderType::GoodTillCancel, 100, 250, 2, 2, 1);
-    // Place a new GTC order.
-    book.placeOrder(order1);
-    // Order should be inserted into the book since there are no other orders to match with.
-    ASSERT_TRUE(book.hasOrder(1));
-    // Place a new GTC order that can match with the first order placed.
-    book.placeOrder(order2);
-    // Order should be filled in full and therefore not inserted into the book.
-    ASSERT_FALSE(book.hasOrder(2));
-    // Reduce the first order by 150. The order has an original quantity of 200 and 100 of those were executed.
-    // Because reducing the order by 150 would mean its new quantity is 50, it is removed from the book.
-    book.reduceOrder(1, 150);
-    ASSERT_FALSE(book.hasOrder(1));
-    // Trade event for first order matching with second.
-    auto trade_event1 = handler.trade_events.back();
-    handler.trade_events.pop_back();
-    ASSERT_EQ(trade_event1.order_id, 1);
-    ASSERT_EQ(trade_event1.user_id, 1);
-    ASSERT_EQ(trade_event1.matched_order_id, 2);
-    ASSERT_EQ(trade_event1.matched_order_price, 250);
-    ASSERT_EQ(trade_event1.quantity, 100);
-    // First order was executed completely due to reduction.
-    auto execution_event1 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event1.order_id, 1);
-    ASSERT_EQ(execution_event1.user_id, 1);
-    ASSERT_EQ(execution_event1.order_price, 100);
-    ASSERT_EQ(execution_event1.order_quantity, 100);
-    // Second order was executed completely.
-    auto execution_event2 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event2.order_id, 2);
-    ASSERT_EQ(execution_event2.user_id, 2);
-    ASSERT_EQ(execution_event2.order_price, 250);
-    ASSERT_EQ(execution_event2.order_quantity, 100);
-    // Order should not have been traded, so no other messages should have been sent.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
+    uint32_t symbol = 1;
+    MapOrderBook book{symbol};
+
+    // Best bid price should be 0 when book is empty.
+    ASSERT_EQ(book.bestBid(), 0);
+
+    // Create LIMIT BID GTC order.
+    OrderAction action1 = OrderAction::Limit;
+    OrderSide side1 = OrderSide::Bid;
+    OrderType type1 = OrderType::GoodTillCancel;
+    uint32_t quantity1 = 200;
+    uint32_t price1 = 350;
+    uint64_t id1 = 1;
+    Order order1{action1, side1, type1, symbol, price1, quantity1, id1};
+    book.addOrder(order1);
+
+    // Best ask price should now be thew price of the order that was added.
+    ASSERT_EQ(book.bestBid(), price1);
 }
 
-/**
- * Order book should handle cancelling a limit order when it is the only order in the book.
- */
-TEST(VectorOrderBookTest, BookShouldCancelOrders1)
+TEST(OrderBookTest, BookShouldMatch1)
 {
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create a GTC order.
-    Order order = Order::askLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
-    // Place a new GTC order.
-    book.placeOrder(order);
-    // Order should be inserted into the book since there are no other orders to match with.
-    ASSERT_TRUE(book.hasOrder(1));
-    // Cancel the order that was just placed.
-    book.cancelOrder(1);
-    // The order was cancelled - it should no longer be in the book.
-    ASSERT_FALSE(book.hasOrder(1));
-    auto rejection_event1 = handler.rejection_events.back();
-    handler.rejection_events.pop_back();
-    ASSERT_EQ(1, rejection_event1.order_id);
-    ASSERT_EQ(1, rejection_event1.user_id);
-    ASSERT_EQ(200, rejection_event1.quantity_rejected);
-    ASSERT_EQ(1, rejection_event1.symbol_id);
-    // Order should not have been traded, so no other messages should have been sent.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
+    uint32_t symbol = 1;
+    MapOrderBook book{symbol};
+
+    // Create a queue to monitor processed orders.
+    std::queue<Order> processed_orders;
+
+    // Create LIMIT BID GTC order.
+    OrderAction action1 = OrderAction::Limit;
+    OrderSide side1 = OrderSide::Bid;
+    OrderType type1 = OrderType::GoodTillCancel;
+    uint32_t quantity1 = 200;
+    uint32_t price1 = 350;
+    uint64_t id1 = 1;
+    Order order1{action1, side1, type1, symbol, price1, quantity1, id1};
+    book.addOrder(order1);
+
+    // There should be no orders to match with.
+    ASSERT_FALSE(book.processMatching(processed_orders));
+
+    // Create LIMIT ASK GTC order.
+    OrderAction action2 = OrderAction::Limit;
+    OrderSide side2 = OrderSide::Ask;
+    OrderType type2 = OrderType::GoodTillCancel;
+    uint32_t quantity2 = 100;
+    uint32_t price2 = 100;
+    uint64_t id2 = 2;
+    Order order2{action2, side2, type2, symbol, price2, quantity2, id2};
+    book.addOrder(order2);
+
+    // Orders should have been matched.
+    ASSERT_TRUE(book.processMatching(processed_orders));
+
+    // Order 1 match.
+    Order &processed_order1 = processed_orders.front();
+    ASSERT_EQ(processed_order1.getOrderID(), id1);
+    ASSERT_EQ(processed_order1.getExecutedQuantity(), quantity2);
+    ASSERT_EQ(processed_order1.getLastExecutedPrice(), price2);
+    processed_orders.pop();
+
+    // Order 2 match.
+    Order &processed_order2 = processed_orders.front();
+    ASSERT_EQ(processed_order2.getOrderID(), id2);
+    ASSERT_EQ(processed_order2.getExecutedQuantity(), quantity2);
+    ASSERT_EQ(processed_order2.getLastExecutedPrice(), price1);
+
+    processed_orders.pop();
+
+    // No other orders should have been processed.
+    ASSERT_TRUE(processed_orders.empty());
 }
 
-/**
- * Order book should handle cancelling a limit order when there are multiple orders in the book.
- */
-TEST(VectorOrderBookTest, BookShouldCancelOrders2)
+TEST(OrderBookTest, BookShouldMatch2)
 {
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create GTC orders on the same side of the book.
-    Order order1 = Order::bidLimit(OrderType::GoodTillCancel, 200, 100, 1, 1, 1);
-    Order order2 = Order::bidLimit(OrderType::GoodTillCancel, 200, 100, 2, 2, 1);
-    Order order3 = Order::bidLimit(OrderType::GoodTillCancel, 200, 100, 3, 3, 1);
-    // Place the GTC orders - all orders should be inserted since there are no orders to match with.
-    book.placeOrder(order1);
-    ASSERT_TRUE(book.hasOrder(1));
-    book.placeOrder(order2);
-    ASSERT_TRUE(book.hasOrder(2));
-    book.placeOrder(order3);
-    ASSERT_TRUE(book.hasOrder(3));
-    // Cancel the second order the was placed.
-    book.cancelOrder(2);
-    // The second order was cancelled and so it should no longer be in the book.
-    ASSERT_FALSE(book.hasOrder(2));
-    auto rejection_event1 = handler.rejection_events.back();
-    handler.rejection_events.pop_back();
-    ASSERT_EQ(2, rejection_event1.order_id);
-    ASSERT_EQ(2, rejection_event1.user_id);
-    ASSERT_EQ(200, rejection_event1.quantity_rejected);
-    ASSERT_EQ(1, rejection_event1.symbol_id);
-    // Order should not have been traded, so no other messages should have been sent.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
+    uint32_t symbol = 1;
+    MapOrderBook book{symbol};
+
+    // Create a queue to monitor processed orders.
+    std::queue<Order> processed_orders;
+
+    // Create LIMIT ASK GTC order.
+    OrderAction action1 = OrderAction::Limit;
+    OrderSide side1 = OrderSide::Ask;
+    OrderType type1 = OrderType::GoodTillCancel;
+    uint32_t quantity1 = 50;
+    uint32_t price1 = 100;
+    uint64_t id1 = 1;
+    Order order1{action1, side1, type1, symbol, price1, quantity1, id1};
+    book.addOrder(order1);
+
+    // There should be no orders to match with.
+    ASSERT_FALSE(book.processMatching(processed_orders));
+
+    // Create LIMIT ASK GTC order.
+    OrderAction action2 = OrderAction::Limit;
+    OrderSide side2 = OrderSide::Ask;
+    OrderType type2 = OrderType::GoodTillCancel;
+    uint32_t quantity2 = 100;
+    uint32_t price2 = 101;
+    uint64_t id2 = 2;
+    Order order2{action2, side2, type2, symbol, price2, quantity2, id2};
+    book.addOrder(order2);
+
+    // There should be no orders to match with.
+    ASSERT_FALSE(book.processMatching(processed_orders));
+
+    // Create LIMIT ASK GTC order.
+    OrderAction action3 = OrderAction::Limit;
+    OrderSide side3 = OrderSide::Ask;
+    OrderType type3 = OrderType::GoodTillCancel;
+    uint32_t quantity3 = 200;
+    uint32_t price3 = 102;
+    uint64_t id3 = 3;
+    Order order3{action3, side3, type3, symbol, price3, quantity3, id3};
+    book.addOrder(order3);
+
+    // There should be no orders to match with.
+    ASSERT_FALSE(book.processMatching(processed_orders));
+
+    // Create LIMIT BID GTC order.
+    OrderAction action4 = OrderAction::Limit;
+    OrderSide side4 = OrderSide::Bid;
+    OrderType type4 = OrderType::GoodTillCancel;
+    uint32_t quantity4 = 400;
+    uint32_t price4 = 101;
+    uint64_t id4 = 4;
+    Order order4{action4, side4, type4, symbol, price4, quantity4, id4};
+    book.addOrder(order4);
+
+    // There should be matched orders.
+    ASSERT_TRUE(book.processMatching(processed_orders));
+
+    // Order 4 match.
+    Order &processed_order1 = processed_orders.front();
+    ASSERT_EQ(processed_order1.getOrderID(), id4);
+    ASSERT_EQ(processed_order1.getExecutedQuantity(), quantity1);
+    ASSERT_EQ(processed_order1.getLastExecutedPrice(), price1);
+    processed_orders.pop();
+
+    // Order 1 match.
+    Order &processed_order2 = processed_orders.front();
+    ASSERT_EQ(processed_order2.getOrderID(), id1);
+    ASSERT_EQ(processed_order2.getExecutedQuantity(), quantity1);
+    ASSERT_EQ(processed_order2.getLastExecutedPrice(), price4);
+    processed_orders.pop();
+
+    // Order 4 match.
+    Order &processed_order3 = processed_orders.front();
+    ASSERT_EQ(processed_order3.getOrderID(), id4);
+    ASSERT_EQ(processed_order3.getExecutedQuantity(), quantity2 + quantity1);
+    ASSERT_EQ(processed_order3.getLastExecutedPrice(), price2);
+    processed_orders.pop();
+
+    // Order 2 match.
+    Order &processed_order4 = processed_orders.front();
+    ASSERT_EQ(processed_order4.getOrderID(), id2);
+    ASSERT_EQ(processed_order4.getExecutedQuantity(), quantity2);
+    ASSERT_EQ(processed_order4.getLastExecutedPrice(), price4);
+    processed_orders.pop();
+
+    // No other orders should have been processed.
+    ASSERT_TRUE(processed_orders.empty());
 }
 
-/**
- * Order book should handle a single match between GTC limit orders where both orders are fully executed.
- */
-TEST(VectorOrderBookTest, BookShouldMatchOrders1)
+TEST(OrderBookTest, BookShouldMatch3)
 {
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create GTC orders on different sides of the book, with matchable price levels.
-    Order order1 = Order::bidLimit(OrderType::GoodTillCancel, 100, 100, 1, 1, 1);
-    Order order2 = Order::askLimit(OrderType::GoodTillCancel, 100, 100, 2, 2, 1);
-    // Place new order.
-    book.placeOrder(order1);
-    // Book should now contain the first order since it has no match.
-    ASSERT_TRUE(book.hasOrder(1));
-    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
-    // Place a second order at the same price level and same quantity as the first order.
-    // Both orders should be completely filled.
-    book.placeOrder(order2);
-    // Second order should have never been inserted into the book.
-    ASSERT_FALSE(book.hasOrder(2));
-    // First order should have been removed.
-    ASSERT_FALSE(book.hasOrder(1));
-    // Check the receiver for result message.
-    auto event1 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(event1.order_id, 2);
-    ASSERT_EQ(event1.user_id, 2);
-    ASSERT_EQ(event1.order_price, 100);
-    ASSERT_EQ(event1.order_quantity, 100);
-    auto event2 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(event2.order_id, 1);
-    ASSERT_EQ(event2.user_id, 1);
-    ASSERT_EQ(event2.order_price, 100);
-    ASSERT_EQ(event2.order_quantity, 100);
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
+    uint32_t symbol = 1;
+    MapOrderBook book{symbol};
+
+    // Create a queue to monitor processed orders.
+    std::queue<Order> processed_orders;
+
+    // Create LIMIT ASK GTC order.
+    OrderAction action1 = OrderAction::Limit;
+    OrderSide side1 = OrderSide::Ask;
+    OrderType type1 = OrderType::GoodTillCancel;
+    uint32_t quantity1 = 50;
+    uint32_t price1 = 1;
+    uint64_t id1 = 1;
+    Order order1{action1, side1, type1, symbol, price1, quantity1, id1};
+    book.addOrder(order1);
+
+    // There should be no orders to match with.
+    ASSERT_FALSE(book.processMatching(processed_orders));
+
+    // Create LIMIT ASK GTC order.
+    OrderAction action2 = OrderAction::Limit;
+    OrderSide side2 = OrderSide::Ask;
+    OrderType type2 = OrderType::GoodTillCancel;
+    uint32_t quantity2 = 100;
+    uint32_t price2 = 2;
+    uint64_t id2 = 2;
+    Order order2{action2, side2, type2, symbol, price2, quantity2, id2};
+    book.addOrder(order2);
+
+    // There should be no orders to match with.
+    ASSERT_FALSE(book.processMatching(processed_orders));
+
+    // Create MARKET BID IOC order.
+    OrderAction action3 = OrderAction::Market;
+    OrderSide side3 = OrderSide::Bid;
+    OrderType type3 = OrderType::ImmediateOrCancel;
+    uint32_t quantity3 = 150;
+    uint32_t price3 = std::numeric_limits<uint32_t>::max();
+    uint64_t id3 = 3;
+    Order order3{action3, side3, type3, symbol, price3, quantity3, id3};
+
+    // There should be matches.
+    ASSERT_TRUE(book.processMatching(order3, processed_orders));
+
+    // Order 3 match.
+    Order &processed_order1 = processed_orders.front();
+    ASSERT_EQ(processed_order1.getOrderID(), id3);
+    ASSERT_EQ(processed_order1.getExecutedQuantity(), quantity1);
+    ASSERT_EQ(processed_order1.getLastExecutedPrice(), price1);
+    processed_orders.pop();
+
+    // Order 1 match.
+    Order &processed_order2 = processed_orders.front();
+    ASSERT_EQ(processed_order2.getOrderID(), id1);
+    ASSERT_EQ(processed_order2.getExecutedQuantity(), quantity1);
+    ASSERT_EQ(processed_order2.getLastExecutedPrice(), price1);
+    processed_orders.pop();
+
+    // Order 3 match.
+    Order &processed_order3 = processed_orders.front();
+    ASSERT_EQ(processed_order3.getOrderID(), id3);
+    ASSERT_EQ(processed_order3.getExecutedQuantity(), quantity1 + quantity2);
+    ASSERT_EQ(processed_order3.getLastExecutedPrice(), price2);
+    processed_orders.pop();
+
+    // Order 2 match.
+    Order &processed_order4 = processed_orders.front();
+    ASSERT_EQ(processed_order4.getOrderID(), id2);
+    ASSERT_EQ(processed_order4.getExecutedQuantity(), quantity2);
+    ASSERT_EQ(processed_order4.getLastExecutedPrice(), price2);
+    processed_orders.pop();
+
+    // No other orders should have been processed.
+    ASSERT_TRUE(processed_orders.empty());
 }
 
-/**
- * Order book should be able to handle a single match between GTC limit orders where one order is fully executed and
- * the other other is only partially executed.
- */
-TEST(VectorOrderBookTest, BookShouldMatchOrders2)
+TEST(OrderBookTest, BookShouldMatch4)
 {
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create GTC orders on different sides of the book, with matchable price levels.
-    Order order1 = Order::askLimit(OrderType::GoodTillCancel, 90, 100, 1, 1, 1);
-    Order order2 = Order::bidLimit(OrderType::GoodTillCancel, 100, 100, 2, 2, 1);
-    // Place new GTC order.
-    book.placeOrder(order1);
-    // Book should now contain the first order since it has no match.
-    ASSERT_TRUE(book.hasOrder(1));
-    // Get the first order and check that it is unmodified.
-    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
-    // Place a second GTC order at the same price level but greater quantity than the first order.
-    // First order placed should be filled, second order placed should be partially filled.
-    book.placeOrder(order2);
-    // Second order should have been inserted into the book since it was unfilled.
-    ASSERT_TRUE(book.hasOrder(2));
-    ASSERT_EQ(book.getOrder(2).quantity_executed, 90);
-    // First order should have been removed from the book.
-    ASSERT_FALSE(book.hasOrder(1));
-    // There should be a message indicating that the first order was executed.
-    auto execution_event1 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event1.order_id, 1);
-    ASSERT_EQ(execution_event1.user_id, 1);
-    ASSERT_EQ(execution_event1.order_quantity, 90);
-    ASSERT_EQ(execution_event1.order_price, 100);
-    // There should be a message indicating that the second order was traded with the first
-    auto trade_event1 = handler.trade_events.back();
-    handler.trade_events.pop_back();
-    ASSERT_EQ(trade_event1.order_id, 2);
-    ASSERT_EQ(trade_event1.user_id, 2);
-    ASSERT_EQ(trade_event1.matched_order_id, 1);
-    ASSERT_EQ(trade_event1.matched_order_price, 100);
-    ASSERT_EQ(trade_event1.quantity, 90);
-    // There should not be any other messages.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
-}
+    uint32_t symbol = 1;
+    MapOrderBook book{symbol};
 
-/**
- * Order book should be able to handle multiple matches between GTC limit orders - a GTC order is placed that matches with
- * multiple orders at different price levels.
- */
-TEST(VectorOrderBookTest, BookShouldMatchOrders3)
-{
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create GTC orders on different sides of the book with multiple matchable price levels.
-    Order order1 = Order::askLimit(OrderType::GoodTillCancel, 90, 100, 1, 1, 1);
-    Order order2 = Order::askLimit(OrderType::GoodTillCancel, 200, 120, 2, 2, 1);
-    Order order3 = Order::bidLimit(OrderType::GoodTillCancel, 200, 200, 3, 3, 1);
-    // Place new GTC order.
-    book.placeOrder(order1);
-    // Book should now contain the first order since it has no match.
-    ASSERT_TRUE(book.hasOrder(1));
-    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
-    // Place a new GTC order.
-    book.placeOrder(order2);
-    // Book should now contain the second order since it has no match.
-    ASSERT_TRUE(book.hasOrder(2));
-    ASSERT_EQ(book.getOrder(2).quantity_executed, 0);
-    // Place new GTC order on the opposite side of the book as the previous two orders.
-    // This order should match with the previous two orders.
-    book.placeOrder(order3);
-    // Order should have been executed and therefore never inserted into the book.
-    ASSERT_FALSE(book.hasOrder(3));
-    // Second order should still be in the book since it was not fully filled.
-    ASSERT_TRUE(book.hasOrder(2));
-    ASSERT_EQ(book.getOrder(2).quantity_executed, 200 - 90);
-    // First order should have been removed since it was fully filled.
-    ASSERT_FALSE(book.hasOrder(1));
-    // There should be a message indicating that the second order was traded with the third order.
-    auto trade_event1 = handler.trade_events.back();
-    handler.trade_events.pop_back();
-    ASSERT_EQ(trade_event1.order_id, 2);
-    ASSERT_EQ(trade_event1.user_id, 2);
-    ASSERT_EQ(trade_event1.matched_order_id, 3);
-    ASSERT_EQ(trade_event1.quantity, 200 - 90);
-    ASSERT_EQ(trade_event1.order_price, 120);
-    ASSERT_EQ(trade_event1.matched_order_price, 200);
-    // There should be a message indicating that the third order was traded with the first order.
-    auto trade_event2 = handler.trade_events.back();
-    handler.trade_events.pop_back();
-    ASSERT_EQ(trade_event2.order_id, 3);
-    ASSERT_EQ(trade_event2.user_id, 3);
-    ASSERT_EQ(trade_event2.matched_order_id, 1);
-    ASSERT_EQ(trade_event2.quantity, 90);
-    ASSERT_EQ(trade_event2.order_price, 200);
-    ASSERT_EQ(trade_event2.matched_order_price, 100);
-    // There should be a message indicating that the third order was executed.
-    auto execution_event1 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event1.order_id, 3);
-    ASSERT_EQ(execution_event1.user_id, 3);
-    ASSERT_EQ(execution_event1.order_quantity, 200);
-    ASSERT_EQ(execution_event1.order_price, 200);
-    // There should be a message indicating that the first order was executed.
-    auto execution_event3 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event3.order_id, 1);
-    ASSERT_EQ(execution_event3.user_id, 1);
-    ASSERT_EQ(execution_event3.order_quantity, 90);
-    ASSERT_EQ(execution_event3.order_price, 100);
-    // There should be no other messages.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
-}
+    // Create a queue to monitor processed orders.
+    std::queue<Order> processed_orders;
 
-/**
- * Order book should be able to handle IOC orders that are matched with GTC limit orders at multiple
- * price levels and are fully filled.
- */
-TEST(VectorOrderBookTest, BookShouldMatchOrders4)
-{
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create GTC orders on same side of the book with different price levels.
-    Order order1 = Order::askLimit(OrderType::GoodTillCancel, 90, 100, 1, 1, 1);
-    Order order2 = Order::askLimit(OrderType::GoodTillCancel, 100, 110, 2, 2, 1);
-    Order order3 = Order::bidLimit(OrderType::GoodTillCancel, 200, 90, 3, 3, 1);
-    // Create IOC order on opposite side of book as GTC ask orders.
-    Order order4 = Order::bidLimit(OrderType::ImmediateOrCancel, 190, 150, 4, 4, 1);
-    // Create IOC order on opposite side of book as GTC bid orders.
-    Order order5 = Order::askLimit(OrderType::ImmediateOrCancel, 200, 80, 5, 5, 1);
-    // Place the first GTC order.
-    book.placeOrder(order1);
-    // Book should now contain the first order since it has no match.
-    ASSERT_TRUE(book.hasOrder(1));
-    // Get the first order and check that it is unmodified.
-    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
-    // Place a second GTC order.
-    book.placeOrder(order2);
-    // Book should now contain the second order since it has no match.
-    ASSERT_TRUE(book.hasOrder(1));
-    // Get the second order and check that it is unmodified.
-    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
-    // Place a third GTC order.
-    book.placeOrder(order3);
-    // Book should now contain third order since it has no match.
-    ASSERT_TRUE(book.hasOrder(3));
-    // PLace the first IOC order - it should match with the first two orders placed.
-    book.placeOrder(order4);
-    // Third GTC order should still be in the book since it was on the opposite side.
-    ASSERT_TRUE(book.hasOrder(3));
-    // IOC orders and first two GTC orders should not been in the book.
-    ASSERT_FALSE(book.hasOrder(4));
-    ASSERT_FALSE(book.hasOrder(2));
-    ASSERT_FALSE(book.hasOrder(1));
-    // PLace the second IOC order - it should match with the third GTC order placed.
-    book.placeOrder(order5);
-    // IOC order and third GTC order should have matched and should not be in the book.
-    ASSERT_FALSE(book.hasOrder(5));
-    ASSERT_FALSE(book.hasOrder(3));
+    // Create LIMIT BID GTC order.
+    OrderAction action1 = OrderAction::Limit;
+    OrderSide side1 = OrderSide::Bid;
+    OrderType type1 = OrderType::GoodTillCancel;
+    uint32_t quantity1 = 50;
+    uint32_t price1 = 50;
+    uint64_t id1 = 1;
+    Order order1{action1, side1, type1, symbol, price1, quantity1, id1};
+    book.addOrder(order1);
 
-    // Notification that second IOC order was executed.
-    auto execution_event1 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event1.order_id, 5);
-    ASSERT_EQ(execution_event1.user_id, 5);
-    ASSERT_EQ(execution_event1.order_quantity, 200);
-    ASSERT_EQ(execution_event1.order_price, 80);
-    // Notification that third GTC order was executed.
-    auto execution_event2 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event2.order_id, 3);
-    ASSERT_EQ(execution_event2.user_id, 3);
-    ASSERT_EQ(execution_event2.order_quantity, 200);
-    ASSERT_EQ(execution_event2.order_price, 90);
-    // Notification that first IOC order was executed.
-    auto execution_event3 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event3.order_id, 4);
-    ASSERT_EQ(execution_event3.user_id, 4);
-    ASSERT_EQ(execution_event3.order_quantity, 190);
-    ASSERT_EQ(execution_event3.order_price, 150);
-    // Notification that second GTC order was executed.
-    auto execution_event4 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event4.order_id, 2);
-    ASSERT_EQ(execution_event4.user_id, 2);
-    ASSERT_EQ(execution_event4.order_quantity, 100);
-    ASSERT_EQ(execution_event4.order_price, 110);
-    // Notification that first GTC order was executed.
-    auto execution_event5 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event5.order_id, 1);
-    ASSERT_EQ(execution_event5.user_id, 1);
-    ASSERT_EQ(execution_event5.order_quantity, 90);
-    ASSERT_EQ(execution_event5.order_price, 100);
-    // Notification that the first GTC order was traded with first IOC order.
-    auto trade_event1 = handler.trade_events.back();
-    handler.trade_events.pop_back();
-    ASSERT_EQ(trade_event1.order_id, 4);
-    ASSERT_EQ(trade_event1.user_id, 4);
-    ASSERT_EQ(trade_event1.matched_order_id, 1);
-    ASSERT_EQ(trade_event1.matched_order_price, 100);
-    ASSERT_EQ(trade_event1.quantity, 90);
-    // There should not be any other notifications.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
-}
-/**
- * Order book should be able to handle FOK orders that are matched with GTC limit orders at multiple
- * price levels and are fully filled.
- */
-TEST(VectorOrderBookTest, BookShouldMatchOrders5)
-{
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create GTC orders on same side of the book with different price levels.
-    Order order1 = Order::askLimit(OrderType::GoodTillCancel, 90, 100, 1, 1, 1);
-    Order order2 = Order::askLimit(OrderType::GoodTillCancel, 100, 110, 2, 2, 1);
-    Order order3 = Order::bidLimit(OrderType::GoodTillCancel, 200, 90, 3, 3, 1);
-    // Create IOC order on opposite side of book as GTC ask orders.
-    Order order4 = Order::bidLimit(OrderType::FillOrKill, 190, 150, 4, 4, 1);
-    // Create IOC order on opposite side of book as GTC bid orders.
-    Order order5 = Order::askLimit(OrderType::FillOrKill, 200, 80, 5, 5, 1);
-    // Place the first GTC order.
-    book.placeOrder(order1);
-    // Book should now contain the first order since it has no match.
-    ASSERT_TRUE(book.hasOrder(1));
-    // Get the first order and check that it is unmodified.
-    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
-    // Place a second GTC order.
-    book.placeOrder(order2);
-    // Book should now contain the second order since it has no match.
-    ASSERT_TRUE(book.hasOrder(1));
-    // Get the second order and check that it is unmodified.
-    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
-    // Place a third GTC order.
-    book.placeOrder(order3);
-    // Book should now contain third order since it has no match.
-    ASSERT_TRUE(book.hasOrder(3));
-    // PLace the first IOC order - it should match with the first two orders placed.
-    book.placeOrder(order4);
-    // Third GTC order should still be in the book since it was on the opposite side.
-    ASSERT_TRUE(book.hasOrder(3));
-    // IOC orders and first two GTC orders should not been in the book.
-    ASSERT_FALSE(book.hasOrder(4));
-    ASSERT_FALSE(book.hasOrder(2));
-    ASSERT_FALSE(book.hasOrder(1));
-    // PLace the second IOC order - it should match with the third GTC order placed.
-    book.placeOrder(order5);
-    // IOC order and third GTC order should have matched and should not be in the book.
-    ASSERT_FALSE(book.hasOrder(5));
-    ASSERT_FALSE(book.hasOrder(3));
+    // There should be no orders to match with.
+    ASSERT_FALSE(book.processMatching(processed_orders));
 
-    // Notification that second IOC order was executed.
-    auto execution_event1 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event1.order_id, 5);
-    ASSERT_EQ(execution_event1.user_id, 5);
-    ASSERT_EQ(execution_event1.order_quantity, 200);
-    ASSERT_EQ(execution_event1.order_price, 80);
-    // Notification that third GTC order was executed.
-    auto execution_event2 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event2.order_id, 3);
-    ASSERT_EQ(execution_event2.user_id, 3);
-    ASSERT_EQ(execution_event2.order_quantity, 200);
-    ASSERT_EQ(execution_event2.order_price, 90);
-    // Notification that first IOC order was executed.
-    auto execution_event3 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event3.order_id, 4);
-    ASSERT_EQ(execution_event3.user_id, 4);
-    ASSERT_EQ(execution_event3.order_quantity, 190);
-    ASSERT_EQ(execution_event3.order_price, 150);
-    // Notification that second GTC order was executed.
-    auto execution_event4 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event4.order_id, 2);
-    ASSERT_EQ(execution_event4.user_id, 2);
-    ASSERT_EQ(execution_event4.order_quantity, 100);
-    ASSERT_EQ(execution_event4.order_price, 110);
-    // Notification that first GTC order was executed.
-    auto execution_event5 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event5.order_id, 1);
-    ASSERT_EQ(execution_event5.user_id, 1);
-    ASSERT_EQ(execution_event5.order_quantity, 90);
-    ASSERT_EQ(execution_event5.order_price, 100);
-    // Notification that the first GTC order was traded with first IOC order.
-    auto trade_event1 = handler.trade_events.back();
-    handler.trade_events.pop_back();
-    ASSERT_EQ(trade_event1.order_id, 4);
-    ASSERT_EQ(trade_event1.user_id, 4);
-    ASSERT_EQ(trade_event1.matched_order_id, 1);
-    ASSERT_EQ(trade_event1.matched_order_price, 100);
-    ASSERT_EQ(trade_event1.quantity, 90);
-    // There should not be any other notifications.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
-}
+    // Create LIMIT BID GTC order.
+    OrderAction action2 = OrderAction::Limit;
+    OrderSide side2 = OrderSide::Bid;
+    OrderType type2 = OrderType::GoodTillCancel;
+    uint32_t quantity2 = 1;
+    uint32_t price2 = 25;
+    uint64_t id2 = 2;
+    Order order2{action2, side2, type2, symbol, price2, quantity2, id2};
+    book.addOrder(order2);
 
-/**
- * Order book should be able to handle a market order that is fully executable.
- */
-TEST(VectorOrderBookTest, BookShouldMatchOrders6)
-{
-    // Make event handler for orderbook.
-    DebugEventHandler handler;
-    // Create the order book.
-    OrderBook::VectorOrderBook book{1, handler};
-    // Create GTC orders on same side of the book with different price levels.
-    Order order1 = Order::askLimit(OrderType::GoodTillCancel, 90, 100, 1, 1, 1);
-    Order order2 = Order::askLimit(OrderType::GoodTillCancel, 100, 110, 2, 2, 1);
-    Order order3 = Order::askLimit(OrderType::GoodTillCancel, 50, 110, 3, 3, 1);
-    // Create market order on opposite side of book as GTC orders.
-    Order order4 = Order::bidMarket(200, 4, 4, 1);
-    // Place the first GTC order.
-    book.placeOrder(order1);
-    // Book should now contain the first order since it has no match.
-    ASSERT_TRUE(book.hasOrder(1));
-    // Get the first order and check that it is unmodified.
-    ASSERT_EQ(book.getOrder(1).quantity_executed, 0);
-    // Place a second GTC order.
-    book.placeOrder(order2);
-    // Book should now contain the second order since it has no match.
-    ASSERT_TRUE(book.hasOrder(2));
-    // Get the second order and check that it is unmodified.
-    ASSERT_EQ(book.getOrder(2).quantity_executed, 0);
-    // Place a third GTC order.
-    book.placeOrder(order3);
-    // Book should now contain the third order since it has no match.
-    ASSERT_TRUE(book.hasOrder(3));
-    // Get the second order and check that it is unmodified.
-    ASSERT_EQ(book.getOrder(3).quantity_executed, 0);
-    // Place the market order - should match with the previous GTC orders.
-    book.placeOrder(order4);
-    // Book should not contain the market order or the orders that it was executed with.
-    ASSERT_FALSE(book.hasOrder(4));
-    ASSERT_FALSE(book.hasOrder(2));
-    ASSERT_FALSE(book.hasOrder(1));
-    // This order should not have been fully filled and should still be in the book.
-    ASSERT_TRUE(book.hasOrder(3));
-    ASSERT_EQ(book.getOrder(3).quantity_executed, 200 - 90 - 100);
-    // There should be a message indicating that the market order was executed.
-    auto execution_event3 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event3.order_id, 4);
-    ASSERT_EQ(execution_event3.user_id, 4);
-    ASSERT_EQ(execution_event3.order_quantity, 200);
-    ASSERT_EQ(execution_event3.order_price, 110);
-    // There should be a message indicating that the second GTC order was executed.
-    auto execution_event2 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event2.order_id, 2);
-    ASSERT_EQ(execution_event2.user_id, 2);
-    ASSERT_EQ(execution_event2.order_quantity, 100);
-    ASSERT_EQ(execution_event2.order_price, 110);
-    // There should be a message indicating that the first GTC order was executed.
-    auto execution_event1 = handler.execution_events.back();
-    handler.execution_events.pop_back();
-    ASSERT_EQ(execution_event1.order_id, 1);
-    ASSERT_EQ(execution_event1.user_id, 1);
-    ASSERT_EQ(execution_event1.order_quantity, 90);
-    ASSERT_EQ(execution_event1.order_price, 100);
-    // There should be a message indicating that the market order was traded with the third GTC order.
-    auto trade_event1 = handler.trade_events.back();
-    handler.trade_events.pop_back();
-    ASSERT_EQ(trade_event1.order_id, 3);
-    ASSERT_EQ(trade_event1.user_id, 3);
-    ASSERT_EQ(trade_event1.matched_order_id, 4);
-    ASSERT_EQ(trade_event1.matched_order_price, 110);
-    ASSERT_EQ(trade_event1.quantity, 200 - 90 - 100);
-    // There should be a message indicating that the market order was traded with the second GTC order.
-    auto trade_event2 = handler.trade_events.back();
-    handler.trade_events.pop_back();
-    ASSERT_EQ(trade_event2.order_id, 4);
-    ASSERT_EQ(trade_event2.user_id, 4);
-    ASSERT_EQ(trade_event2.matched_order_id, 2);
-    ASSERT_EQ(trade_event2.matched_order_price, 110);
-    ASSERT_EQ(trade_event2.quantity, 100);
-    // There should be a message indicating that the market order was traded with the first GTC order.
-    auto trade_event3 = handler.trade_events.back();
-    handler.trade_events.pop_back();
-    ASSERT_EQ(trade_event3.order_id, 4);
-    ASSERT_EQ(trade_event3.user_id, 4);
-    ASSERT_EQ(trade_event3.matched_order_id, 1);
-    ASSERT_EQ(trade_event3.matched_order_price, 100);
-    ASSERT_EQ(trade_event3.quantity, 90);
-    // There should not be any other messages.
-    ASSERT_TRUE(handler.trade_events.empty());
-    ASSERT_TRUE(handler.execution_events.empty());
-    ASSERT_TRUE(handler.rejection_events.empty());
+    // There should be no orders to match with.
+    ASSERT_FALSE(book.processMatching(processed_orders));
+
+    // Create MARKET ASK IOC order.
+    OrderAction action3 = OrderAction::Market;
+    OrderSide side3 = OrderSide::Ask;
+    OrderType type3 = OrderType::ImmediateOrCancel;
+    uint32_t quantity3 = 200;
+    uint32_t price3 = std::numeric_limits<uint32_t>::min();
+    uint64_t id3 = 3;
+    Order order3{action3, side3, type3, symbol, price3, quantity3, id3};
+
+    // There should be matches.
+    ASSERT_TRUE(book.processMatching(order3, processed_orders));
+
+    // Order 1 match.
+    Order &processed_order1 = processed_orders.front();
+    ASSERT_EQ(processed_order1.getOrderID(), id1);
+    ASSERT_EQ(processed_order1.getExecutedQuantity(), quantity1);
+    ASSERT_EQ(processed_order1.getLastExecutedPrice(), price1);
+    processed_orders.pop();
+
+    // Order 3 match.
+    Order &processed_order2 = processed_orders.front();
+    ASSERT_EQ(processed_order2.getOrderID(), id3);
+    ASSERT_EQ(processed_order2.getExecutedQuantity(), quantity1);
+    ASSERT_EQ(processed_order2.getLastExecutedPrice(), price1);
+    processed_orders.pop();
+
+    // Order 2 match.
+    Order &processed_order4 = processed_orders.front();
+    ASSERT_EQ(processed_order4.getOrderID(), id2);
+    ASSERT_EQ(processed_order4.getExecutedQuantity(), quantity2);
+    ASSERT_EQ(processed_order4.getLastExecutedPrice(), price2);
+    processed_orders.pop();
+
+    // Order 3 match.
+    Order &processed_order3 = processed_orders.front();
+    ASSERT_EQ(processed_order3.getOrderID(), id3);
+    ASSERT_EQ(processed_order3.getExecutedQuantity(), quantity1 + quantity2);
+    ASSERT_EQ(processed_order3.getLastExecutedPrice(), price2);
+    processed_orders.pop();
+
+    // No other orders should have been processed.
+    ASSERT_TRUE(processed_orders.empty());
 }

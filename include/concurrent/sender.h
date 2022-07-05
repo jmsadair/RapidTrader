@@ -1,5 +1,5 @@
-#ifndef FAST_EXCHANGE_SENDER_H
-#define FAST_EXCHANGE_SENDER_H
+#ifndef RAPID_TRADER_SENDER_H
+#define RAPID_TRADER_SENDER_H
 #include "message_queue.h"
 
 namespace Messaging {
@@ -43,4 +43,4 @@ private:
     MessageQueue *message_queue_ptr;
 };
 } // namespace Messaging
-#endif // FAST_EXCHANGE_SENDER_H
+#endif // RAPID_TRADER_SENDER_H

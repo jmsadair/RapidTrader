@@ -1,5 +1,5 @@
-#ifndef FAST_EXCHANGE_DISPATCHER_H
-#define FAST_EXCHANGE_DISPATCHER_H
+#ifndef RAPID_TRADER_DISPATCHER_H
+#define RAPID_TRADER_DISPATCHER_H
 #include "template_dispatcher.h"
 #include <exception>
 
@@ -90,7 +90,7 @@ private:
      */
     static inline bool dispatch(std::unique_ptr<BaseMessage> msg)
     {
-        if (dynamic_cast<WrappedMessage<CloseQueue>*>(msg.get()))
+        if (dynamic_cast<WrappedMessage<CloseQueue> *>(msg.get()))
         {
             throw CloseQueue();
         }
@@ -98,4 +98,4 @@ private:
     }
 };
 } // namespace Messaging
-#endif // FAST_EXCHANGE_DISPATCHER_H
+#endif // RAPID_TRADER_DISPATCHER_H

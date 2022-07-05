@@ -4,9 +4,9 @@
 #include "receiver.h"
 
 // Messages for testing.
-struct AddMessage
+struct Message1
 {};
-struct SubtractMessage
+struct Message2
 {};
 
 struct MessagingTester
@@ -19,9 +19,7 @@ struct MessagingTester
         {
             while (true)
             {
-                receiver.wait()
-                    .handle<AddMessage>([&](const AddMessage &msg) { ++num; })
-                    .handle<SubtractMessage>([&](const SubtractMessage &msg) { --num; });
+                receiver.wait().handle<Message1>([&](const Message1 &msg) { ++num; }).handle<Message2>([&](const Message2 &msg) { --num; });
             }
         }
         catch (const Messaging::CloseQueue &)
@@ -33,19 +31,24 @@ TEST(MessagingTest, SenderAndRecieverShouldWork)
 {
     MessagingTester tester;
     auto sender = static_cast<Messaging::Sender>(tester.receiver);
+
+    // Spawn a thread for handling incoming messages.
     std::thread t1{&MessagingTester::start, &tester};
+
     // Initialize some message for testing.
-    AddMessage test_msg1;
-    SubtractMessage test_msg2;
-    // Expected value after sending the first message.
-    int expected_num1 = 2;
-    // Add 3 to num.
+    Message1 test_msg1;
+    Message2 test_msg2;
+
+    // Send a message that increments num.
     sender.send(test_msg1);
-    sender.send(test_msg1);
-    sender.send(test_msg1);
-    // Subtract 1 from num.
+
+    // Send a message that decrements num.
     sender.send(test_msg2);
+
+    // Close out the message queue and join the thread.
     sender.send(Messaging::CloseQueue());
     t1.join();
-    ASSERT_EQ(tester.num, expected_num1);
+
+    // Number should be 0.
+    ASSERT_EQ(tester.num, 0);
 }

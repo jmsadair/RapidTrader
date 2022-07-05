@@ -2,7 +2,7 @@
 #include <future>
 #include "message_queue.h"
 
-// A simple message ADT for testing purposes.
+// A simple message for testing purposes.
 struct TestMessage
 {
     std::string text;

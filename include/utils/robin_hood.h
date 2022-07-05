@@ -2653,7 +2653,7 @@ private:
         // we got space left, try to make info smaller
         mInfoInc = static_cast<uint8_t>(mInfoInc >> 1U);
 
-        // remove one bit of the hash, leaving more space for the distance info.
+        // deleteOrder one bit of the hash, leaving more space for the distance info.
         // This is extremely fast because we can operate on 8 bytes at once.
         ++mInfoHashShift;
         auto const numElementsWithBuffer = calcNumElementsWithBuffer(mMask + 1);
