@@ -74,6 +74,7 @@ TEST(MarketTest, AddSymbolShouldWork1)
     notification_processor.shutdown();
 
     // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
@@ -100,12 +101,14 @@ TEST(MarketTest, AddOrderBookShouldWork1)
     notification_processor.shutdown();
 
     // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
 
     // Check that book was added.
+    ASSERT_TRUE(market.hasOrderbook(symbol_id));
     ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
     notification_processor.add_book_notifications.pop();
     ASSERT_TRUE(notification_processor.empty());
@@ -144,12 +147,14 @@ TEST(MarketTest, AddOrderShouldWork1)
     notification_processor.shutdown();
 
     // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
 
     // Check that book was added.
+    ASSERT_TRUE(market.hasOrderbook(symbol_id));
     ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
     notification_processor.add_book_notifications.pop();
 
@@ -208,12 +213,14 @@ TEST(MarketTest, AddOrderShouldWork2)
     notification_processor.shutdown();
 
     // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
 
     // Check that book was added.
+    ASSERT_TRUE(market.hasOrderbook(symbol_id));
     ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
     notification_processor.add_book_notifications.pop();
 
@@ -251,8 +258,6 @@ TEST(MarketTest, AddOrderShouldWork2)
     ASSERT_EQ(execute_order_notification2.order.getOpenQuantity(), quantity2 - quantity1);
 
     // Check that the first order was deleted since it was completely filled.
-    // Check that first order was executed - should be completely filled.
-    // Note that bid orders are always processed first.
     ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
     DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
     notification_processor.delete_order_notifications.pop();
@@ -321,12 +326,14 @@ TEST(MarketTest, AddOrderShouldWork3)
     notification_processor.shutdown();
 
     // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
 
     // Check that book was added.
+    ASSERT_TRUE(market.hasOrderbook(symbol_id));
     ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
     notification_processor.add_book_notifications.pop();
 
@@ -474,12 +481,14 @@ TEST(MarketTest, AddOrderShouldWork4)
     notification_processor.shutdown();
 
     // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
 
     // Check that book was added.
+    ASSERT_TRUE(market.hasOrderbook(symbol_id));
     ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
     notification_processor.add_book_notifications.pop();
 
@@ -606,12 +615,14 @@ TEST(MarketTest, AddOrderShouldWork5)
     notification_processor.shutdown();
 
     // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
 
     // Check that book was added.
+    ASSERT_TRUE(market.hasOrderbook(symbol_id));
     ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
     notification_processor.add_book_notifications.pop();
 
@@ -725,12 +736,14 @@ TEST(MarketTest, AddOrderShouldWork6)
     notification_processor.shutdown();
 
     // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
 
     // Check that book was added.
+    ASSERT_TRUE(market.hasOrderbook(symbol_id));
     ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
     notification_processor.add_book_notifications.pop();
 
@@ -821,12 +834,14 @@ TEST(MarketTest, AddOrderShouldWork7)
     notification_processor.shutdown();
 
     // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
 
     // Check that book was added.
+    ASSERT_TRUE(market.hasOrderbook(symbol_id));
     ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
     notification_processor.add_book_notifications.pop();
 
@@ -963,12 +978,14 @@ TEST(MarketTest, AddOrderShouldWork8)
     notification_processor.shutdown();
 
     // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
 
     // Check that book was added.
+    ASSERT_TRUE(market.hasOrderbook(symbol_id));
     ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
     notification_processor.add_book_notifications.pop();
 
@@ -1052,12 +1069,14 @@ TEST(MarketTest, DeleteOrderShouldWork1)
     notification_processor.shutdown();
 
     // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
 
     // Check that book was added.
+    ASSERT_TRUE(market.hasOrderbook(symbol_id));
     ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
     notification_processor.add_book_notifications.pop();
 
@@ -1117,12 +1136,14 @@ TEST(MarketTest, ReplaceOrderShouldWork1)
     notification_processor.shutdown();
 
     // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
 
     // Check that book was added.
+    ASSERT_TRUE(market.hasOrderbook(symbol_id));
     ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
     notification_processor.add_book_notifications.pop();
 
@@ -1220,12 +1241,14 @@ TEST(MarketTest, ReplaceOrderShouldWork2)
     notification_processor.shutdown();
 
     // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
 
     // Check that book was added.
+    ASSERT_TRUE(market.hasOrderbook(symbol_id));
     ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
     notification_processor.add_book_notifications.pop();
 
@@ -1367,11 +1390,13 @@ TEST(MarketTest, ExecuteOrderShouldWork1)
 
     // Check that symbol was added.
     ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
+    ASSERT_TRUE(market.hasSymbol(symbol_id));
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
 
     // Check that book was added.
+    ASSERT_TRUE(market.hasOrderbook(symbol_id));
     ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
     notification_processor.add_book_notifications.pop();
 

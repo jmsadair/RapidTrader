@@ -14,7 +14,7 @@ TEST(Level, AddingOrdersToLevelShouldWork1)
     Order order1{action1, side1, type1, symbol1, price1, quantity1, id1};
 
     // Create a level to add the order to.
-    Level level(price1);
+    Level level(price1, LevelSide::Bid, symbol1);
     // Level should initially have 0 volume.
     ASSERT_EQ(level.getVolume(), 0);
     // Level should be empty.
@@ -42,7 +42,7 @@ TEST(Level, PoppingOrdersFromLevelShouldWork1)
     Order order1{action1, side1, type1, symbol1, price1, quantity1, id1};
 
     // Create a level to add the order to.
-    Level level(price1);
+    Level level(price1, LevelSide::Bid, symbol1);
     // Level should initially have 0 volume.
     ASSERT_EQ(level.getVolume(), 0);
     // Level should be empty.

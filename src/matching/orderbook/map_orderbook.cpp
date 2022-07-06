@@ -1,19 +1,26 @@
 #include "map_orderbook.h"
+#include "notification.h"
 #include "log.h"
 
-// Only check the order book invariants in debug mode.
-#ifndef NDEBUG
-#    define ORDERBOOK_CHECK_INVARIANTS verifyOrderBookState()
-#else
-#    define ORDERBOOK_CHECK_INVARIANTS
-#endif
-
-MapOrderBook::MapOrderBook(uint32_t symbol_id_)
-    : symbol_id(symbol_id_)
+MapOrderBook::MapOrderBook(uint32_t symbol_id_, Messaging::Sender &outgoing_messages_)
+    : symbol_id(symbol_id_), outgoing_messages(outgoing_messages_)
 {}
 
-void MapOrderBook::addOrder(const Order &order)
+void MapOrderBook::addLimitOrder(Order order)
 {
+    // Send notification that order was added.
+    outgoing_messages.send(AddedOrder{order});
+    // Match the order.
+    processMatching(order);
+    // If the order is filled and is not IOC or FOK, then the job is done.
+    if (order.isFilled() && !order.isIoc() && !order.isFok())
+        return;
+    // If the order is not filled and is IOC or FOK, a notification that the order
+    // was deleted must be sent.
+    if (!order.isFilled() && (order.isIoc() || order.isFok())) {
+        outgoing_messages.send(DeletedOrder{order});
+    }
+    // Add the order to the book.
     auto [it, success] = orders.insert({order.getOrderID(), order});
     if (order.isAsk())
     {
@@ -43,20 +50,16 @@ void MapOrderBook::addOrder(const Order &order)
     }
 }
 
-Level *MapOrderBook::addLevel(const Order &order)
-{
-    if (order.isAsk())
-    {
-        auto [it, success] = ask_levels.emplace(order.getPrice(), order.getPrice());
-        Level *level_ptr = &it->second;
-        return level_ptr;
-    }
-    else
-    {
-        auto [it, success] = bid_levels.emplace(order.getPrice(), order.getPrice());
-        Level *level_ptr = &it->second;
-        return level_ptr;
-    }
+void MapOrderBook::addMarketOrder(Order order) {
+    // Send notification that order was added.
+    outgoing_messages.send(AddedOrder{order});
+    // Set the price of the order the max/min possible value for matching.
+    order.setPrice(order.isAsk() ? 0 : std::numeric_limits<uint32_t>::max());
+    if (order.isFok() && !canProcess(order))
+        outgoing_messages.send(DeletedOrder{order});
+    processMatching(order);
+    if (!order.isFilled())
+        outgoing_messages.send(DeletedOrder{order});
 }
 
 void MapOrderBook::deleteOrder(uint64_t order_id)
@@ -64,9 +67,29 @@ void MapOrderBook::deleteOrder(uint64_t order_id)
     auto it = orders.find(order_id);
     auto price_level_it = it->second.isAsk() ? ask_levels.find(it->second.getPrice()) : bid_levels.find(it->second.getPrice());
     price_level_it->second.deleteOrder(it->second);
+    outgoing_messages.send(DeletedOrder{it->second});
+    // Remove the price level if it is empty.
     if (price_level_it->second.empty())
         deleteLevel(it->second);
     orders.erase(it);
+}
+
+Level *MapOrderBook::addLevel(const Order &order)
+{
+    if (order.isAsk())
+    {
+        auto [it, success] = ask_levels.emplace(std::piecewise_construct, std::make_tuple(order.getPrice()),
+            std::make_tuple(order.getPrice(), LevelSide::Ask, symbol_id));
+        Level *level_ptr = &it->second;
+        return level_ptr;
+    }
+    else
+    {
+        auto [it, success] = bid_levels.emplace(std::piecewise_construct, std::make_tuple(order.getPrice()),
+            std::make_tuple(order.getPrice(), LevelSide::Bid, symbol_id));
+        Level *level_ptr = &it->second;
+        return level_ptr;
+    }
 }
 
 void MapOrderBook::deleteLevel(const Order &order)
@@ -77,7 +100,7 @@ void MapOrderBook::deleteLevel(const Order &order)
         bid_levels.erase(order.getPrice());
 }
 
-bool MapOrderBook::processMatching(std::queue<Order> &processed_orders)
+void MapOrderBook::processMatching()
 {
     while (true)
     {
@@ -91,92 +114,116 @@ bool MapOrderBook::processMatching(std::queue<Order> &processed_orders)
         Order &ask = ask_level->second.front();
         Order &bid = bid_level->second.front();
         matchOrders(ask, bid);
-        processed_orders.push(bid);
-        processed_orders.push(ask);
+        // Send order execution notifications for the matched orders.
+        outgoing_messages.send(ExecutedOrder{bid});
+        outgoing_messages.send(ExecutedOrder{ask});
+        // Remove the orders from the book if they are filled.
         if (bid.isFilled())
             deleteOrder(bid.getOrderID());
         if (ask.isFilled())
             deleteOrder(ask.getOrderID());
     }
-    return !processed_orders.empty();
 }
 
-bool MapOrderBook::processMatching(Order &order, std::queue<Order> &processed_orders)
+void MapOrderBook::processMatching(Order &order)
 {
+    // Order is on the ask side.
     if (order.isAsk())
     {
+        // Maximum price bid level.
         auto level = bid_levels.rbegin();
         while (level != bid_levels.rend() && level->second.getPrice() >= order.getPrice())
         {
             Order &bid = level->second.front();
             matchOrders(order, bid);
-            processed_orders.push(bid);
-            processed_orders.push(order);
+            // Send order execution notifications for the matched orders.
+            outgoing_messages.send(ExecutedOrder{bid});
+            outgoing_messages.send(ExecutedOrder{order});
+            // If the existing bid order is filled, remove it from the book.
             if (bid.isFilled())
             {
                 deleteOrder(bid.getOrderID());
-                // Watch out for iterator invalidation. Deleting the order above could delete the level.
                 level = bid_levels.rbegin();
             }
+            // If the incoming ask order is filled, send order deletion notification
+            // and exit the loop.
             if (order.isFilled())
+            {
+                outgoing_messages.send(DeletedOrder{order});
                 break;
+            }
         }
     }
+    // Order is on the bid side.
     else
     {
+        // Minimum price ask level.
         auto level = ask_levels.begin();
         while (level != ask_levels.end() && (level->second.getPrice() <= order.getPrice()))
         {
             Order &ask = level->second.front();
             matchOrders(ask, order);
-            processed_orders.push(order);
-            processed_orders.push(ask);
+            // Send order execution notifications for the matched orders.
+            outgoing_messages.send(ExecutedOrder{order});
+            outgoing_messages.send(ExecutedOrder{ask});
+            // If the existing ask order is filled, remove it from the book.
             if (ask.isFilled())
             {
                 deleteOrder(ask.getOrderID());
-                // Watch out for iterator invalidation. Deleting the order above could delete the level.
                 level = ask_levels.begin();
             }
+            // If the incoming bid order is filled, send order deletion notification
+            // and exit the loop.
             if (order.isFilled())
+            {
+                outgoing_messages.send(DeletedOrder{order});
                 break;
+            }
         }
     }
-    return !processed_orders.empty();
 }
 
 void MapOrderBook::matchOrders(Order &ask, Order &bid)
 {
+    // Calculate the minimum quantity to match.
     uint64_t matched_quantity = std::min(ask.getOpenQuantity(), bid.getOpenQuantity());
     bid.execute(ask.isMarket() ? bid.getPrice() : ask.getPrice(), matched_quantity);
     ask.execute(bid.isMarket() ? ask.getPrice() : bid.getPrice(), matched_quantity);
 }
 
-bool MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint32_t price)
+void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint32_t price)
 {
+    // Find the order.
     auto it = orders.find(order_id);
     if (it != orders.end())
     {
+        // Calculate the minimum quantity to execute.
         uint64_t executed_quantity = std::min(quantity, it->second.getOpenQuantity());
         it->second.execute(price, executed_quantity);
-        return it->second.isFilled();
+        outgoing_messages.send(ExecutedOrder{it->second});
+        if (it->second.isFilled())
+            deleteOrder(order_id);
     }
-    return false;
 }
 
-bool MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
+void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
 {
+    // Find the order.
     auto it = orders.find(order_id);
     if (it != orders.end())
     {
+        // Calculate the minimum quantity to execute.
         uint64_t execute_quantity = std::min(quantity, it->second.getOpenQuantity());
         it->second.execute(it->second.getPrice(), execute_quantity);
-        return it->second.isFilled();
+        outgoing_messages.send(ExecutedOrder{it->second});
+        if (it->second.isFilled())
+            deleteOrder(order_id);
     }
-    return false;
 }
 
 bool MapOrderBook::canProcess(const Order &order) const
 {
+    // An order cannot be matched if there are no orders in the book.
     if (orders.empty())
         return false;
     uint64_t quantity_can_fill = 0;
@@ -206,16 +253,16 @@ bool MapOrderBook::canProcess(const Order &order) const
     return quantity_can_fill >= order.getQuantity();
 }
 
-bool MapOrderBook::cancelOrder(uint64_t order_id, uint64_t quantity)
+void MapOrderBook::cancelOrder(uint64_t order_id, uint64_t quantity)
 {
     auto it = orders.find(order_id);
     if (it != orders.end())
     {
         it->second.cancel(quantity);
-        // Return true if cancelling the requested number of shares
-        // reduces the orders open quantity to zero.
-        return it->second.isFilled();
+        outgoing_messages.send(UpdatedOrder{it->second});
+        // Delete the order if cancelling the request quantity resulted in
+        // it being filled.
+        if (it->second.isFilled())
+            deleteOrder(order_id);
     }
-    // Order is not in book - should never happen.
-    return false;
 }

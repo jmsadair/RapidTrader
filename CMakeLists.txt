@@ -162,9 +162,7 @@ add_executable(rapid_trader_tests
         test/test_level.cpp
         test/test_market.cpp
         test/test_message_queue.cpp
-        test/test_messaging.cpp
         test/test_order.cpp
-        test/test_orderbook.cpp
         )
 target_link_libraries(rapid_trader_tests rapid_trader)
 target_link_libraries(rapid_trader_tests gtest_main)
