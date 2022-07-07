@@ -12,27 +12,23 @@ void MapOrderBook::addLimitOrder(Order order)
     outgoing_messages.send(AddedOrder{order});
     // Match the order.
     processMatching(order);
-    // If the order is filled and is not IOC or FOK, then the job is done.
-    if (order.isFilled() && !order.isIoc() && !order.isFok())
-        return;
-    // If the order is not filled and is IOC or FOK, a notification that the order
-    // was deleted must be sent.
-    if (!order.isFilled() && (order.isIoc() || order.isFok())) {
+    // Insert order into book if it is not filled.
+    if (!order.isFilled() && !order.isIoc() && !order.isFok())
+    {
+        auto level_it = order.isAsk() ? ask_levels.find(order.getPrice()) : bid_levels.find(order.getPrice());
+        if (level_it == (order.isAsk() ? ask_levels.end() : bid_levels.end()))
+        {
+            auto new_level_it = addLevel(order);
+            auto [it, success] = orders.insert({order.getOrderID(), {order, new_level_it}});
+            new_level_it->second.addOrder(it->second.order);
+        }
+        else
+        {
+            auto [it, success] = orders.insert({order.getOrderID(), {order, level_it}});
+            level_it->second.addOrder(it->second.order);
+        }
+    } else {
         outgoing_messages.send(DeletedOrder{order});
-        return;
-    }
-    // Insert order into book.
-    auto level_it = order.isAsk() ? ask_levels.find(order.getPrice()) : bid_levels.find(order.getPrice());
-    if (level_it == (order.isAsk() ? ask_levels.end() : bid_levels.end()))
-    {
-        auto new_level_it = addLevel(order);
-        auto [it, success] = orders.insert({order.getOrderID(), {order, new_level_it}});
-        new_level_it->second.addOrder(it->second.order);
-    }
-    else
-    {
-        auto [it, success] = orders.insert({order.getOrderID(), {order, level_it}});
-        level_it->second.addOrder(it->second.order);
     }
 }
 
@@ -44,8 +40,7 @@ void MapOrderBook::addMarketOrder(Order order) {
     if (order.isFok() && !canProcess(order))
         outgoing_messages.send(DeletedOrder{order});
     processMatching(order);
-    if (!order.isFilled())
-        outgoing_messages.send(DeletedOrder{order});
+    outgoing_messages.send(DeletedOrder{order});
 }
 
 void MapOrderBook::deleteOrder(uint64_t order_id)
@@ -140,13 +135,9 @@ void MapOrderBook::processMatching(Order &order)
                 deleteOrder(bid.getOrderID());
                 level = bid_levels.rbegin();
             }
-            // If the incoming ask order is filled, send order deletion notification
-            // and exit the loop.
+            // If the incoming ask order is filled, quit.
             if (order.isFilled())
-            {
-                outgoing_messages.send(DeletedOrder{order});
                 break;
-            }
         }
     }
     // Order is on the bid side.
@@ -167,13 +158,9 @@ void MapOrderBook::processMatching(Order &order)
                 deleteOrder(ask.getOrderID());
                 level = ask_levels.begin();
             }
-            // If the incoming bid order is filled, send order deletion notification
-            // and exit the loop.
+            // If the incoming bid order is filled, quit.
             if (order.isFilled())
-            {
-                outgoing_messages.send(DeletedOrder{order});
                 break;
-            }
         }
     }
 }
