@@ -20,19 +20,20 @@ void MapOrderBook::addLimitOrder(Order order)
     if (!order.isFilled() && (order.isIoc() || order.isFok())) {
         outgoing_messages.send(DeletedOrder{order});
     }
-    // Add the order to the book.
-    auto [it, success] = orders.insert({order.getOrderID(), order});
+
     if (order.isAsk())
     {
         auto level_it = ask_levels.find(order.getPrice());
         if (level_it == ask_levels.end())
         {
-            Level *level_ptr = addLevel(order);
-            level_ptr->addOrder(it->second);
+            auto new_level_it = addLevel(order);
+            auto [it, success] = orders.insert({order.getOrderID(), {order, new_level_it}});
+            new_level_it->second.addOrder(it->second.order);
         }
         else
         {
-            level_it->second.addOrder(it->second);
+            auto [it, success] = orders.insert({order.getOrderID(), {order, level_it}});
+            level_it->second.addOrder(it->second.order);
         }
     }
     else
@@ -40,12 +41,14 @@ void MapOrderBook::addLimitOrder(Order order)
         auto level_it = bid_levels.find(order.getPrice());
         if (level_it == bid_levels.end())
         {
-            Level *level_ptr = addLevel(order);
-            level_ptr->addOrder(it->second);
+            auto new_level_it = addLevel(order);
+            auto [it, success] = orders.insert({order.getOrderID(), {order, new_level_it}});
+            new_level_it->second.addOrder(it->second.order);
         }
         else
         {
-            level_it->second.addOrder(it->second);
+            auto [it, success] = orders.insert({order.getOrderID(), {order, level_it}});
+            level_it->second.addOrder(it->second.order);
         }
     }
 }
@@ -65,39 +68,36 @@ void MapOrderBook::addMarketOrder(Order order) {
 void MapOrderBook::deleteOrder(uint64_t order_id)
 {
     auto it = orders.find(order_id);
-    auto price_level_it = it->second.isAsk() ? ask_levels.find(it->second.getPrice()) : bid_levels.find(it->second.getPrice());
-    price_level_it->second.deleteOrder(it->second);
-    outgoing_messages.send(DeletedOrder{it->second});
+    auto level_it = it->second.level_it;
+    level_it->second.deleteOrder(it->second.order);
+    outgoing_messages.send(DeletedOrder{it->second.order});
     // Remove the price level if it is empty.
-    if (price_level_it->second.empty())
-        deleteLevel(it->second);
+    if (level_it->second.empty())
+        deleteLevel(it->second.order);
     orders.erase(it);
 }
 
-Level *MapOrderBook::addLevel(const Order &order)
+std::map<uint32_t, Level>::iterator MapOrderBook::addLevel(const Order &order)
 {
     if (order.isAsk())
     {
         auto [it, success] = ask_levels.emplace(std::piecewise_construct, std::make_tuple(order.getPrice()),
             std::make_tuple(order.getPrice(), LevelSide::Ask, symbol_id));
-        Level *level_ptr = &it->second;
-        return level_ptr;
+         return it;
     }
     else
     {
         auto [it, success] = bid_levels.emplace(std::piecewise_construct, std::make_tuple(order.getPrice()),
             std::make_tuple(order.getPrice(), LevelSide::Bid, symbol_id));
-        Level *level_ptr = &it->second;
-        return level_ptr;
+        return it;
     }
 }
 
 void MapOrderBook::deleteLevel(const Order &order)
 {
-    if (order.isAsk())
-        ask_levels.erase(order.getPrice());
-    else
-        bid_levels.erase(order.getPrice());
+    auto it = orders.find(order.getOrderID());
+    auto level_it = it->second.level_it;
+    order.isAsk() ? ask_levels.erase(level_it) : bid_levels.erase(level_it);
 }
 
 void MapOrderBook::processMatching()
@@ -119,9 +119,21 @@ void MapOrderBook::processMatching()
         outgoing_messages.send(ExecutedOrder{ask});
         // Remove the orders from the book if they are filled.
         if (bid.isFilled())
-            deleteOrder(bid.getOrderID());
+        {
+            outgoing_messages.send(DeletedOrder{bid});
+            bid_level->second.popFront();
+            if (bid_level->second.empty())
+                bid_levels.erase(std::next(bid_level).base());
+            orders.erase(bid.getOrderID());
+        }
         if (ask.isFilled())
-            deleteOrder(ask.getOrderID());
+        {
+            outgoing_messages.send(DeletedOrder{ask});
+            ask_level->second.popFront();
+            if (ask_level->second.empty())
+                ask_levels.erase(std::next(bid_level).base());
+            orders.erase(ask.getOrderID());
+        }
     }
 }
 
@@ -198,10 +210,10 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint32_t p
     if (it != orders.end())
     {
         // Calculate the minimum quantity to execute.
-        uint64_t executed_quantity = std::min(quantity, it->second.getOpenQuantity());
-        it->second.execute(price, executed_quantity);
-        outgoing_messages.send(ExecutedOrder{it->second});
-        if (it->second.isFilled())
+        uint64_t executed_quantity = std::min(quantity, it->second.order.getOpenQuantity());
+        it->second.order.execute(price, executed_quantity);
+        outgoing_messages.send(ExecutedOrder{it->second.order});
+        if (it->second.order.isFilled())
             deleteOrder(order_id);
     }
 }
@@ -213,10 +225,10 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
     if (it != orders.end())
     {
         // Calculate the minimum quantity to execute.
-        uint64_t execute_quantity = std::min(quantity, it->second.getOpenQuantity());
-        it->second.execute(it->second.getPrice(), execute_quantity);
-        outgoing_messages.send(ExecutedOrder{it->second});
-        if (it->second.isFilled())
+        uint64_t execute_quantity = std::min(quantity, it->second.order.getOpenQuantity());
+        it->second.order.execute(it->second.order.getPrice(), execute_quantity);
+        outgoing_messages.send(ExecutedOrder{it->second.order});
+        if (it->second.order.isFilled())
             deleteOrder(order_id);
     }
 }
@@ -258,11 +270,11 @@ void MapOrderBook::cancelOrder(uint64_t order_id, uint64_t quantity)
     auto it = orders.find(order_id);
     if (it != orders.end())
     {
-        it->second.cancel(quantity);
-        outgoing_messages.send(UpdatedOrder{it->second});
+        it->second.order.cancel(quantity);
+        outgoing_messages.send(UpdatedOrder{it->second.order});
         // Delete the order if cancelling the request quantity resulted in
         // it being filled.
-        if (it->second.isFilled())
+        if (it->second.order.isFilled())
             deleteOrder(order_id);
     }
 }

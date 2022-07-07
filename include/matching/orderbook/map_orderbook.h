@@ -7,6 +7,16 @@
 #include "orderbook.h"
 #include "sender.h"
 
+struct OrderWrapper {
+    Order order;
+    // An iterator to the level that the order is stored in.
+    // Used for finding the level to delete the order from in constant time.
+    // Be careful about iterator invalidation! For the STL map, this iterator
+    // will remain valid as long as element that iterator corresponds to in
+    // the map is deleted. Insertions and deletions do not invalidate the iterator.
+    std::map<uint32_t, Level>::iterator level_it;
+};
+
 class MapOrderBook : public OrderBook
 {
 public:
@@ -77,7 +87,7 @@ public:
      */
     [[nodiscard]] inline const Order &getOrder(uint64_t order_id) const override
     {
-        return orders.find(order_id)->second;
+        return orders.find(order_id)->second.order;
     }
 
     /**
@@ -94,7 +104,7 @@ private:
      * @param order the initial order that will be added to the price level.
      * @return a pointer the newly added level.
      */
-    Level *addLevel(const Order &order);
+    std::map<uint32_t, Level>::iterator addLevel(const Order &order);
 
     /**
      * Deletes a price level from the book.
@@ -138,10 +148,14 @@ private:
     // Class members are destroyed in the reverse order of their declaration,
     // so the price level vectors will be destroyed before orders. This is
     // required for the intrusive list.
-    robin_hood::unordered_map<uint64_t, Order> orders;
+
+    // Maps order IDs to order wrappers.
+    robin_hood::unordered_map<uint64_t, OrderWrapper> orders;
+    // Maps prices to levels.
     std::map<uint32_t, Level> ask_levels;
     std::map<uint32_t, Level> bid_levels;
     Messaging::Sender &outgoing_messages;
+    // The symbol ID associated with the book.
     uint32_t symbol_id;
 };
 #endif // RAPID_TRADER_MAP_ORDERBOOK_H
