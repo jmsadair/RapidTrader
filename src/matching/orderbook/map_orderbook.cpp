@@ -19,37 +19,20 @@ void MapOrderBook::addLimitOrder(Order order)
     // was deleted must be sent.
     if (!order.isFilled() && (order.isIoc() || order.isFok())) {
         outgoing_messages.send(DeletedOrder{order});
+        return;
     }
-
-    if (order.isAsk())
+    // Insert order into book.
+    auto level_it = order.isAsk() ? ask_levels.find(order.getPrice()) : bid_levels.find(order.getPrice());
+    if (level_it == (order.isAsk() ? ask_levels.end() : bid_levels.end()))
     {
-        auto level_it = ask_levels.find(order.getPrice());
-        if (level_it == ask_levels.end())
-        {
-            auto new_level_it = addLevel(order);
-            auto [it, success] = orders.insert({order.getOrderID(), {order, new_level_it}});
-            new_level_it->second.addOrder(it->second.order);
-        }
-        else
-        {
-            auto [it, success] = orders.insert({order.getOrderID(), {order, level_it}});
-            level_it->second.addOrder(it->second.order);
-        }
+        auto new_level_it = addLevel(order);
+        auto [it, success] = orders.insert({order.getOrderID(), {order, new_level_it}});
+        new_level_it->second.addOrder(it->second.order);
     }
     else
     {
-        auto level_it = bid_levels.find(order.getPrice());
-        if (level_it == bid_levels.end())
-        {
-            auto new_level_it = addLevel(order);
-            auto [it, success] = orders.insert({order.getOrderID(), {order, new_level_it}});
-            new_level_it->second.addOrder(it->second.order);
-        }
-        else
-        {
-            auto [it, success] = orders.insert({order.getOrderID(), {order, level_it}});
-            level_it->second.addOrder(it->second.order);
-        }
+        auto [it, success] = orders.insert({order.getOrderID(), {order, level_it}});
+        level_it->second.addOrder(it->second.order);
     }
 }
 
