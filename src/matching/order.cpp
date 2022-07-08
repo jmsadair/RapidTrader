@@ -17,6 +17,7 @@ Order::Order(OrderAction action_, OrderSide side_, OrderType type_, uint32_t sym
     last_executed_quantity = 0;
 }
 
+//LCOV_EXCL_START
 std::ostream &operator<<(std::ostream &os, const Order &order)
 {
     os << "Symbol ID: " << order.symbol_id << "\n";
@@ -28,3 +29,4 @@ std::ostream &operator<<(std::ostream &os, const Order &order)
     os << "Order Quantity: " << order.quantity << "\n";
     return os;
 }
+//LCOV_EXCL_STOP

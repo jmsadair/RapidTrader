@@ -22,6 +22,8 @@ struct AddedSymbol : public MarketNotification
         : MarketNotification(symbol_id_)
         , name(std::move(name_))
     {}
+
+    friend std::ostream &operator<<(std::ostream &os, const AddedSymbol &notification);
 };
 
 struct DeletedSymbol : public MarketNotification
@@ -31,6 +33,8 @@ struct DeletedSymbol : public MarketNotification
         : MarketNotification(symbol_id_)
         , name(std::move(name_))
     {}
+
+    friend std::ostream &operator<<(std::ostream &os, const DeletedSymbol &notification);
 };
 
 struct AddedOrderBook : public MarketNotification
@@ -38,6 +42,8 @@ struct AddedOrderBook : public MarketNotification
     explicit AddedOrderBook(uint32_t symbol_id_)
         : MarketNotification(symbol_id_)
     {}
+
+    friend std::ostream &operator<<(std::ostream &os, const AddedOrderBook &notification);
 };
 
 struct DeletedOrderBook : public MarketNotification
@@ -45,6 +51,8 @@ struct DeletedOrderBook : public MarketNotification
     explicit DeletedOrderBook(uint32_t symbol_id_)
         : MarketNotification(symbol_id_)
     {}
+
+    friend std::ostream &operator<<(std::ostream &os, const DeletedOrderBook &notification);
 };
 
 struct OrderNotification : public Notification
@@ -60,6 +68,8 @@ struct AddedOrder : public OrderNotification
     explicit AddedOrder(Order order_)
         : OrderNotification(std::move(order_))
     {}
+
+    friend std::ostream &operator<<(std::ostream &os, const AddedOrder &notification);
 };
 
 struct DeletedOrder : public OrderNotification
@@ -67,6 +77,8 @@ struct DeletedOrder : public OrderNotification
     explicit DeletedOrder(Order order_)
         : OrderNotification(std::move(order_))
     {}
+
+    friend std::ostream &operator<<(std::ostream &os, const DeletedOrder &notification);
 };
 
 struct ExecutedOrder : public OrderNotification
@@ -74,6 +86,8 @@ struct ExecutedOrder : public OrderNotification
     explicit ExecutedOrder(Order order_)
         : OrderNotification(std::move(order_))
     {}
+
+    friend std::ostream &operator<<(std::ostream &os, const ExecutedOrder &notification);
 };
 
 struct UpdatedOrder : public OrderNotification
@@ -81,5 +95,7 @@ struct UpdatedOrder : public OrderNotification
     explicit UpdatedOrder(Order order_)
         : OrderNotification(std::move(order_))
     {}
+
+    friend std::ostream &operator<<(std::ostream &os, const UpdatedOrder &notification);
 };
 #endif // RAPID_TRADER_NOTIFICATION_H

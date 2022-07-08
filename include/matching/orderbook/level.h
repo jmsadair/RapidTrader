@@ -1,6 +1,5 @@
 #ifndef RAPID_TRADER_LEVEL_H
 #define RAPID_TRADER_LEVEL_H
-#include <algorithm>
 #include "order.h"
 
 enum class LevelSide { Bid, Ask };
@@ -10,11 +9,7 @@ using namespace boost::intrusive;
 class Level
 {
 public:
-    explicit Level(uint32_t price_, LevelSide side_, uint32_t symbol_id_)
-        : price(price_), side(side_), symbol_id(symbol_id_)
-    {
-        volume = 0;
-    }
+    Level(uint32_t price_, LevelSide side_, uint32_t symbol_id_);
 
     /**
      * @return the price associated with the level.
@@ -104,38 +99,19 @@ public:
      * @param order the order to add, require that order is on the same side as the level,
      *              has the same price as the level, and has the same symbol ID as the level.
      */
-    inline void addOrder(Order &order)
-    {
-        assert(order.isAsk() ? side == LevelSide::Ask : side == LevelSide::Bid && "Order is on different side than level!");
-        assert(order.getPrice() == price && "Order does not have same price as the level!");
-        assert(order.getSymbolID() == symbol_id && "Order does not have the same symbol ID as the level!");
-        volume += order.getOpenQuantity();
-        orders.push_front(order);
-    };
+    void addOrder(Order &order);
 
     /**
      * Removes the least recently inserted order from the level, require
      * that the level is non-empty.
      */
-    inline void popFront()
-    {
-        assert(!orders.empty() && "Cannot pop from empty level!");
-        Order &order_to_remove = orders.front();
-        volume -= order_to_remove.getOpenQuantity();
-        orders.pop_front();
-    };
+    void popFront();
 
     /**
      * Removes the most recently inserted order from the level, require that
      * the level is non-empty.
      */
-    inline void popBack()
-    {
-        assert(!orders.empty() && "Cannot pop from empty level!");
-        Order &order_to_remove = orders.back();
-        volume -= order_to_remove.getOpenQuantity();
-        orders.pop_back();
-    }
+    void popBack();
 
     /**
      * Deletes the order from the level.
@@ -148,6 +124,8 @@ public:
         volume -= order.getOpenQuantity();
         orders.remove(order);
     }
+
+    friend std::ostream &operator<<(std::ostream &os, const Level &level);
 private:
     list<Order> orders;
     LevelSide side;

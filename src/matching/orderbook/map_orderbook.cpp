@@ -12,7 +12,7 @@ void MapOrderBook::addLimitOrder(Order order)
     outgoing_messages.send(AddedOrder{order});
     // Match the order.
     processMatching(order);
-    // Insert order into book if it is not filled.
+    // Insert order into book if it is not filled, not IOC, and not FOK.
     if (!order.isFilled() && !order.isIoc() && !order.isFok())
     {
         auto level_it = order.isAsk() ? ask_levels.find(order.getPrice()) : bid_levels.find(order.getPrice());
@@ -27,7 +27,10 @@ void MapOrderBook::addLimitOrder(Order order)
             auto [it, success] = orders.insert({order.getOrderID(), {order, level_it}});
             level_it->second.addOrder(it->second.order);
         }
-    } else {
+    }
+    // Otherwise, notify that the order was deleted.
+    else
+    {
         outgoing_messages.send(DeletedOrder{order});
     }
 }
@@ -45,24 +48,30 @@ void MapOrderBook::addMarketOrder(Order order) {
 
 void MapOrderBook::deleteOrder(uint64_t order_id)
 {
+    // Find the order and the iterator to the level it belongs to.
     auto it = orders.find(order_id);
     auto level_it = it->second.level_it;
+    // Remove the order from level.
     level_it->second.deleteOrder(it->second.order);
+    // Send notification that order was deleted.
     outgoing_messages.send(DeletedOrder{it->second.order});
     // Remove the price level if it is empty.
     if (level_it->second.empty())
         deleteLevel(it->second.order);
+    // Remove the order wrapper.
     orders.erase(it);
 }
 
 std::map<uint32_t, Level>::iterator MapOrderBook::addLevel(const Order &order)
 {
+    // Add a level on the ask side.
     if (order.isAsk())
     {
         auto [it, success] = ask_levels.emplace(std::piecewise_construct, std::make_tuple(order.getPrice()),
             std::make_tuple(order.getPrice(), LevelSide::Ask, symbol_id));
          return it;
     }
+    // Add a level on the bid side.
     else
     {
         auto [it, success] = bid_levels.emplace(std::piecewise_construct, std::make_tuple(order.getPrice()),
@@ -73,8 +82,10 @@ std::map<uint32_t, Level>::iterator MapOrderBook::addLevel(const Order &order)
 
 void MapOrderBook::deleteLevel(const Order &order)
 {
+    // Find the iterator to the level that the order belongs.
     auto it = orders.find(order.getOrderID());
     auto level_it = it->second.level_it;
+    // Erase the level from the map. Note that this invalidates the iterator.
     order.isAsk() ? ask_levels.erase(level_it) : bid_levels.erase(level_it);
 }
 
@@ -84,11 +95,11 @@ void MapOrderBook::processMatching()
     {
         auto ask_level = ask_levels.begin();
         auto bid_level = bid_levels.rbegin();
-        uint8_t halt_processing = ask_levels.empty() + bid_levels.empty();
-        if (halt_processing)
+        if (ask_levels.empty() || bid_levels.empty());
             break;
         if (ask_level->second.getPrice() > bid_level->second.getPrice())
             break;
+        // Match the orders.
         Order &ask = ask_level->second.front();
         Order &bid = bid_level->second.front();
         matchOrders(ask, bid);
@@ -97,21 +108,9 @@ void MapOrderBook::processMatching()
         outgoing_messages.send(ExecutedOrder{ask});
         // Remove the orders from the book if they are filled.
         if (bid.isFilled())
-        {
-            outgoing_messages.send(DeletedOrder{bid});
-            bid_level->second.popFront();
-            if (bid_level->second.empty())
-                bid_levels.erase(std::next(bid_level).base());
-            orders.erase(bid.getOrderID());
-        }
+            deleteOrder(bid.getOrderID());
         if (ask.isFilled())
-        {
-            outgoing_messages.send(DeletedOrder{ask});
-            ask_level->second.popFront();
-            if (ask_level->second.empty())
-                ask_levels.erase(std::next(bid_level).base());
-            orders.erase(ask.getOrderID());
-        }
+            deleteOrder(ask.getOrderID());
     }
 }
 

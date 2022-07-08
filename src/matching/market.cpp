@@ -1,7 +1,6 @@
 #include "market.h"
 #include "map_orderbook.h"
 #include "notification.h"
-#include "log.h"
 
 namespace RapidTrader::Matching {
 Market::Market(Messaging::Sender outgoing_messenger_)
@@ -22,7 +21,10 @@ ErrorStatus Market::deleteSymbol(uint32_t symbol_id)
     if (id_to_symbol.find(symbol_id) == id_to_symbol.end())
         return ErrorStatus::SymbolDoesNotExist;
     outgoing_messenger.send(DeletedSymbol{symbol_id, id_to_symbol[symbol_id]});
-    symbol_to_book[symbol_id] = nullptr;
+    // Delete the orderbook associated with the symbol if necessary.
+    if (symbol_id < symbol_to_book.size() && symbol_to_book[symbol_id])
+        symbol_to_book[symbol_id] = nullptr;
+    // Delete the symbol.
     id_to_symbol.erase(symbol_id);
     return ErrorStatus::Ok;
 }
