@@ -5,9 +5,10 @@
 #include "robin_hood.h"
 #include "level.h"
 #include "orderbook.h"
-#include "sender.h"
+#include "concurrent/messaging/sender.h"
 
-struct OrderWrapper {
+struct OrderWrapper
+{
     Order order;
     // An iterator to the level that the order is stored in.
     // Used for finding the level to delete the order from in constant time.
@@ -26,17 +27,12 @@ public:
      * @param symbol_id_ the symbol ID that will be associated with the book.
      * @param outgoing_messages_ a message queue for outgoing messages.
      */
-    MapOrderBook(uint32_t symbol_id_, Messaging::Sender &outgoing_messages_);
+    MapOrderBook(uint32_t symbol_id_, Concurrent::Messaging::Sender &outgoing_messages_);
 
     /**
      * @inheritdoc
      */
-    void addLimitOrder(Order order) override;
-
-    /**
-     * @inheritdoc
-     */
-    void addMarketOrder(Order order) override;
+    void addOrder(Order order) override;
 
     /**
      * @inheritdoc
@@ -63,7 +59,7 @@ public:
      */
     [[nodiscard]] inline uint32_t marketAskPrice() const override
     {
-        return ask_levels.empty() ? std::numeric_limits<uint32_t>::max() : ask_levels.begin()->second.getPrice();
+        return ask_levels.empty() ? std::numeric_limits<uint32_t>::max() : ask_levels.begin()->first;
     }
 
     /**
@@ -71,7 +67,7 @@ public:
      */
     [[nodiscard]] inline uint32_t marketBidPrice() const override
     {
-        return bid_levels.empty() ? 0 : bid_levels.rbegin()->second.getPrice();
+        return bid_levels.empty() ? 0 : bid_levels.rbegin()->first;
     }
 
     /**
@@ -97,21 +93,89 @@ public:
     {
         return orders.empty();
     }
+
 private:
     /**
-     * Adds a new price level to the book.
+     * Submits a limit order to the book.
      *
-     * @param order the initial order that will be added to the price level.
-     * @return a pointer the newly added level.
+     * @param order the limit order to add to the book, require that the order
+     *              does not already exist in the book.
      */
-    std::map<uint32_t, Level>::iterator addLevel(const Order &order);
+    void addLimitOrder(Order &order);
 
     /**
-     * Deletes a price level from the book.
+     * Inserts a limit order into the book.
+     *
+     * @param order the order to insert.
+     */
+    void insertLimitOrder(const Order &order);
+
+    /**
+     * Adds a new limit price level to the book.
+     *
+     * @param order the initial limit order that will be added to the price level.
+     * @return an iterator to the newly added level.
+     */
+    std::map<uint32_t, Level>::iterator addLimitLevel(const Order &order);
+
+    /**
+     * Deletes a limit price level from the book.
      *
      * @param order an order that is the level to be deleted.
      */
-    void deleteLevel(const Order &order);
+    void deleteLimitLevel(const Order &order);
+
+    /**
+     * Submits a market order to the book.
+     *
+     * @param order the market order to add to the book.
+     */
+    void addMarketOrder(Order &order);
+
+    /**
+     * Submits a stop market order to the book.
+     *
+     * @param order the stop market order to submit to the book.
+     */
+    void addStopOrder(Order &order);
+
+    /**
+     * Adds a new stop price level to the book.
+     *
+     * @param order the initial stop order that will be added to the price level.
+     * @return an iterator to the newly added level.
+     */
+    std::map<uint32_t, Level>::iterator addStopLevel(const Order &order);
+
+    /**
+     * Deletes a stop price level from the book.
+     *
+     * @param order a stop order that is the level to be deleted.
+     */
+    void deleteStopLevel(const Order &order);
+
+    /**
+     * Inserts a stop order into the book.
+     *
+     * @param order the order to insert, require that order has stop
+     *              or stop limit action.
+     */
+    void insertStopOrder(const Order &order);
+
+    /**
+     * Attempts to activate and process the stop (limit and market)
+     * orders in the book.
+     */
+    void activateStopOrders();
+
+    /**
+     * Removes the provided order from the orderbook, converts it into a market
+     * or limit order, and submits it for matching.
+     *
+     * @param order the order to activate, require that order is has a stop or
+     *              stop limit action and is in the orderbook.
+     */
+    void activateStopOrder(Order order);
 
     /**
      * Indicates whether an order can be filled or not.
@@ -154,7 +218,9 @@ private:
     // Maps prices to levels.
     std::map<uint32_t, Level> ask_levels;
     std::map<uint32_t, Level> bid_levels;
-    Messaging::Sender &outgoing_messages;
+    std::map<uint32_t, Level> stop_ask_levels;
+    std::map<uint32_t, Level> stop_bid_levels;
+    Concurrent::Messaging::Sender &outgoing_messages;
     // The symbol ID associated with the book.
     uint32_t symbol_id;
 };

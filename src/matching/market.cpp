@@ -3,7 +3,7 @@
 #include "notification.h"
 
 namespace RapidTrader::Matching {
-Market::Market(Messaging::Sender outgoing_messenger_)
+Market::Market(Concurrent::Messaging::Sender outgoing_messenger_)
     : outgoing_messenger(outgoing_messenger_)
 {}
 
@@ -78,15 +78,7 @@ ErrorStatus Market::addOrder(const Order &order)
     if (book->hasOrder(order.getOrderID()))
         return ErrorStatus::DuplicateOrder;
     // Submit order for matching.
-    switch(order.getAction())
-    {
-        case OrderAction::Limit:
-            book->addLimitOrder(order);
-            break;
-        case OrderAction::Market:
-            book->addMarketOrder(order);
-            break;
-    }
+    book->addOrder(order);
     return ErrorStatus::Ok;
 }
 
@@ -136,7 +128,7 @@ ErrorStatus Market::replaceOrder(uint32_t symbol_id, uint64_t order_id, uint64_t
     new_order.setOrderID(new_order_id);
     new_order.setPrice(new_price);
     book->deleteOrder(order_id);
-    book->addLimitOrder(new_order);
+    book->addOrder(new_order);
     return ErrorStatus::Ok;
 }
 

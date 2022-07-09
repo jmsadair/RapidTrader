@@ -2,7 +2,11 @@
 #define RAPID_TRADER_LEVEL_H
 #include "order.h"
 
-enum class LevelSide { Bid, Ask };
+enum class LevelSide
+{
+    Bid,
+    Ask
+};
 
 using namespace boost::intrusive;
 
@@ -126,6 +130,7 @@ public:
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Level &level);
+
 private:
     list<Order> orders;
     LevelSide side;

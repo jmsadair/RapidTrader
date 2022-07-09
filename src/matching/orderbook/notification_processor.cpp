@@ -17,6 +17,6 @@ void NotificationProcessor::processNotifications()
                 .handle<UpdatedOrder>([&](const UpdatedOrder &notification) { onOrderUpdated(notification); });
         }
     }
-    catch (const Messaging::CloseQueue &)
+    catch (const Concurrent::Messaging::CloseQueue &)
     {}
 }

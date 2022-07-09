@@ -5,8 +5,7 @@
 #include <queue>
 #include <memory>
 
-namespace Messaging {
-
+namespace Concurrent::Messaging {
 struct BaseMessage
 {
     virtual ~BaseMessage() = default;
@@ -22,7 +21,7 @@ struct WrappedMessage : BaseMessage
 };
 
 /**
- * A FIFO queue for message.
+ * A thread-safe FIFO message queue.
  */
 class MessageQueue
 {
@@ -62,5 +61,5 @@ private:
     // Stores pointers to message.
     std::queue<std::unique_ptr<BaseMessage>> message_queue;
 };
-} // namespace Messaging
+} // namespace Concurrent::Messaging
 #endif // RAPID_TRADER_MESSAGE_QUEUE_H

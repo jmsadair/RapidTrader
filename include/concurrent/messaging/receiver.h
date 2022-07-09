@@ -1,9 +1,9 @@
 #ifndef RAPID_TRADER_RECEIVER_H
 #define RAPID_TRADER_RECEIVER_H
-#include "dispatcher.h"
+#include "concurrent/messaging/dispatcher.h"
 #include "sender.h"
 
-namespace Messaging {
+namespace Concurrent::Messaging {
 /**
  * An ADT responsible for receiving message.
  */
@@ -30,5 +30,5 @@ private:
     // The Receiver class owns the message queue.
     MessageQueue msg_queue;
 };
-} // namespace Messaging
+} // namespace Concurrent::Messaging
 #endif // RAPID_TRADER_RECEIVER_H

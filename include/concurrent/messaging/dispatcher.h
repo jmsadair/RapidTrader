@@ -3,7 +3,7 @@
 #include "template_dispatcher.h"
 #include <exception>
 
-namespace Messaging {
+namespace Concurrent::Messaging {
 // Command for closing the queue.
 struct CloseQueue : std::exception
 {};
@@ -97,5 +97,5 @@ private:
         return false;
     }
 };
-} // namespace Messaging
+} // namespace Concurrent::Messaging
 #endif // RAPID_TRADER_DISPATCHER_H

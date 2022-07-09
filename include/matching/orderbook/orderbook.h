@@ -6,19 +6,11 @@ class OrderBook
 {
 public:
     /**
-     * Submits a limit order to the book.
+     * Submits an order to order book.
      *
-     * @param order the limit order to add to the book, require that the order
-     *              does not already exist in the book.
+     * @param order the order to submit.
      */
-    virtual void addLimitOrder(Order order) = 0;
-
-    /**
-     * Submits a market order to the book.
-     *
-     * @param order the market order to add to the book.
-     */
-    virtual void addMarketOrder(Order order) = 0;
+    virtual void addOrder(Order order) = 0;
 
     /**
      * Executes an order in the book.

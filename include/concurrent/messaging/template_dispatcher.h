@@ -1,8 +1,8 @@
 #ifndef RAPID_TRADER_TEMPLATE_DISPATCHER_H
 #define RAPID_TRADER_TEMPLATE_DISPATCHER_H
-#include "message_queue.h"
+#include "concurrent/messaging/message_queue.h"
 
-namespace Messaging {
+namespace Concurrent::Messaging {
 /**
  * An ADT that is capable of handling message of the specified type.
  *
@@ -116,5 +116,5 @@ private:
         }
     }
 };
-} // namespace Messaging
+} // namespace Concurrent::Messaging
 #endif // RAPID_TRADER_TEMPLATE_DISPATCHER_H

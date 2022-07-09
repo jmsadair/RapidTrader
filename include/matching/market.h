@@ -4,10 +4,11 @@
 #include <robin_hood.h>
 #include <memory>
 #include "order.h"
-#include "sender.h"
+#include "concurrent/messaging/sender.h"
 #include "orderbook.h"
 
-enum class ErrorStatus {
+enum class ErrorStatus
+{
     Ok,
     DuplicateSymbol,
     DuplicateOrder,
@@ -31,7 +32,7 @@ public:
      *
      * @param outgoing_messenger_ a message queue for outgoing messages.
      */
-    explicit Market(Messaging::Sender outgoing_messenger_);
+    explicit Market(Concurrent::Messaging::Sender outgoing_messenger_);
 
     /**
      * Adds a new symbol to market.
@@ -83,7 +84,7 @@ public:
      *                  there exists an orderbook associated with the ID.
      * @return the orderbook.
      */
-    const OrderBook& getOrderbook(uint32_t symbol_id) const;
+    const OrderBook &getOrderbook(uint32_t symbol_id) const;
 
     /**
      * Indicates whether an orderbook is present in the market.
@@ -151,13 +152,14 @@ public:
      * @return ErrorStatus indicating whether the order was successfully executed.
      */
     ErrorStatus executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity);
+
 private:
     // Maps symbol to orderbook.
     std::vector<std::unique_ptr<OrderBook>> symbol_to_book;
     // Symbol IDs to symbol names.
     std::unordered_map<uint32_t, std::string> id_to_symbol;
     // Sends outgoing messages regarding the statuses of orders.
-    Messaging::Sender outgoing_messenger;
+    Concurrent::Messaging::Sender outgoing_messenger;
 };
 } // namespace RapidTrader::Matching
 #endif // RAPID_TRADER_MARKET_H

@@ -1,8 +1,8 @@
 #ifndef RAPID_TRADER_SENDER_H
 #define RAPID_TRADER_SENDER_H
-#include "message_queue.h"
+#include "concurrent/messaging/message_queue.h"
 
-namespace Messaging {
+namespace Concurrent::Messaging {
 /**
  * A wrapper for MessageQueue that only allows message
  * to be pushed onto the queue.
@@ -42,5 +42,5 @@ public:
 private:
     MessageQueue *message_queue_ptr;
 };
-} // namespace Messaging
+} // namespace Concurrent::Messaging
 #endif // RAPID_TRADER_SENDER_H

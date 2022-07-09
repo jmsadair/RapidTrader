@@ -8,9 +8,11 @@
 enum class OrderAction
 {
     Limit = 0,
-    Market = 1
+    Market = 1,
+    Stop = 2,
+    StopLimit = 3
 };
-static constexpr std::array order_action_to_string{"LIMIT", "MARKET"};
+static constexpr std::array order_action_to_string{"LIMIT", "MARKET", "STOP", "STOP LIMIT"};
 
 // Represents the different types of orders.
 //  Good 'Till Cancelled: A good-til-canceled order will remain active until
@@ -24,9 +26,10 @@ enum class OrderType
 {
     GoodTillCancel = 0,
     FillOrKill = 1,
-    ImmediateOrCancel = 2
+    ImmediateOrCancel = 2,
+    AllOrNone = 3
 };
-static constexpr std::array order_type_to_string{"GTC", "FOK", "IOC"};
+static constexpr std::array order_type_to_string{"GTC", "FOK", "IOC", "AON"};
 
 // Represents the side of the order.
 enum class OrderSide
@@ -189,6 +192,17 @@ struct Order : public list_base_hook<>
     }
 
     /**
+     * Set the action of the order.
+     *
+     * @param action_ the new action of the order, require that, if action_ is
+     *                market or stop, the type of the order is FOK or IOC.
+     */
+    inline void setAction(OrderAction action_)
+    {
+        action = action_;
+    }
+
+    /**
      * Cancel a quantity of the order.
      *
      * @param quantity_ the quantity of the order to cancel, require that quantity_ is positive.
@@ -231,6 +245,22 @@ struct Order : public list_base_hook<>
     }
 
     /**
+     * @return true if the order is a stop order and false otherwise.
+     */
+    [[nodiscard]] inline bool isStop() const
+    {
+        return action == OrderAction::Stop;
+    }
+
+    /**
+     * @return true if the order is a stop limit order and false otherwise.
+     */
+    [[nodiscard]] inline bool isStopLimit() const
+    {
+        return action == OrderAction::StopLimit;
+    }
+
+    /**
      * @return true if the order is an IOC order and false otherwise.
      */
     [[nodiscard]] inline bool isIoc() const
@@ -252,6 +282,14 @@ struct Order : public list_base_hook<>
     [[nodiscard]] inline bool isFok() const
     {
         return type == OrderType::FillOrKill;
+    }
+
+    /**
+     * @return true if the order is a AON order and false otherwise.
+     */
+    [[nodiscard]] inline bool isAon() const
+    {
+        return type == OrderType::AllOrNone;
     }
 
     /**

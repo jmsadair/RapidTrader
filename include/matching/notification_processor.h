@@ -1,7 +1,7 @@
 #ifndef RAPID_TRADER_NOTIFICATION_PROCESSOR_H
 #define RAPID_TRADER_NOTIFICATION_PROCESSOR_H
 #include <thread>
-#include "receiver.h"
+#include "concurrent/messaging/receiver.h"
 #include "notification.h"
 
 class NotificationProcessor
@@ -27,7 +27,7 @@ public:
      */
     inline void shutdown()
     {
-        getSender().send(Messaging::CloseQueue());
+        getSender().send(Concurrent::Messaging::CloseQueue());
         processing_thread.join();
     }
 
@@ -35,9 +35,9 @@ public:
      * @return a message sender that can communicate with the notification
      *         processor.
      */
-    inline Messaging::Sender getSender()
+    inline Concurrent::Messaging::Sender getSender()
     {
-        return static_cast<Messaging::Sender>(notification_receiver);
+        return static_cast<Concurrent::Messaging::Sender>(notification_receiver);
     }
 
 protected:
@@ -106,6 +106,6 @@ private:
     // The thread that the notifications are processed on.
     std::thread processing_thread;
     // Receives incoming notifications.
-    Messaging::Receiver notification_receiver;
+    Concurrent::Messaging::Receiver notification_receiver;
 };
 #endif // RAPID_TRADER_NOTIFICATION_PROCESSOR_H

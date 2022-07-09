@@ -148,7 +148,7 @@ target_link_libraries(rapid_trader spdlog)
 # ------------------------------------------------------------------------------
 # Rapid Trader Benchmark
 # ------------------------------------------------------------------------------
-#add_executable(rapid_trader_benchmark )
+#add_executable(rapid_trader_benchmark benchmark/bench_market.cpp)
 #target_link_libraries(rapid_trader_benchmark benchmark::benchmark rapid_trader)
 #install(TARGETS rapid_trader_benchmark DESTINATION ${TRADER_INSTALL_BIN_DIR}/benchmarks)
 
@@ -157,13 +157,8 @@ target_link_libraries(rapid_trader spdlog)
 # ------------------------------------------------------------------------------
 include(CTest)
 include(GoogleTest)
-
-add_executable(rapid_trader_tests
-        test/test_level.cpp
-        test/test_market.cpp
-        test/test_message_queue.cpp
-        test/test_order.cpp
-        )
+file(GLOB_RECURSE TEST_SOURCE_FILES "test/*.cpp")
+add_executable(rapid_trader_tests ${TEST_SOURCE_FILES})
 target_link_libraries(rapid_trader_tests rapid_trader)
 target_link_libraries(rapid_trader_tests gtest_main)
 gtest_discover_tests(rapid_trader_tests)
