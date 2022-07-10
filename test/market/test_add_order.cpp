@@ -1,25 +1,10 @@
-#include <gtest/gtest.h>
-#include "market.h"
-#include "debug_notification_processor.h"
+#include "market_test_fixture.h"
 
 /**
  * Tests adding GTC limit order to empty orderbook.
  */
-TEST(MarketTest, AddGtcLimitOrder1)
+TEST_F(MarketTest, AddGtcLimitOrder1)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Bid;
@@ -34,18 +19,6 @@ TEST(MarketTest, AddGtcLimitOrder1)
 
     notification_processor.shutdown();
 
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
-
     // Check that order was added. Order should be identical to original
     // order since it should not have been matched.
     ASSERT_FALSE(notification_processor.add_order_notifications.empty());
@@ -59,21 +32,8 @@ TEST(MarketTest, AddGtcLimitOrder1)
 /**
  * Tests adding GTC limit orders that are matchable to an orderbook.
  */
-TEST(MarketTest, AddGtcLimitOrder2)
+TEST_F(MarketTest, AddGtcLimitOrder2)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Bid;
@@ -99,18 +59,6 @@ TEST(MarketTest, AddGtcLimitOrder2)
     market.addOrder(order2);
 
     notification_processor.shutdown();
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
@@ -160,21 +108,8 @@ TEST(MarketTest, AddGtcLimitOrder2)
 /**
  * Tests adding AON limit order that is matched when it is added to the book.
  */
-TEST(MarketTest, AddAonLimitOrder1)
+TEST_F(MarketTest, AddAonLimitOrder1)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Bid;
@@ -200,18 +135,6 @@ TEST(MarketTest, AddAonLimitOrder1)
     market.addOrder(order2);
 
     notification_processor.shutdown();
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
@@ -260,21 +183,8 @@ TEST(MarketTest, AddAonLimitOrder1)
 /**
  * Tests adding limit IOC order that is not able to be completely filled to an orderbook.
  */
-TEST(MarketTest, AddIocLimitOrder1)
+TEST_F(MarketTest, AddIocLimitOrder1)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Ask;
@@ -312,18 +222,6 @@ TEST(MarketTest, AddIocLimitOrder1)
     market.addOrder(order3);
 
     notification_processor.shutdown();
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
@@ -415,21 +313,8 @@ TEST(MarketTest, AddIocLimitOrder1)
 /**
  * Tests adding limit IOC order that is not able to be completely filled to an orderbook.
  */
-TEST(MarketTest, AddIocLimitOrder2)
+TEST_F(MarketTest, AddIocLimitOrder2)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Bid;
@@ -455,18 +340,6 @@ TEST(MarketTest, AddIocLimitOrder2)
     market.addOrder(order2);
 
     notification_processor.shutdown();
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
@@ -524,21 +397,8 @@ TEST(MarketTest, AddIocLimitOrder2)
 /**
  * Tests adding limit FOK order that is able to be completely filled to an orderbook.
  */
-TEST(MarketTest, AddFokLimitOrder1)
+TEST_F(MarketTest, AddFokLimitOrder1)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Ask;
@@ -576,18 +436,6 @@ TEST(MarketTest, AddFokLimitOrder1)
     market.addOrder(order3);
 
     notification_processor.shutdown();
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
@@ -670,21 +518,8 @@ TEST(MarketTest, AddFokLimitOrder1)
 /**
  * Tests adding limit FOK order that is not able to be completely filled to an orderbook.
  */
-TEST(MarketTest, AddFokLimitOrder2)
+TEST_F(MarketTest, AddFokLimitOrder2)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Bid;
@@ -723,18 +558,6 @@ TEST(MarketTest, AddFokLimitOrder2)
 
     notification_processor.shutdown();
 
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
-
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
     ASSERT_FALSE(notification_processor.add_order_notifications.empty());
@@ -768,21 +591,8 @@ TEST(MarketTest, AddFokLimitOrder2)
 /**
  * Tests adding market IOC order that is not able to be completely filled to an orderbook.
  */
-TEST(MarketTest, AddIocMarketOrder1)
+TEST_F(MarketTest, AddIocMarketOrder1)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Bid;
@@ -820,18 +630,6 @@ TEST(MarketTest, AddIocMarketOrder1)
     market.addOrder(order3);
 
     notification_processor.shutdown();
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
@@ -924,16 +722,8 @@ TEST(MarketTest, AddIocMarketOrder1)
 /**
  * Tests adding market IOC order that is able to be completely filled to an orderbook.
  */
-TEST(MarketTest, AddIocMarketOrder2)
+TEST_F(MarketTest, AddIocMarketOrder2)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
     // Add the symbol.
     market.addSymbol(symbol_id, symbol_name);
     // Add the orderbook for the symbol.
@@ -964,18 +754,6 @@ TEST(MarketTest, AddIocMarketOrder2)
     market.addOrder(order2);
 
     notification_processor.shutdown();
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
@@ -1024,21 +802,8 @@ TEST(MarketTest, AddIocMarketOrder2)
 /**
  * Tests adding stop IOC order that is activated when it is added to the book.
  */
-TEST(MarketTest, AddIocStopOrder1)
+TEST_F(MarketTest, AddIocStopOrder1)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Bid;
@@ -1076,18 +841,6 @@ TEST(MarketTest, AddIocStopOrder1)
     market.addOrder(order3);
 
     notification_processor.shutdown();
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
@@ -1182,21 +935,8 @@ TEST(MarketTest, AddIocStopOrder1)
 /**
  * Tests adding stop IOC order that is activated after new limit order is added to the book.
  */
-TEST(MarketTest, AddIocStopOrder2)
+TEST_F(MarketTest, AddIocStopOrder2)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Ask;
@@ -1234,18 +974,6 @@ TEST(MarketTest, AddIocStopOrder2)
     market.addOrder(order3);
 
     notification_processor.shutdown();
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
@@ -1340,21 +1068,8 @@ TEST(MarketTest, AddIocStopOrder2)
 /**
  * Tests adding multiple stop IOC orders that are activated after new limit order is added to the book.
  */
-TEST(MarketTest, AddIocStopOrder3)
+TEST_F(MarketTest, AddIocStopOrder3)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Ask;
@@ -1416,18 +1131,6 @@ TEST(MarketTest, AddIocStopOrder3)
     market.addOrder(order5);
 
     notification_processor.shutdown();
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
@@ -1614,21 +1317,8 @@ TEST(MarketTest, AddIocStopOrder3)
 /**
  * Tests adding stop limit GTC order that is activated when it is added to the book.
  */
-TEST(MarketTest, AddGtcStopLimitOrder1)
+TEST_F(MarketTest, AddGtcStopLimitOrder1)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Ask;
@@ -1666,18 +1356,6 @@ TEST(MarketTest, AddGtcStopLimitOrder1)
     market.addOrder(order3);
 
     notification_processor.shutdown();
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.

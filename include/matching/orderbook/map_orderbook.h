@@ -59,7 +59,8 @@ public:
      */
     [[nodiscard]] inline uint32_t marketAskPrice() const override
     {
-        return ask_levels.empty() ? std::numeric_limits<uint32_t>::max() : ask_levels.begin()->first;
+        uint32_t best_ask = ask_levels.empty() ? std::numeric_limits<uint32_t>::max() : ask_levels.begin()->first;
+        return std::min(best_ask, ask_match_price);
     }
 
     /**
@@ -67,7 +68,8 @@ public:
      */
     [[nodiscard]] inline uint32_t marketBidPrice() const override
     {
-        return bid_levels.empty() ? 0 : bid_levels.rbegin()->first;
+        uint32_t best_bid = bid_levels.empty() ? 0 : bid_levels.rbegin()->first;
+        return std::max(best_bid, bid_match_price);
     }
 
     /**
@@ -96,6 +98,17 @@ public:
 
 private:
     /**
+     * Deletes an order from the book. Does not match orders.
+     *
+     * @param order_id the ID of the order, require that there exists
+     *                 an order with order_id in the book.
+     * @param notification true if a notification should be sent
+     *                     indicating that the order was deleted and
+     *                     false otherwise.
+     */
+    void deleteOrder(uint64_t order_id, bool notification = true);
+
+    /**
      * Submits a limit order to the book.
      *
      * @param order the limit order to add to the book, require that the order
@@ -109,21 +122,6 @@ private:
      * @param order the order to insert.
      */
     void insertLimitOrder(const Order &order);
-
-    /**
-     * Adds a new limit price level to the book.
-     *
-     * @param order the initial limit order that will be added to the price level.
-     * @return an iterator to the newly added level.
-     */
-    std::map<uint32_t, Level>::iterator addLimitLevel(const Order &order);
-
-    /**
-     * Deletes a limit price level from the book.
-     *
-     * @param order an order that is the level to be deleted.
-     */
-    void deleteLimitLevel(const Order &order);
 
     /**
      * Submits a market order to the book.
@@ -140,21 +138,6 @@ private:
     void addStopOrder(Order &order);
 
     /**
-     * Adds a new stop price level to the book.
-     *
-     * @param order the initial stop order that will be added to the price level.
-     * @return an iterator to the newly added level.
-     */
-    std::map<uint32_t, Level>::iterator addStopLevel(const Order &order);
-
-    /**
-     * Deletes a stop price level from the book.
-     *
-     * @param order a stop order that is the level to be deleted.
-     */
-    void deleteStopLevel(const Order &order);
-
-    /**
      * Inserts a stop order into the book.
      *
      * @param order the order to insert, require that order has stop
@@ -163,10 +146,11 @@ private:
     void insertStopOrder(const Order &order);
 
     /**
-     * Attempts to activate and process the stop (limit and market)
-     * orders in the book.
+     * Activates stop limit and stop market orders if possible.
+     *
+     * @return true if orders were activated and false otherwise.
      */
-    void activateStopOrders();
+    bool activateStopOrders();
 
     /**
      * Removes the provided order from the orderbook, converts it into a market
@@ -205,7 +189,28 @@ private:
      * @param ask an ask order to match.
      * @param bid a bid order to match.
      */
-    static void matchOrders(Order &ask, Order &bid);
+    void matchOrders(Order &ask, Order &bid);
+
+    /**
+     * Updates the last ask and bid match prices.
+     *
+     * @param order the order to update the match price with.
+     */
+    inline void updateMatchingPrice(const Order &order) {
+        if (order.isAsk())
+            ask_match_price = order.getPrice();
+        else
+            bid_match_price = order.getPrice();
+    }
+
+    /**
+     * Resets the last ask match price to its maximum value and
+     * the last bid match price to its minimum value.
+     */
+    inline void resetMatchingPrice() {
+        ask_match_price = std::numeric_limits<uint32_t>::max();
+        bid_match_price = 0;
+    }
 
     // IMPORTANT: Note that the declaration of orders MUST be
     // declared before the declaration of the price level vectors.
@@ -220,6 +225,9 @@ private:
     std::map<uint32_t, Level> bid_levels;
     std::map<uint32_t, Level> stop_ask_levels;
     std::map<uint32_t, Level> stop_bid_levels;
+    // Last matched prices.
+    uint32_t ask_match_price;
+    uint32_t bid_match_price;
     Concurrent::Messaging::Sender &outgoing_messages;
     // The symbol ID associated with the book.
     uint32_t symbol_id;

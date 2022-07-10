@@ -16,6 +16,14 @@ public:
     Level(uint32_t price_, LevelSide side_, uint32_t symbol_id_);
 
     /**
+     * @return the orders in the level.
+     */
+    [[nodiscard]] inline const list<Order> &getOrders() const
+    {
+        return orders;
+    }
+
+    /**
      * @return the price associated with the level.
      */
     [[nodiscard]] inline uint32_t getPrice() const

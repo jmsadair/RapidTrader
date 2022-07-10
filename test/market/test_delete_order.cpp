@@ -1,25 +1,10 @@
-#include <gtest/gtest.h>
-#include "market.h"
-#include "debug_notification_processor.h"
+#include "market_test_fixture.h"
 
 /**
  * Tests deleting an order such that it does not result in matching.
  */
-TEST(MarketTest, DeleteOrderShouldWork1)
+TEST_F(MarketTest, DeleteOrderShouldWork1)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Ask;
@@ -36,18 +21,6 @@ TEST(MarketTest, DeleteOrderShouldWork1)
     market.deleteOrder(symbol_id, id1);
 
     notification_processor.shutdown();
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
@@ -68,21 +41,8 @@ TEST(MarketTest, DeleteOrderShouldWork1)
 /**
  * Tests deleting an order such that it results in matching.
  */
-TEST(MarketTest, DeleteOrderShouldWork2)
+TEST_F(MarketTest, DeleteOrderShouldWork2)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
-
-    // Symbol data.
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-
-    // Add the symbol.
-    market.addSymbol(symbol_id, symbol_name);
-    // Add the orderbook for the symbol.
-    market.addOrderbook(symbol_id);
-
     // Order to add.
     OrderAction action1 = OrderAction::Limit;
     OrderSide side1 = OrderSide::Ask;
@@ -123,18 +83,6 @@ TEST(MarketTest, DeleteOrderShouldWork2)
     market.deleteOrder(symbol_id, id1);
 
     notification_processor.shutdown();
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-
-    // Check that book was added.
-    ASSERT_TRUE(market.hasOrderbook(symbol_id));
-    ASSERT_EQ(notification_processor.add_book_notifications.front().symbol_id, symbol_id);
-    notification_processor.add_book_notifications.pop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.

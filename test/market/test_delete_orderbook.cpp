@@ -2,7 +2,7 @@
 #include "market.h"
 #include "debug_notification_processor.h"
 
-TEST(MarketTest, DeleteOrderBookShouldWork1)
+TEST(MarketTestOrderBook, DeleteOrderBookShouldWork1)
 {
     DebugNotificationProcessor notification_processor;
     notification_processor.run();

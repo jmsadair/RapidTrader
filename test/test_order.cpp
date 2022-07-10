@@ -58,22 +58,3 @@ TEST(Order, OrderExecutionShouldWork)
     ASSERT_EQ(order1.getLastExecutedPrice(), executed_price);
     ASSERT_EQ(order1.getOpenQuantity(), quantity1 - executed_quantity);
 }
-
-TEST(Order, OrderReductionShouldWork)
-{
-    // Create a LIMIT BID GTC order.
-    uint32_t symbol1 = 1;
-    OrderAction action1 = OrderAction::Limit;
-    OrderSide side1 = OrderSide::Bid;
-    OrderType type1 = OrderType::GoodTillCancel;
-    uint32_t quantity1 = 100;
-    uint32_t price1 = 100;
-    uint64_t id1 = 1;
-    Order order1{action1, side1, type1, symbol1, price1, quantity1, id1};
-
-    uint64_t quantity_to_cancel = 50;
-    order1.cancel(quantity_to_cancel);
-    ASSERT_EQ(order1.getQuantity(), quantity1);
-    ASSERT_EQ(order1.getOpenQuantity(), quantity1 - quantity_to_cancel);
-    ASSERT_EQ(order1.getExecutedQuantity(), 0);
-}

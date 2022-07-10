@@ -2,7 +2,7 @@
 #include "market.h"
 #include "debug_notification_processor.h"
 
-TEST(MarketTest, AddSymbolShouldWork1)
+TEST(MarketTestSymbol, AddSymbolShouldWork1)
 {
     DebugNotificationProcessor notification_processor;
     notification_processor.run();
@@ -24,4 +24,23 @@ TEST(MarketTest, AddSymbolShouldWork1)
     ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
     notification_processor.add_symbol_notifications.pop();
     ASSERT_TRUE(notification_processor.empty());
+}
+
+TEST(MarketTestSymbol, AddSymbolShouldWork2)
+{
+    DebugNotificationProcessor notification_processor;
+    notification_processor.run();
+    RapidTrader::Matching::Market market(notification_processor.getSender());
+
+    // Symbol data.
+    uint32_t symbol_id = 1;
+    std::string symbol_name = "GOOG";
+
+    // Add the symbol.
+    market.addSymbol(symbol_id, symbol_name);
+
+    // Try to add duplicate symbol
+    ASSERT_EQ(market.addSymbol(symbol_id, symbol_name), ErrorStatus::DuplicateSymbol);
+
+    notification_processor.shutdown();
 }

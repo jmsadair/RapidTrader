@@ -4,7 +4,10 @@
 
 MapOrderBook::MapOrderBook(uint32_t symbol_id_, Concurrent::Messaging::Sender &outgoing_messages_)
     : symbol_id(symbol_id_), outgoing_messages(outgoing_messages_)
-{}
+{
+    ask_match_price = std::numeric_limits<uint32_t>::max();
+    bid_match_price = 0;
+}
 
 void MapOrderBook::addOrder(Order order) {
     assert(order.getSymbolID() == symbol_id && "Order symbol ID does not match the orderbook symbol ID!");
@@ -24,6 +27,7 @@ void MapOrderBook::addOrder(Order order) {
         break;
     }
     processMatching();
+    resetMatchingPrice();
 }
 
 void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint32_t price)
@@ -38,14 +42,10 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint32_t p
     order.execute(price, executed_quantity);
     outgoing_messages.send(ExecutedOrder{order});
     // If the order is filled, remove it from the book.
-    if (order.isFilled()) {
-        outgoing_messages.send(DeletedOrder{order});
-        level_it->second.deleteOrder(it->second.order);
-        if (level_it->second.empty())
-            order.isLimit() ? deleteLimitLevel(order) : deleteStopLevel(order);
-        orders.erase(it);
-    }
+    if (order.isFilled())
+        deleteOrder(order_id, true);
     processMatching();
+    resetMatchingPrice();
 }
 
 void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
@@ -54,20 +54,15 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
     auto it = orders.find(order_id);
     assert(it != orders.end() && "Order does not exist!");
     Order& order = it->second.order;
-    auto level_it = it->second.level_it;
     // Calculate the minimum quantity to execute.
     uint64_t execute_quantity = std::min(quantity, order.getOpenQuantity());
     it->second.order.execute(order.getPrice(), execute_quantity);
     outgoing_messages.send(ExecutedOrder{order});
     // If the order is filled, remove it from the book.
-    if (order.isFilled()) {
-        outgoing_messages.send(DeletedOrder{order});
-        level_it->second.deleteOrder(it->second.order);
-        if (level_it->second.empty())
-            order.isLimit() ? deleteLimitLevel(order) : deleteStopLevel(order);
-        orders.erase(it);
-    }
+    if (order.isFilled())
+       deleteOrder(order_id, true);
     processMatching();
+    resetMatchingPrice();
 }
 
 void MapOrderBook::cancelOrder(uint64_t order_id, uint64_t quantity)
@@ -75,39 +70,39 @@ void MapOrderBook::cancelOrder(uint64_t order_id, uint64_t quantity)
     auto it = orders.find(order_id);
     assert(it != orders.end() && "Order does not exist!");
     Order& order = it->second.order;
-    auto level_it = it->second.level_it;
-    order.cancel(quantity);
+    order.setQuantity(quantity);
     outgoing_messages.send(UpdatedOrder{order});
     // If the order is filled, remove it from the book.
-    if (order.isFilled()) {
-        outgoing_messages.send(DeletedOrder{order});
-        level_it->second.deleteOrder(it->second.order);
-        if (level_it->second.empty())
-            order.isLimit() ? deleteLimitLevel(order) : deleteStopLevel(order);
-        orders.erase(it);
-    }
+    if (order.isFilled())
+        deleteOrder(order_id, true);
     processMatching();
+    resetMatchingPrice();
 }
 
 void MapOrderBook::deleteOrder(uint64_t order_id)
 {
+    deleteOrder(order_id, true);
+    processMatching();
+    resetMatchingPrice();
+}
+
+void MapOrderBook::deleteOrder(uint64_t order_id, bool notification) {
     // Find the order and the iterator to the level it belongs to.
     auto it = orders.find(order_id);
     assert(it != orders.end() && "Order does not exist!");
-    // Notify that order has been deleted.
-    outgoing_messages.send(DeletedOrder{it->second.order});
     auto level_it = it->second.level_it;
+    if (notification)
+        outgoing_messages.send(DeletedOrder{it->second.order});
     // Remove the order from level.
     level_it->second.deleteOrder(it->second.order);
-    // Remove the limit price level if it is empty.
+    // Erase the level from the map. Note that this invalidates the iterator to the level.
     if (level_it->second.empty() && it->second.order.isLimit())
-        deleteLimitLevel(it->second.order);
-    // Remove the stop price level if it is empty.
-    if (level_it->second.empty() && it->second.order.isStop())
-        deleteStopLevel(it->second.order);
+        it->second.order.isAsk() ? ask_levels.erase(level_it) : bid_levels.erase(level_it);
+    // Erase the level from the map. Note that this invalidates the iterator to the level.
+    if (level_it->second.empty() && (it->second.order.isStop() || it->second.order.isStopLimit()))
+        it->second.order.isAsk() ? stop_ask_levels.erase(level_it) : stop_bid_levels.erase(level_it);
     // Remove the order wrapper.
     orders.erase(it);
-    processMatching();
 }
 
 void MapOrderBook::addLimitOrder(Order &order)
@@ -123,48 +118,43 @@ void MapOrderBook::addLimitOrder(Order &order)
         outgoing_messages.send(DeletedOrder{order});
 }
 
-std::map<uint32_t, Level>::iterator MapOrderBook::addLimitLevel(const Order &order)
-{
-    assert(order.isLimit() && "Order must be a limit order!");
-    // Add a level on the ask side.
-    if (order.isAsk())
-    {
-        auto [it, success] = ask_levels.emplace(std::piecewise_construct, std::make_tuple(order.getPrice()),
-            std::make_tuple(order.getPrice(), LevelSide::Ask, symbol_id));
-         return it;
-    }
-    // Add a level on the bid side.
-    else
-    {
-        auto [it, success] = bid_levels.emplace(std::piecewise_construct, std::make_tuple(order.getPrice()),
-            std::make_tuple(order.getPrice(), LevelSide::Bid, symbol_id));
-        return it;
-    }
-}
-
-void MapOrderBook::deleteLimitLevel(const Order &order)
-{
-    assert(order.isLimit() && "Order must be a limit order!");
-    // Find the iterator to the level that the order belongs.
-    auto it = orders.find(order.getOrderID());
-    auto level_it = it->second.level_it;
-    // Erase the level from the map. Note that this invalidates the iterator.
-    order.isAsk() ? ask_levels.erase(level_it) : bid_levels.erase(level_it);
-}
-
 void MapOrderBook::insertLimitOrder(const Order &order) {
     assert(order.isLimit() && "Order must be a limit order!");
-    auto level_it = order.isAsk() ? ask_levels.find(order.getPrice()) : bid_levels.find(order.getPrice());
-    if (level_it == (order.isAsk() ? ask_levels.end() : bid_levels.end()))
+    if (order.isAsk())
     {
-        auto new_level_it = addLimitLevel(order);
-        auto [it, success] = orders.insert({order.getOrderID(), {order, new_level_it}});
-        new_level_it->second.addOrder(it->second.order);
+        auto level_it = ask_levels.find(order.getPrice());
+        // Make a new ask level.
+        if (level_it == ask_levels.end())
+        {
+            auto level_pair = ask_levels.emplace(
+                std::piecewise_construct, std::make_tuple(order.getPrice()), std::make_tuple(order.getPrice(), LevelSide::Ask, symbol_id));
+            auto order_pair = orders.insert({order.getOrderID(), {order, level_pair.first}});
+            level_pair.first->second.addOrder(order_pair.first->second.order);
+        }
+        // Insert order into existing ask level.
+        else
+        {
+            auto order_pair = orders.insert({order.getOrderID(), {order, level_it}});
+            level_it->second.addOrder(order_pair.first->second.order);
+        }
     }
     else
     {
-        auto [it, success] = orders.insert({order.getOrderID(), {order, level_it}});
-        level_it->second.addOrder(it->second.order);
+        auto level_it = bid_levels.find(order.getPrice());
+        // Make a new bid level.
+        if (level_it == bid_levels.end())
+        {
+            auto level_pair = bid_levels.emplace(
+                std::piecewise_construct, std::make_tuple(order.getPrice()), std::make_tuple(order.getPrice(), LevelSide::Bid, symbol_id));
+            auto order_pair = orders.insert({order.getOrderID(), {order, level_pair.first}});
+            level_pair.first->second.addOrder(order_pair.first->second.order);
+        }
+        // Insert order into existing bid level.
+        else
+        {
+            auto order_pair = orders.insert({order.getOrderID(), {order, level_it}});
+            level_it->second.addOrder(order_pair.first->second.order);
+        }
     }
 }
 
@@ -188,75 +178,73 @@ void MapOrderBook::addStopOrder(Order &order) {
     insertStopOrder(order);
 }
 
-std::map<uint32_t, Level>::iterator MapOrderBook::addStopLevel(const Order &order)
-{
-    // Add a level on the ask side.
-    if (order.isAsk())
-    {
-        auto [it, success] = stop_ask_levels.emplace(std::piecewise_construct, std::make_tuple(order.getPrice()),
-            std::make_tuple(order.getPrice(), LevelSide::Ask, symbol_id));
-        return it;
-    }
-    // Add a level on the bid side.
-    else
-    {
-        auto [it, success] = stop_bid_levels.emplace(std::piecewise_construct, std::make_tuple(order.getPrice()),
-            std::make_tuple(order.getPrice(), LevelSide::Bid, symbol_id));
-        return it;
-    }
-}
-
-void MapOrderBook::deleteStopLevel(const Order &order) {
-    // Find the iterator to the stop level that the order belongs.
-    auto it = orders.find(order.getOrderID());
-    auto level_it = it->second.level_it;
-    // Erase the level from the map. Note that this invalidates the iterator.
-    order.isAsk() ? stop_ask_levels.erase(level_it) : stop_bid_levels.erase(level_it);
-}
-
 void MapOrderBook::insertStopOrder(const Order &order) {
     assert(order.isStop() || order.isStopLimit() && "Order must be a stop order!");
-    auto level_it = order.isAsk() ? stop_ask_levels.find(order.getPrice()) : stop_bid_levels.find(order.getPrice());
-    if (level_it == (order.isAsk() ? stop_ask_levels.end() : stop_bid_levels.end()))
+    if (order.isAsk())
     {
-        auto new_level_it = addStopLevel(order);
-        auto [it, success] = orders.insert({order.getOrderID(), {order, new_level_it}});
-        new_level_it->second.addOrder(it->second.order);
+        auto level_it = stop_ask_levels.find(order.getPrice());
+        // Make a new ask level.
+        if (level_it == stop_ask_levels.end())
+        {
+            auto level_pair = stop_ask_levels.emplace(
+                std::piecewise_construct, std::make_tuple(order.getPrice()), std::make_tuple(order.getPrice(), LevelSide::Ask, symbol_id));
+            auto order_pair = orders.insert({order.getOrderID(), {order, level_pair.first}});
+            level_pair.first->second.addOrder(order_pair.first->second.order);
+        }
+        // Insert order into existing ask level.
+        else
+        {
+            auto order_pair = orders.insert({order.getOrderID(), {order, level_it}});
+            level_it->second.addOrder(order_pair.first->second.order);
+        }
     }
     else
     {
-        auto [it, success] = orders.insert({order.getOrderID(), {order, level_it}});
-        level_it->second.addOrder(it->second.order);
+        auto level_it = stop_bid_levels.find(order.getPrice());
+        // Make a new bid level.
+        if (level_it == stop_bid_levels.end())
+        {
+            auto level_pair = stop_bid_levels.emplace(
+                std::piecewise_construct, std::make_tuple(order.getPrice()), std::make_tuple(order.getPrice(), LevelSide::Bid, symbol_id));
+            auto order_pair = orders.insert({order.getOrderID(), {order, level_pair.first}});
+            level_pair.first->second.addOrder(order_pair.first->second.order);
+        }
+        // Insert order into existing bid level.
+        else
+        {
+            auto order_pair = orders.insert({order.getOrderID(), {order, level_it}});
+            level_it->second.addOrder(order_pair.first->second.order);
+        }
     }
 }
 
-void MapOrderBook::activateStopOrders() {
+bool MapOrderBook::activateStopOrders() {
+    bool activated_orders = false;
     uint32_t market_ask_price = marketAskPrice();
     uint32_t market_bid_price = marketBidPrice();
     auto bid_level_it = stop_bid_levels.rbegin();
     auto ask_level_it = stop_ask_levels.begin();
     // Activate all bid stop orders that have a price that is greater than the current market ask price.
     while (bid_level_it != stop_bid_levels.rend() && bid_level_it->first >= market_ask_price) {
+        activated_orders = true;
         Order& bid_stop_order = bid_level_it->second.front();
         activateStopOrder(bid_stop_order);
         bid_level_it = stop_bid_levels.rbegin();
     }
     // Activate all ask stop orders that have a price that is less than current market bid price.
     while (ask_level_it != stop_ask_levels.end() && ask_level_it->second.getPrice() <= market_bid_price) {
+        activated_orders = true;
         Order& ask_stop_order = ask_level_it->second.front();
         activateStopOrder(ask_stop_order);
         ask_level_it = stop_ask_levels.begin();
     }
+    return activated_orders;
 }
 
 void MapOrderBook::activateStopOrder(Order order) {
     // Remove order from book - this is safe since a copy of the order was made.
-    auto it = orders.find(order.getOrderID());
-    auto level_it = it->second.level_it;
-    level_it->second.deleteOrder(order);
-    if (level_it->second.empty())
-        deleteStopLevel(order);
-    orders.erase(it);
+    // Do not notify that order was deleted.
+    deleteOrder(order.getOrderID(), false);
     // Convert the stop order to a limit or market order and match it.
     if (order.isStop())
     {
@@ -276,60 +264,48 @@ void MapOrderBook::activateStopOrder(Order order) {
 
 void MapOrderBook::processMatching()
 {
-    auto bid_level = bid_levels.rbegin();
-    auto ask_level = ask_levels.begin();
-    uint32_t last_ask_price = marketAskPrice();
-    uint32_t last_bid_price = marketBidPrice();
-    while (ask_level != ask_levels.end() && bid_level != bid_levels.rend() && ask_level->first <= bid_level->first)
+    auto bid_levels_it = bid_levels.rbegin();
+    auto ask_levels_it = ask_levels.begin();
+    while (true)
     {
-        // Match the orders.
-        Order &ask = ask_level->second.front();
-        Order &bid = bid_level->second.front();
-        if (bid.isAon() && !canProcess(bid))
-            return;
-        if (ask.isAon() && !canProcess(ask))
-            return;
-        matchOrders(ask, bid);
-        // Send order execution notifications for the matched orders.
-        outgoing_messages.send(ExecutedOrder{bid});
-        outgoing_messages.send(ExecutedOrder{ask});
-        // Remove the orders from the book if they are filled.
-        if (bid.isFilled())
+        while (ask_levels_it != ask_levels.end() && bid_levels_it != bid_levels.rend() && ask_levels_it->first <= bid_levels_it->first)
         {
-            outgoing_messages.send(DeletedOrder{bid});
-            bid_level->second.popFront();
-            // Remove the level if it is empty.
-            if (bid_level->second.empty())
-                deleteLimitLevel(bid);
-            orders.erase(bid.getOrderID());
-
+            Order &min_ask = ask_levels_it->second.front();
+            Order &max_bid = bid_levels_it->second.front();
+            // If either orders are AON and cannot be filled, quit.
+            if (max_bid.isAon() && !canProcess(max_bid))
+                return;
+            if (min_ask.isAon() && !canProcess(min_ask))
+                return;
+            // Match the orders.
+            matchOrders(min_ask, max_bid);
+            bool price_level_change = (max_bid.isFilled() && bid_levels_it->second.size() == 1) ||
+                                 (min_ask.isFilled() && ask_levels_it->second.size() == 1);
+            // Remove max_bid order if it is filled. May delete current level.
+            if (max_bid.isFilled())
+                deleteOrder(max_bid.getOrderID(), true);
+            // Remove min_ask order if it is filled. May delete current level.
+            if (min_ask.isFilled())
+                deleteOrder(min_ask.getOrderID(), true);
+            // Activate stop orders if price has been updated.
+            if (price_level_change)
+                activateStopOrders();
+            // Reset level iterators in case level was deleted.
+            bid_levels_it = bid_levels.rbegin();
+            ask_levels_it = ask_levels.begin();
         }
-        if (ask.isFilled())
-        {
-            outgoing_messages.send(DeletedOrder{ask});
-            ask_level->second.popFront();
-            // Remove the level if it is empty.
-            if (ask_level->second.empty())
-                deleteLimitLevel(ask);
-            orders.erase(ask.getOrderID());
-        }
-        // If the market price has changed, activate stop orders.
-        if (last_ask_price != marketAskPrice() || last_bid_price != marketBidPrice()) {
-            activateStopOrders();
-            last_ask_price = marketAskPrice();
-            last_bid_price = marketBidPrice();
-        }
-        bid_level = bid_levels.rbegin();
-        ask_level = ask_levels.begin();
+        if (!activateStopOrders())
+            break;
     }
-    activateStopOrders();
 }
 
 void MapOrderBook::processMatching(Order &order)
 {
-    bool can_match = !(order.isAon() || order.isFok()) || canProcess(order);
+    // Quit if the order is AON or FOK and cannot be completely filled.
+    if ((order.isAon() || order.isFok()) && !canProcess(order))
+        return;
     // Order is on the ask side.
-    if (order.isAsk() && can_match)
+    if (order.isAsk())
     {
         // Maximum price bid level.
         auto level = bid_levels.rbegin();
@@ -340,23 +316,14 @@ void MapOrderBook::processMatching(Order &order)
             if (bid.isAon() && bid.getOpenQuantity() > order.getOpenQuantity())
                 return;
             matchOrders(order, bid);
-            // Send order execution notifications for the matched orders.
-            outgoing_messages.send(ExecutedOrder{bid});
-            outgoing_messages.send(ExecutedOrder{order});
             // If the existing bid order is filled, remove it from the book.
             if (bid.isFilled())
-            {
-                outgoing_messages.send(DeletedOrder{bid});
-                level->second.popFront();
-                if (level->second.empty())
-                    deleteLimitLevel(bid);
-                orders.erase(bid.getOrderID());
-                level = bid_levels.rbegin();
-            }
+                deleteOrder(bid.getOrderID(), true);
+            level = bid_levels.rbegin();
         }
     }
     // Order is on the bid side.
-    if (order.isBid() && can_match)
+    if (order.isBid())
     {
         // Minimum price ask level.
         auto level = ask_levels.begin();
@@ -367,19 +334,10 @@ void MapOrderBook::processMatching(Order &order)
             if (ask.isAon() && ask.getOpenQuantity() > order.getOpenQuantity())
                  return;
             matchOrders(ask, order);
-            // Send order execution notifications for the matched orders.
-            outgoing_messages.send(ExecutedOrder{order});
-            outgoing_messages.send(ExecutedOrder{ask});
             // If the existing ask order is filled, remove it from the book.
             if (ask.isFilled())
-            {
-                outgoing_messages.send(DeletedOrder{ask});
-                level->second.popFront();
-                if (level->second.empty())
-                    deleteLimitLevel(ask);
-                orders.erase(ask.getOrderID());
-                level = ask_levels.begin();
-            }
+                deleteOrder(ask.getOrderID(), true);
+            level = ask_levels.begin();
         }
     }
 }
@@ -391,6 +349,12 @@ void MapOrderBook::matchOrders(Order &ask, Order &bid)
     uint64_t matched_quantity = std::min(ask.getOpenQuantity(), bid.getOpenQuantity());
     bid.execute(ask.isMarket() ? bid.getPrice() : ask.getPrice(), matched_quantity);
     ask.execute(bid.isMarket() ? ask.getPrice() : bid.getPrice(), matched_quantity);
+    // Send order execution notifications for the matched orders.
+    outgoing_messages.send(ExecutedOrder{bid});
+    outgoing_messages.send(ExecutedOrder{ask});
+    // Update the last matched prices.
+    updateMatchingPrice(ask);
+    updateMatchingPrice(bid);
 }
 
 bool MapOrderBook::canProcess(const Order &order) const
@@ -403,25 +367,35 @@ bool MapOrderBook::canProcess(const Order &order) const
     if (order.isAsk())
     {
         auto level = bid_levels.rbegin();
-        while (quantity_can_fill < order.getOpenQuantity() && level != bid_levels.rend())
+        while (quantity_can_fill < order.getOpenQuantity() && level != bid_levels.rend() && level->first >= order.getPrice())
         {
-            if (level->second.getPrice() < order.getPrice())
-                break;
-            quantity_can_fill += level->second.getVolume();
+            const auto& level_orders = level->second.getOrders();
+            for (const auto& level_order : level_orders)
+            {
+                // If level order is AON and there is not enough remaining quantity of order to fill it, quit.
+                if (level_order.isAon() && order.getOpenQuantity() - quantity_can_fill < level_order.getOpenQuantity())
+                    return quantity_can_fill >= order.getOpenQuantity();
+                quantity_can_fill += level_order.getOpenQuantity();
+            }
             ++level;
         }
     }
     else
     {
         auto level = ask_levels.begin();
-        while (quantity_can_fill < order.getOpenQuantity() && level != ask_levels.end())
+        while (quantity_can_fill < order.getOpenQuantity() && level != ask_levels.end() && level->first <= order.getPrice())
         {
-            if (order.getPrice() != 0 && level->second.getPrice() > order.getPrice())
-                break;
-            quantity_can_fill += level->second.getVolume();
+            const auto& level_orders = level->second.getOrders();
+            for (const auto& level_order : level_orders)
+            {
+                // If level order is AON and there is not enough remaining quantity of order to fill it, quit.
+                if (level_order.isAon() && order.getOpenQuantity() - quantity_can_fill < level_order.getOpenQuantity())
+                    return quantity_can_fill >= order.getOpenQuantity();
+                quantity_can_fill += level_order.getOpenQuantity();
+            }
             ++level;
         }
     }
-    return quantity_can_fill >= order.getQuantity();
+    return quantity_can_fill >= order.getOpenQuantity();
 }
 

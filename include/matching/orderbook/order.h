@@ -177,8 +177,8 @@ struct Order : public list_base_hook<>
      */
     inline void setQuantity(uint64_t quantity_)
     {
-        quantity = quantity_;
-        open_quantity = std::min(open_quantity, quantity);
+        quantity = std::min(quantity_, open_quantity);
+        open_quantity -= quantity_;
     }
 
     /**
@@ -200,16 +200,6 @@ struct Order : public list_base_hook<>
     inline void setAction(OrderAction action_)
     {
         action = action_;
-    }
-
-    /**
-     * Cancel a quantity of the order.
-     *
-     * @param quantity_ the quantity of the order to cancel, require that quantity_ is positive.
-     */
-    inline void cancel(uint64_t quantity_)
-    {
-        open_quantity = std::min(quantity_, quantity);
     }
 
     /**
