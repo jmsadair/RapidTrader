@@ -50,6 +50,16 @@ public:
     virtual void cancelOrder(uint64_t order_id, uint64_t quantity) = 0;
 
     /**
+     * Replaces an existing order in the book.
+     *
+     * @param order_id the ID of the order to replace, require that an order with the provided
+     *                 ID exists in the book.
+     * @param new_order_id the ID that the new order will have.
+     * @param new_price the new price of the order, require that new_price is positive.
+     */
+    virtual void replaceOrder(uint64_t order_id, uint64_t new_order_id, uint64_t new_price) = 0;
+
+    /**
      * @param order_id the ID of the order to check the book for, require that quantity is positive.
      * @return true if the order is in the book and false otherwise.
      */

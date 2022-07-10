@@ -41,6 +41,8 @@ public:
     }
 
 protected:
+    //LCOV_EXCL_START
+
     /**
      * Handles a notification that an order was added.
      *
@@ -97,6 +99,7 @@ protected:
      */
     virtual void onOrderBookDeleted(const DeletedOrderBook &notification){};
 
+    //LCOV_EXCL_STOP
 private:
     /**
      * Processes incoming notifications.

@@ -57,6 +57,11 @@ public:
     /**
      * @inheritdoc
      */
+    void replaceOrder(uint64_t order_id, uint64_t new_order_id, uint64_t new_price) override;
+
+    /**
+     * @inheritdoc
+     */
     [[nodiscard]] inline uint32_t marketAskPrice() const override
     {
         uint32_t best_ask = ask_levels.empty() ? std::numeric_limits<uint32_t>::max() : ask_levels.begin()->first;
@@ -106,7 +111,7 @@ private:
      *                     indicating that the order was deleted and
      *                     false otherwise.
      */
-    void deleteOrder(uint64_t order_id, bool notification = true);
+    void deleteOrder(uint64_t order_id, bool notification);
 
     /**
      * Submits a limit order to the book.

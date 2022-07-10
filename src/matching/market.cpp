@@ -121,14 +121,8 @@ ErrorStatus Market::replaceOrder(uint32_t symbol_id, uint64_t order_id, uint64_t
     // Check that the orderbook has the order.
     if (!book->hasOrder(order_id))
         return ErrorStatus::OrderDoesNotExist;
-    // Find the order to replace.
-    auto order_to_replace = book->getOrder(order_id);
-    // Make a copy of the order with the modified ID and price, and reinsert into the book.
-    Order new_order = order_to_replace;
-    new_order.setOrderID(new_order_id);
-    new_order.setPrice(new_price);
-    book->deleteOrder(order_id);
-    book->addOrder(new_order);
+    // Replace the order.
+    book->replaceOrder(order_id, new_order_id, new_price);
     return ErrorStatus::Ok;
 }
 

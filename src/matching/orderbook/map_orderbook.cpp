@@ -105,6 +105,17 @@ void MapOrderBook::deleteOrder(uint64_t order_id, bool notification) {
     orders.erase(it);
 }
 
+void MapOrderBook::replaceOrder(uint64_t order_id, uint64_t new_order_id, uint64_t new_price)
+{
+    auto it = orders.find(order_id);
+    assert(it != orders.end() && "Order does not exist!");
+    Order new_order = it->second.order;
+    new_order.setOrderID(new_order_id);
+    new_order.setPrice(new_price);
+    deleteOrder(order_id);
+    addOrder(new_order);
+}
+
 void MapOrderBook::addLimitOrder(Order &order)
 {
     assert(order.isLimit() && "Order must be a limit order!");
@@ -398,4 +409,3 @@ bool MapOrderBook::canProcess(const Order &order) const
     }
     return quantity_can_fill >= order.getOpenQuantity();
 }
-
