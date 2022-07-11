@@ -142,7 +142,6 @@ ErrorStatus Market::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t
         return ErrorStatus::OrderDoesNotExist;
     book->executeOrder(order_id, quantity, price);
     return ErrorStatus::Ok;
-
 }
 ErrorStatus Market::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity)
 {

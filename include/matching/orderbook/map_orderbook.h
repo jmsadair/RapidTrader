@@ -62,19 +62,17 @@ public:
     /**
      * @inheritdoc
      */
-    [[nodiscard]] inline uint32_t marketAskPrice() const override
+    [[nodiscard]] inline uint32_t marketPriceAsk() const override
     {
-        uint32_t best_ask = ask_levels.empty() ? std::numeric_limits<uint32_t>::max() : ask_levels.begin()->first;
-        return std::min(best_ask, ask_match_price);
+        return ask_market_price;
     }
 
     /**
      * @inheritdoc
      */
-    [[nodiscard]] inline uint32_t marketBidPrice() const override
+    [[nodiscard]] inline uint32_t marketPriceBid() const override
     {
-        uint32_t best_bid = bid_levels.empty() ? 0 : bid_levels.rbegin()->first;
-        return std::max(best_bid, bid_match_price);
+        return bid_market_price;
     }
 
     /**
@@ -122,6 +120,13 @@ private:
     void addLimitOrder(Order &order);
 
     /**
+     * Matches a limit order if possible.
+     *
+     * @param order the limit order to match.
+     */
+    void matchLimitOrder(Order &order);
+
+    /**
      * Inserts a limit order into the book.
      *
      * @param order the order to insert.
@@ -134,6 +139,13 @@ private:
      * @param order the market order to add to the book.
      */
     void addMarketOrder(Order &order);
+
+    /**
+     * Matches a market order if possible.
+     *
+     * @param order the market order to match.
+     */
+    void matchMarketOrder(Order &order);
 
     /**
      * Submits a stop market order to the book.
@@ -178,7 +190,7 @@ private:
      * Matches all crossed orders in the book. Orders that are filled
      * are removed from the book.
      */
-    void processMatching();
+    void match();
 
     /**
      * Matches all crossed orders in the book. Orders that are filled
@@ -186,35 +198,27 @@ private:
      *
      * @param order the order to match.
      */
-    void processMatching(Order &order);
+    void match(Order &order);
 
     /**
      * Matches two orders.
      *
      * @param ask an ask order to match.
      * @param bid a bid order to match.
+     * @param executing_price price at which orders are executed, require that executing_price
+     *                        is positive.
      */
-    void matchOrders(Order &ask, Order &bid);
+    void matchOrders(Order &ask, Order &bid, uint32_t executing_price);
 
     /**
-     * Updates the last ask and bid match prices.
+     * Updates the market price.
      *
-     * @param order the order to update the match price with.
+     * @param price the price that two orders were matched at.
      */
-    inline void updateMatchingPrice(const Order &order) {
-        if (order.isAsk())
-            ask_match_price = order.getPrice();
-        else
-            bid_match_price = order.getPrice();
-    }
-
-    /**
-     * Resets the last ask match price to its maximum value and
-     * the last bid match price to its minimum value.
-     */
-    inline void resetMatchingPrice() {
-        ask_match_price = std::numeric_limits<uint32_t>::max();
-        bid_match_price = 0;
+    inline void updateMatchingPrice(uint32_t price)
+    {
+        ask_market_price = price;
+        bid_market_price = price;
     }
 
     // IMPORTANT: Note that the declaration of orders MUST be
@@ -225,14 +229,19 @@ private:
 
     // Maps order IDs to order wrappers.
     robin_hood::unordered_map<uint64_t, OrderWrapper> orders;
-    // Maps prices to levels.
+    // Maps prices to limit levels.
     std::map<uint32_t, Level> ask_levels;
     std::map<uint32_t, Level> bid_levels;
+    // Maps prices to stop levels.
     std::map<uint32_t, Level> stop_ask_levels;
     std::map<uint32_t, Level> stop_bid_levels;
-    // Last matched prices.
-    uint32_t ask_match_price;
-    uint32_t bid_match_price;
+    // The current price of the symbol - based off last matched price.
+    // The asking market price is initially 0 and the bidding market
+    // price is initially the maximum 32-bit integer value. They are
+    // updated when there is a new trade.
+    uint32_t ask_market_price;
+    uint32_t bid_market_price;
+    // Sends notifications regarding the execution, deletion, and update of orders.
     Concurrent::Messaging::Sender &outgoing_messages;
     // The symbol ID associated with the book.
     uint32_t symbol_id;

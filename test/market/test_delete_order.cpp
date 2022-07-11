@@ -110,7 +110,7 @@ TEST_F(MarketTest, DeleteOrderShouldWork2)
     ExecutedOrder &execute_order_notification3 = notification_processor.execute_order_notifications.front();
     notification_processor.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification3.order.getOrderID(), id3);
-    ASSERT_EQ(execute_order_notification3.order.getLastExecutedPrice(), price2);
+    ASSERT_EQ(execute_order_notification3.order.getLastExecutedPrice(), price3);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(execute_order_notification3.order.getOpenQuantity(), 0);
 
@@ -134,7 +134,7 @@ TEST_F(MarketTest, DeleteOrderShouldWork2)
     DeletedOrder &delete_order_notification2 = notification_processor.delete_order_notifications.front();
     notification_processor.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification2.order.getOrderID(), id3);
-    ASSERT_EQ(delete_order_notification2.order.getLastExecutedPrice(), price2);
+    ASSERT_EQ(delete_order_notification2.order.getLastExecutedPrice(), price3);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(delete_order_notification2.order.getOpenQuantity(), 0);
 

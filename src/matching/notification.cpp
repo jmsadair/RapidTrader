@@ -1,7 +1,7 @@
 #include <iostream>
 #include "notification.h"
 
-//LCOV_EXCL_START
+// LCOV_EXCL_START
 std::ostream &operator<<(std::ostream &os, const AddedSymbol &notification)
 {
     os << "ADDED SYMBOL: " << notification.name << " " << notification.symbol_id << "\n";
@@ -37,8 +37,9 @@ std::ostream &operator<<(std::ostream &os, const DeletedOrder &notification)
     os << "DELETED ORDER: " << notification.order.getOrderID() << "\n";
     return os;
 }
-std::ostream &operator<<(std::ostream &os, const UpdatedOrder &notification) {
+std::ostream &operator<<(std::ostream &os, const UpdatedOrder &notification)
+{
     os << "UPDATED ORDER: " << notification.order.getOrderID() << "\n";
     return os;
 }
-//LCOV_EXCL_STOP
+// LCOV_EXCL_STOP

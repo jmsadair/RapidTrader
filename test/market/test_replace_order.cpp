@@ -146,7 +146,7 @@ TEST_F(MarketTest, ReplaceOrderShouldWork2)
     ExecutedOrder &execute_order_notification1 = notification_processor.execute_order_notifications.front();
     notification_processor.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification1.order.getOrderID(), id1);
-    ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), new_order_price);
+    ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification1.order.getOpenQuantity(), 0);
 
@@ -164,7 +164,7 @@ TEST_F(MarketTest, ReplaceOrderShouldWork2)
     ExecutedOrder &execute_order_notification3 = notification_processor.execute_order_notifications.front();
     notification_processor.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification3.order.getOrderID(), id2);
-    ASSERT_EQ(execute_order_notification3.order.getLastExecutedPrice(), new_order_price);
+    ASSERT_EQ(execute_order_notification3.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedQuantity(), quantity3 - quantity1);
     ASSERT_EQ(execute_order_notification3.order.getOpenQuantity(), quantity2 - (quantity3 - quantity1));
 
@@ -188,7 +188,7 @@ TEST_F(MarketTest, ReplaceOrderShouldWork2)
     DeletedOrder &delete_order_notification2 = notification_processor.delete_order_notifications.front();
     notification_processor.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification2.order.getOrderID(), id1);
-    ASSERT_EQ(delete_order_notification2.order.getLastExecutedPrice(), new_order_price);
+    ASSERT_EQ(delete_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(delete_order_notification2.order.getOpenQuantity(), 0);
 

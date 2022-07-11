@@ -2,7 +2,9 @@
 #include "level.h"
 
 Level::Level(uint32_t price_, LevelSide side_, uint32_t symbol_id_)
-    : price(price_), side(side_), symbol_id(symbol_id_)
+    : price(price_)
+    , side(side_)
+    , symbol_id(symbol_id_)
 {
     volume = 0;
 }
@@ -32,7 +34,7 @@ void Level::popBack()
     orders.pop_back();
 }
 
-//LCOV_EXCL_START
+// LCOV_EXCL_START
 std::ostream &operator<<(std::ostream &os, const Level &level)
 {
     os << "Level Symbol ID: " << level.symbol_id;
@@ -41,5 +43,4 @@ std::ostream &operator<<(std::ostream &os, const Level &level)
     os << "\nLevel Volume: " << level.volume << "\n";
     return os;
 }
-//LCOV_EXCL_STOP
-
+// LCOV_EXCL_STOP
