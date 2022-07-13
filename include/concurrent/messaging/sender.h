@@ -29,7 +29,7 @@ public:
     /**
      * Sends a message.
      *
-     * @tparam Msg the type of the message that is to be sent.
+     * @tparam Msg the time_in_force of the message that is to be sent.
      * @param msg the message that is to be sent.
      */
     template<typename Msg>

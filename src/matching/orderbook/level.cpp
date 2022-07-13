@@ -1,7 +1,7 @@
 #include <iostream>
 #include "level.h"
 
-Level::Level(uint32_t price_, LevelSide side_, uint32_t symbol_id_)
+Level::Level(uint64_t price_, LevelSide side_, uint32_t symbol_id_)
     : price(price_)
     , side(side_)
     , symbol_id(symbol_id_)

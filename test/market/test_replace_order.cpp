@@ -6,20 +6,20 @@
 TEST_F(MarketTest, ReplaceOrderShouldWork1)
 {
     // Order to add.
-    OrderAction action1 = OrderAction::Limit;
+    OrderType type1 = OrderType::Limit;
     OrderSide side1 = OrderSide::Bid;
-    OrderType type1 = OrderType::GoodTillCancel;
-    uint32_t quantity1 = 1000;
-    uint32_t price1 = 1500;
+    OrderTimeInForce tof1 = OrderTimeInForce::GTC;
+    uint64_t quantity1 = 1000;
+    uint64_t price1 = 1500;
     uint64_t id1 = 1;
-    Order order1{action1, side1, type1, symbol_id, price1, quantity1, id1};
+    Order order1{type1, side1, tof1, symbol_id, price1, quantity1, id1};
 
     // Add the order.
     market.addOrder(order1);
 
     // New order data.
     uint64_t new_order_id = 2;
-    uint32_t new_order_price = 1200;
+    uint64_t new_order_price = 1200;
 
     // Replace the order.
     market.replaceOrder(symbol_id, id1, new_order_id, new_order_price);
@@ -42,7 +42,7 @@ TEST_F(MarketTest, ReplaceOrderShouldWork1)
     ASSERT_EQ(add_order_notification2.order.getSymbolID(), symbol_id);
     ASSERT_EQ(add_order_notification2.order.getPrice(), new_order_price);
     ASSERT_EQ(add_order_notification2.order.getSide(), side1);
-    ASSERT_EQ(add_order_notification2.order.getAction(), action1);
+    ASSERT_EQ(add_order_notification2.order.getType(),type1);
     ASSERT_EQ(add_order_notification2.order.getType(), type1);
     ASSERT_EQ(add_order_notification2.order.getLastExecutedQuantity(), 0);
     ASSERT_EQ(add_order_notification2.order.getLastExecutedPrice(), 0);
@@ -62,44 +62,44 @@ TEST_F(MarketTest, ReplaceOrderShouldWork1)
 TEST_F(MarketTest, ReplaceOrderShouldWork2)
 {
     // Order to add.
-    OrderAction action1 = OrderAction::Limit;
+    OrderType type1 = OrderType::Limit;
     OrderSide side1 = OrderSide::Bid;
-    OrderType type1 = OrderType::GoodTillCancel;
-    uint32_t quantity1 = 100;
-    uint32_t price1 = 1500;
+    OrderTimeInForce tof1 = OrderTimeInForce::GTC;
+    uint64_t quantity1 = 100;
+    uint64_t price1 = 1500;
     uint64_t id1 = 1;
-    Order order1{action1, side1, type1, symbol_id, price1, quantity1, id1};
+    Order order1{type1, side1, tof1, symbol_id, price1, quantity1, id1};
 
     // Add the order.
     market.addOrder(order1);
 
     // Order to add.
-    OrderAction action2 = OrderAction::Limit;
+    OrderType type2 = OrderType::Limit;
     OrderSide side2 = OrderSide::Bid;
-    OrderType type2 = OrderType::GoodTillCancel;
-    uint32_t quantity2 = 1000;
-    uint32_t price2 = 1200;
+    OrderTimeInForce tof2 = OrderTimeInForce::GTC;
+    uint64_t quantity2 = 1000;
+    uint64_t price2 = 1200;
     uint64_t id2 = 2;
-    Order order2{action2, side2, type2, symbol_id, price2, quantity2, id2};
+    Order order2{type2, side2, tof2, symbol_id, price2, quantity2, id2};
 
     // Add the order.
     market.addOrder(order2);
 
     // Order to add.
-    OrderAction action3 = OrderAction::Limit;
+    OrderType type3 = OrderType::Limit;
     OrderSide side3 = OrderSide::Ask;
-    OrderType type3 = OrderType::GoodTillCancel;
-    uint32_t quantity3 = 500;
-    uint32_t price3 = 2000;
+    OrderTimeInForce tof3 = OrderTimeInForce::GTC;
+    uint64_t quantity3 = 500;
+    uint64_t price3 = 2000;
     uint64_t id3 = 3;
-    Order order3{action3, side3, type3, symbol_id, price3, quantity3, id3};
+    Order order3{type3, side3, tof3, symbol_id, price3, quantity3, id3};
 
     // Add the order.
     market.addOrder(order3);
 
     // New order data.
     uint64_t new_order_id = 4;
-    uint32_t new_order_price = 900;
+    uint64_t new_order_price = 900;
 
     // Replace the order.
     market.replaceOrder(symbol_id, id3, new_order_id, new_order_price);
@@ -136,7 +136,7 @@ TEST_F(MarketTest, ReplaceOrderShouldWork2)
     ASSERT_EQ(add_order_notification4.order.getSymbolID(), symbol_id);
     ASSERT_EQ(add_order_notification4.order.getPrice(), new_order_price);
     ASSERT_EQ(add_order_notification4.order.getSide(), side3);
-    ASSERT_EQ(add_order_notification4.order.getAction(), action3);
+    ASSERT_EQ(add_order_notification4.order.getType(),type3);
     ASSERT_EQ(add_order_notification4.order.getType(), type3);
     ASSERT_EQ(add_order_notification4.order.getLastExecutedQuantity(), 0);
     ASSERT_EQ(add_order_notification4.order.getLastExecutedPrice(), 0);

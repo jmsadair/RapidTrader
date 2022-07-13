@@ -5,14 +5,14 @@
 #include <array>
 
 // Represents the different actions of orders.
-enum class OrderAction
+enum class OrderType
 {
     Limit = 0,
     Market = 1,
     Stop = 2,
     StopLimit = 3
 };
-static constexpr std::array order_action_to_string{"LIMIT", "MARKET", "STOP", "STOP LIMIT"};
+static constexpr std::array order_type_to_string{"LIMIT", "MARKET", "STOP", "STOP LIMIT"};
 
 // Represents the different types of orders.
 //  Good 'Till Cancelled: A good-til-canceled order will remain active until
@@ -22,14 +22,13 @@ static constexpr std::array order_action_to_string{"LIMIT", "MARKET", "STOP", "S
 //  Immediate or Cancel: A immediate-or-cancel order will be executed immediately
 //                       as fully as possible. Non-executed parts of the order are deleted
 //                       without entry in the order book.
-enum class OrderType
+enum class OrderTimeInForce
 {
-    GoodTillCancel = 0,
-    FillOrKill = 1,
-    ImmediateOrCancel = 2,
-    AllOrNone = 3
+    GTC = 0,
+    FOK = 1,
+    IOC = 2,
 };
-static constexpr std::array order_type_to_string{"GTC", "FOK", "IOC", "AON"};
+static constexpr std::array order_tof_to_string{"GTC", "FOK", "IOC"};
 
 // Represents the side of the order.
 enum class OrderSide
@@ -46,15 +45,15 @@ struct Order : public list_base_hook<>
     /**
      * A constructor for the Order.
      *
-     * @param action_ the action of the order, require that market orders are of type IOC or FOK.
+     * @param type_ the time_in_force of the order - Limit, Market, Stop, or Stop Limit.
      * @param side_ the side the order is on - ask or bid (i.e. buy or sell).
-     * @param type_ the type of the order - FOK, GTC, or IOC.
+     * @param time_in_force_ the time_in_force of the order - FOK, GTC, or IOC.
      * @param symbol_id_ the symbol ID associated with the order.
      * @param price_ the price of the order, require that price_ is positive.
      * @param quantity_ the quantity of the order, require that quantity_ is positive.
      * @param id_ the ID associated with the order.
      */
-    Order(OrderAction action_, OrderSide side_, OrderType type_, uint32_t symbol_id_, uint32_t price_, uint64_t quantity_, uint64_t id_);
+    Order(OrderType type_, OrderSide side_, OrderTimeInForce time_in_force_, uint32_t symbol_id_, uint64_t price_, uint64_t quantity_, uint64_t id_);
 
     /**
      * Executes the order.
@@ -114,7 +113,7 @@ struct Order : public list_base_hook<>
     /**
      * @return the price associated with the order.
      */
-    [[nodiscard]] inline uint32_t getPrice() const
+    [[nodiscard]] inline uint64_t getPrice() const
     {
         return price;
     }
@@ -128,15 +127,7 @@ struct Order : public list_base_hook<>
     }
 
     /**
-     * @return the action of the order - limit or market.
-     */
-    [[nodiscard]] inline OrderAction getAction() const
-    {
-        return action;
-    }
-
-    /**
-     * @return the type of the order - FOK, GTC, or IOC.
+     * @return the time_in_force of the order - limit, market, stop, or stop limit.
      */
     [[nodiscard]] inline OrderType getType() const
     {
@@ -144,10 +135,18 @@ struct Order : public list_base_hook<>
     }
 
     /**
+     * @return the time in force of the order - FOK, GTC, or IOC.
+     */
+    [[nodiscard]] inline OrderTimeInForce getTimeInForce() const
+    {
+        return time_in_force;
+    }
+
+    /**
      * @return the price at which the order was last executed if the order
      *         has been executed, otherwise zero.
      */
-    [[nodiscard]] inline uint32_t getLastExecutedPrice() const
+    [[nodiscard]] inline uint64_t getLastExecutedPrice() const
     {
         return last_executed_price;
     }
@@ -165,7 +164,7 @@ struct Order : public list_base_hook<>
      *
      * @param price_ the new price of that order, require that price_ is positive.
      */
-    inline void setPrice(uint32_t price_)
+    inline void setPrice(uint64_t price_)
     {
         price = price_;
     }
@@ -192,14 +191,14 @@ struct Order : public list_base_hook<>
     }
 
     /**
-     * Set the action of the order.
+     * Set the time_in_force of the order.
      *
-     * @param action_ the new action of the order, require that, if action_ is
-     *                market or stop, the type of the order is FOK or IOC.
+     * @param action_ the new time_in_force of the order, require that, if type_ is
+     *                market or stop, the time_in_force of the order is FOK or IOC.
      */
-    inline void setAction(OrderAction action_)
+    inline void setType(OrderType action_)
     {
-        action = action_;
+        type = action_;
     }
 
     /**
@@ -223,7 +222,7 @@ struct Order : public list_base_hook<>
      */
     [[nodiscard]] inline bool isLimit() const
     {
-        return action == OrderAction::Limit;
+        return type == OrderType::Limit;
     }
 
     /**
@@ -231,7 +230,7 @@ struct Order : public list_base_hook<>
      */
     [[nodiscard]] inline bool isMarket() const
     {
-        return action == OrderAction::Market;
+        return type == OrderType::Market;
     }
 
     /**
@@ -239,7 +238,7 @@ struct Order : public list_base_hook<>
      */
     [[nodiscard]] inline bool isStop() const
     {
-        return action == OrderAction::Stop;
+        return type == OrderType::Stop;
     }
 
     /**
@@ -247,7 +246,7 @@ struct Order : public list_base_hook<>
      */
     [[nodiscard]] inline bool isStopLimit() const
     {
-        return action == OrderAction::StopLimit;
+        return type == OrderType::StopLimit;
     }
 
     /**
@@ -255,7 +254,7 @@ struct Order : public list_base_hook<>
      */
     [[nodiscard]] inline bool isIoc() const
     {
-        return type == OrderType::ImmediateOrCancel;
+        return time_in_force == OrderTimeInForce::IOC;
     }
 
     /**
@@ -263,7 +262,7 @@ struct Order : public list_base_hook<>
      */
     [[nodiscard]] inline bool isGtc() const
     {
-        return type == OrderType::GoodTillCancel;
+        return time_in_force == OrderTimeInForce::GTC;
     }
 
     /**
@@ -271,15 +270,7 @@ struct Order : public list_base_hook<>
      */
     [[nodiscard]] inline bool isFok() const
     {
-        return type == OrderType::FillOrKill;
-    }
-
-    /**
-     * @return true if the order is a AON order and false otherwise.
-     */
-    [[nodiscard]] inline bool isAon() const
-    {
-        return type == OrderType::AllOrNone;
+        return time_in_force == OrderTimeInForce::FOK;
     }
 
     /**
@@ -317,9 +308,9 @@ struct Order : public list_base_hook<>
     friend std::ostream &operator<<(std::ostream &os, const Order &order);
 
 private:
-    OrderAction action;
-    OrderSide side;
     OrderType type;
+    OrderSide side;
+    OrderTimeInForce time_in_force;
     uint32_t symbol_id;
     uint32_t price;
     uint32_t last_executed_price;

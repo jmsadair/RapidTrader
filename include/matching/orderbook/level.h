@@ -13,7 +13,7 @@ using namespace boost::intrusive;
 class Level
 {
 public:
-    Level(uint32_t price_, LevelSide side_, uint32_t symbol_id_);
+    Level(uint64_t price_, LevelSide side_, uint32_t symbol_id_);
 
     /**
      * @return the orders in the level.
@@ -26,7 +26,7 @@ public:
     /**
      * @return the price associated with the level.
      */
-    [[nodiscard]] inline uint32_t getPrice() const
+    [[nodiscard]] inline uint64_t getPrice() const
     {
         return price;
     }
@@ -144,6 +144,6 @@ private:
     LevelSide side;
     uint32_t symbol_id;
     uint64_t volume;
-    uint32_t price;
+    uint64_t price;
 };
 #endif // RAPID_TRADER_LEVEL_H

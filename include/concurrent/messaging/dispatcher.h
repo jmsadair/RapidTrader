@@ -41,10 +41,10 @@ public:
     {}
 
     /**
-     * Handles a specific type of message.
+     * Handles a specific time_in_force of message.
      *
-     * @tparam Message the type of the message to handle.
-     * @tparam Func the type of the function to that will handle the message.
+     * @tparam Message the time_in_force of the message to handle.
+     * @tparam Func the time_in_force of the function to that will handle the message.
      * @param func the function that will handle the message.
      * @return a TemplateDispatcher capable of handling the message.
      */

@@ -20,7 +20,7 @@ public:
      * @param quantity the quantity of the order to execute, require that quantity is positive.
      * @param price the price to execute the order at, require that price is positive.
      */
-    virtual void executeOrder(uint64_t order_id, uint64_t quantity, uint32_t price) = 0;
+    virtual void executeOrder(uint64_t order_id, uint64_t quantity, uint64_t price) = 0;
 
     /**
      * Executes an order in the book.
@@ -73,22 +73,6 @@ public:
      * @return the order with provided ID.
      */
     [[nodiscard]] virtual const Order &getOrder(uint64_t order_id) const = 0;
-
-    /**
-     * @return the current market price of the symbol associated
-     *         with the book - the last price that orders were
-     *         traded at. If no orders have been traded, returns
-     *         maximum 32-bit integer value.
-     */
-    [[nodiscard]] virtual uint32_t marketPriceAsk() const = 0;
-
-    /**
-     * @return the current market price of the symbol associated
-     *         with the book - the last price that orders were
-     *         executed at. If no orders have been traded, returns
-     *         zero.
-     */
-    [[nodiscard]] virtual uint32_t marketPriceBid() const = 0;
 
     /**
      * @return true if there are no orders in the book and false otherwise.

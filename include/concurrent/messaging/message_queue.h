@@ -29,7 +29,7 @@ public:
     /**
      * Pushes a message onto the queue.
      *
-     * @tparam T the type of the message being pushed onto the queue.
+     * @tparam T the time_in_force of the message being pushed onto the queue.
      * @param msg the message to push onto the queue.
      */
     template<typename T>

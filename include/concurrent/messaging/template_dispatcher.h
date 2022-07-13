@@ -4,11 +4,11 @@
 
 namespace Concurrent::Messaging {
 /**
- * An ADT that is capable of handling message of the specified type.
+ * An ADT that is capable of handling message of the specified time_in_force.
  *
- * @tparam PreviousDispatcher the type of the dispatcher that this dispatcher
+ * @tparam PreviousDispatcher the time_in_force of the dispatcher that this dispatcher
  *                            is chained to.
- * @tparam Msg the type of the message that this dispatcher can handle.
+ * @tparam Msg the time_in_force of the message that this dispatcher can handle.
  * @tparam Func the function that will handle the provided message.
  */
 template<typename PreviousDispatcher, typename Msg, typename Func>
@@ -52,8 +52,8 @@ public:
     /**
      * Chains dispatchers to allow for multiple types of message to be handled.
      *
-     * @tparam OtherMsg the type of the message.
-     * @tparam OtherFunc the type of the function that will handle the message.
+     * @tparam OtherMsg the time_in_force of the message.
+     * @tparam OtherFunc the time_in_force of the function that will handle the message.
      * @param other_func the function that will handle the message.
      * @return a new TemplateDispatcher.
      */

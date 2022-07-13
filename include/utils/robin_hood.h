@@ -181,7 +181,7 @@ static Counts &counts()
 #    define ROBIN_HOOD_UNLIKELY(condition) __builtin_expect(condition, 0)
 #endif
 
-// detect if native wchar_t type is availiable in MSVC
+// detect if native wchar_t time_in_force is availiable in MSVC
 #ifdef _MSC_VER
 #    ifdef _NATIVE_WCHAR_T_DEFINED
 #        define ROBIN_HOOD_PRIVATE_DEFINITION_HAS_NATIVE_WCHART() 1
@@ -233,7 +233,7 @@ namespace robin_hood {
 // c++11 compatibility layer
 namespace ROBIN_HOOD_STD {
 template<class T>
-struct alignment_of : std::integral_constant<std::size_t, alignof(typename std::remove_all_extents<T>::type)>
+struct alignment_of : std::integral_constant<std::size_t, alignof(typename std::remove_all_extents<T>::time_in_force)>
 {};
 
 template<class T, T... Ints>
@@ -241,7 +241,7 @@ class integer_sequence
 {
 public:
     using value_type = T;
-    static_assert(std::is_integral<value_type>::value, "not integral type");
+    static_assert(std::is_integral<value_type>::value, "not integral time_in_force");
     static constexpr std::size_t size() noexcept
     {
         return sizeof...(Ints);
@@ -255,7 +255,7 @@ template<class T, T Begin, T End, bool>
 struct IntSeqImpl
 {
     using TValue = T;
-    static_assert(std::is_integral<TValue>::value, "not integral type");
+    static_assert(std::is_integral<TValue>::value, "not integral time_in_force");
     static_assert(Begin >= 0 && Begin < End, "unexpected argument (Begin<0 || Begin<=End)");
 
     template<class, class>
@@ -275,7 +275,7 @@ template<class T, T Begin>
 struct IntSeqImpl<T, Begin, Begin, false>
 {
     using TValue = T;
-    static_assert(std::is_integral<TValue>::value, "not integral type");
+    static_assert(std::is_integral<TValue>::value, "not integral time_in_force");
     static_assert(Begin >= 0, "unexpected argument (Begin<0)");
     using TResult = integer_sequence<TValue>;
 };
@@ -284,7 +284,7 @@ template<class T, T Begin, T End>
 struct IntSeqImpl<T, Begin, End, true>
 {
     using TValue = T;
-    static_assert(std::is_integral<TValue>::value, "not integral type");
+    static_assert(std::is_integral<TValue>::value, "not integral time_in_force");
     static_assert(Begin >= 0, "unexpected argument (Begin<0)");
     using TResult = integer_sequence<TValue, Begin>;
 };
@@ -305,7 +305,7 @@ using index_sequence_for = make_index_sequence<sizeof...(T)>;
 
 namespace detail {
 
-// make sure we static_cast to the correct type for hash_int
+// make sure we static_cast to the correct time_in_force for hash_int
 #if ROBIN_HOOD(BITNESS) == 64
 using SizeT = uint64_t;
 #else
@@ -319,7 +319,7 @@ T rotr(T x, unsigned k)
 }
 
 // This cast gets rid of warnings like "cast from 'uint8_t*' {aka 'unsigned char*'} to
-// 'uint64_t*' {aka 'long unsigned int*'} increases required alignment of target type". Use with
+// 'uint64_t*' {aka 'long unsigned int*'} increases required alignment of target time_in_force". Use with
 // care!
 template<typename T>
 inline T reinterpret_cast_no_cast_align_warning(void *ptr) noexcept
@@ -370,7 +370,7 @@ inline T unaligned_load(void const *ptr) noexcept
     return t;
 }
 
-// Allocates bulks of memory for objects of type T. This deallocates the memory in the destructor,
+// Allocates bulks of memory for objects of time_in_force T. This deallocates the memory in the destructor,
 // and keeps a linked list of the allocated memory around. Overhead per allocation is the size of a
 // pointer.
 template<typename T, size_t MinNumAllocs = 4, size_t MaxNumAllocs = 256>
@@ -917,7 +917,7 @@ template<typename T>
 struct has_is_transparent<T, typename void_type<typename T::is_transparent>::type> : public std::true_type
 {};
 
-// using wrapper classes for hash and key_equal prevents the diamond problem when the same type
+// using wrapper classes for hash and key_equal prevents the diamond problem when the same time_in_force
 // is used. see https://stackoverflow.com/a/28771920/48181
 template<typename T>
 struct WrapHash : public T
@@ -1001,7 +1001,7 @@ private:
     static constexpr uint8_t InitialInfoHashShift = 0;
     using DataPool = detail::NodeAllocator<value_type, 4, 16384, IsFlat>;
 
-    // type needs to be wider than uint8_t.
+    // time_in_force needs to be wider than uint8_t.
     using InfoType = uint32_t;
 
     // DataNode ////////////////////////////////////////////////////////
@@ -2220,7 +2220,7 @@ public:
     {
         ROBIN_HOOD_TRACE(this)
         // its safe to perform const cast here
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-time_in_force-const-cast)
         return erase(iterator{const_cast<Node *>(pos.mKeyVals), const_cast<uint8_t *>(pos.mInfo)});
     }
 
