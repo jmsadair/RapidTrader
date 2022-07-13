@@ -195,3 +195,38 @@ TEST_F(MarketTest, ExecuteOrderShouldWork4)
 
     ASSERT_TRUE(notification_processor.empty());
 }
+
+/**
+ * Tests trying to execute invalid orders.
+ */
+TEST_F(MarketTest, ExecuteOrderShouldWork5)
+{
+    // Order to add.
+    OrderType type1 = OrderType::Limit;
+    OrderSide side1 = OrderSide::Ask;
+    OrderTimeInForce tof1 = OrderTimeInForce::GTC;
+    uint32_t quantity1 = 200;
+    uint32_t price1 = 100;
+    uint64_t id1 = 1;
+    Order order1{type1, side1, tof1, symbol_id, price1, quantity1, id1};
+
+    // Add the order.
+    market.addOrder(order1);
+
+    // Execution data - invalid quantity.
+    uint64_t executed_quantity = 0;
+    uint64_t executed_price = 0;
+    uint64_t executed_id = 10;
+    uint64_t executed_symbol_id = 2;
+
+    // Execute order - bad quantity.
+    ASSERT_EQ(market.executeOrder(symbol_id, id1, executed_quantity), ErrorStatus::InvalidQuantity);
+    // Execute order - bad price.
+    ASSERT_EQ(market.executeOrder(symbol_id, id1, quantity1, executed_price), ErrorStatus::InvalidPrice);
+    // Execute order - bad ID.
+    ASSERT_EQ(market.executeOrder(symbol_id, executed_id, quantity1, price1), ErrorStatus::OrderDoesNotExist);
+    // Execute order - bad symbol ID.
+    ASSERT_EQ(market.executeOrder(executed_symbol_id, id1, quantity1, price1), ErrorStatus::SymbolDoesNotExist);
+
+    notification_processor.shutdown();
+}

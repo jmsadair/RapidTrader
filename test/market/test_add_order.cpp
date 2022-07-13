@@ -1,6 +1,62 @@
 #include "market_test_fixture.h"
 
 /**
+ * Tests adding order with invalid symbol.
+ */
+TEST_F(MarketTest, AddInvalidOrder1)
+{
+    // Order to add.
+    OrderType type1 = OrderType::Limit;
+    OrderSide side1 = OrderSide::Bid;
+    OrderTimeInForce tof1 = OrderTimeInForce::GTC;
+    uint32_t quantity1 = 200;
+    uint32_t price1 = 100;
+    uint64_t id1 = 1;
+    uint32_t symbol_id1 = 0;
+    Order order1{type1, side1, tof1, symbol_id1, price1, quantity1, id1};
+
+    // Add the order.
+    ASSERT_EQ(market.addOrder(order1), ErrorStatus::SymbolDoesNotExist);
+
+    notification_processor.shutdown();
+
+    ASSERT_TRUE(notification_processor.empty());
+}
+
+/**
+ * Tests adding order with invalid orderbook - symbol exists but orderbook does not.
+ */
+TEST_F(MarketTest, AddInvalidOrder2)
+{
+    // Symbol added.
+    std::string symbol_name = "GOOG";
+    uint32_t symbol_id = 2;
+
+    // Add the symbol;
+    market.addSymbol(symbol_id, symbol_name);
+
+    // Order to add.
+    OrderType type1 = OrderType::Limit;
+    OrderSide side1 = OrderSide::Bid;
+    OrderTimeInForce tof1 = OrderTimeInForce::GTC;
+    uint32_t quantity1 = 200;
+    uint32_t price1 = 100;
+    uint64_t id1 = 1;
+    Order order1{type1, side1, tof1, symbol_id, price1, quantity1, id1};
+
+    // Add the order.
+    ASSERT_EQ(market.addOrder(order1), ErrorStatus::OrderBookDoesNotExist);
+
+    notification_processor.shutdown();
+
+    // Check that the symbol was added.
+    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
+    notification_processor.add_symbol_notifications.pop();
+
+    ASSERT_TRUE(notification_processor.empty());
+}
+
+/**
  * Tests adding GTC limit order to empty orderbook.
  */
 TEST_F(MarketTest, AddGtcLimitOrder1)

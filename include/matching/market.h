@@ -9,15 +9,15 @@
 
 enum class ErrorStatus
 {
-    Ok,
-    DuplicateSymbol,
-    DuplicateOrder,
-    DuplicateOrderBook,
-    SymbolDoesNotExist,
-    OrderBookDoesNotExist,
-    OrderDoesNotExist,
-    InvalidQuantity,
-    InvalidPrice
+    Ok = 0,
+    DuplicateSymbol = 1,
+    DuplicateOrder = 2,
+    DuplicateOrderBook = 3,
+    SymbolDoesNotExist = 4,
+    OrderBookDoesNotExist = 5,
+    OrderDoesNotExist = 6,
+    InvalidQuantity = 7,
+    InvalidPrice = 8
 };
 
 namespace RapidTrader::Matching {
