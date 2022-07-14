@@ -12,7 +12,6 @@ Level::Level(uint64_t price_, LevelSide side_, uint32_t symbol_id_)
 void Level::addOrder(Order &order)
 {
     assert(order.isAsk() ? side == LevelSide::Ask : side == LevelSide::Bid && "Order is on different side than level!");
-    assert(order.getPrice() == price && "Order does not have same price as the level!");
     assert(order.getSymbolID() == symbol_id && "Order does not have the same symbol ID as the level!");
     volume += order.getOpenQuantity();
     orders.push_front(order);

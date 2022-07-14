@@ -6,13 +6,11 @@
 TEST_F(MarketTest, DeleteOrderShouldWork1)
 {
     // Order to add.
-    OrderType type1 = OrderType::Limit;
-    OrderSide side1 = OrderSide::Ask;
     OrderTimeInForce tof1 = OrderTimeInForce::GTC;
-    uint32_t quantity1 = 200;
-    uint32_t price1 = 350;
+    uint64_t quantity1 = 200;
+    uint64_t price1 = 350;
     uint64_t id1 = 1;
-    Order order1{type1, side1, tof1, symbol_id, price1, quantity1, id1};
+    Order order1 = Order::limitAskOrder(id1, symbol_id, price1, quantity1, tof1);
 
     // Add the order.
     market.addOrder(order1);

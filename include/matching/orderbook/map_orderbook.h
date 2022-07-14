@@ -206,6 +206,9 @@ private:
     // Maps prices to stop levels.
     std::map<uint64_t, Level> stop_ask_levels;
     std::map<uint64_t, Level> stop_bid_levels;
+    // Maps prices to trailing stop levels.
+    std::map<uint64_t, Level> trailing_stop_ask_levels;
+    std::map<uint64_t, Level> trailing_stop_bid_levels;
     // The current price of the symbol - based off the price that the
     // symbol was last traded at. Initially zero.
     uint32_t last_traded_price;

@@ -5,13 +5,11 @@
 TEST_F(MarketTest, ExecuteOrderShouldWork1)
 {
     // Order to add.
-    OrderType type1 = OrderType::Limit;
-    OrderSide side1 = OrderSide::Ask;
     OrderTimeInForce tof1 = OrderTimeInForce::GTC;
-    uint32_t quantity1 = 200;
-    uint32_t price1 = 350;
+    uint64_t quantity1 = 200;
+    uint64_t price1 = 350;
     uint64_t id1 = 1;
-    Order order1{type1, side1, tof1, symbol_id, price1, quantity1, id1};
+    Order order1 = Order::limitAskOrder(id1, symbol_id, price1, quantity1, tof1);
 
     // Add the order.
     market.addOrder(order1);
@@ -49,13 +47,11 @@ TEST_F(MarketTest, ExecuteOrderShouldWork1)
 TEST_F(MarketTest, ExecuteOrderShouldWork2)
 {
     // Order to add.
-    OrderType type1 = OrderType::Limit;
-    OrderSide side1 = OrderSide::Ask;
     OrderTimeInForce tof1 = OrderTimeInForce::GTC;
-    uint32_t quantity1 = 200;
-    uint32_t price1 = 350;
+    uint64_t quantity1 = 200;
+    uint64_t price1 = 350;
     uint64_t id1 = 1;
-    Order order1{type1, side1, tof1, symbol_id, price1, quantity1, id1};
+    Order order1 = Order::limitAskOrder(id1, symbol_id, price1, quantity1, tof1);
 
     // Add the order.
     market.addOrder(order1);
@@ -94,13 +90,11 @@ TEST_F(MarketTest, ExecuteOrderShouldWork2)
 TEST_F(MarketTest, ExecuteOrderShouldWork3)
 {
     // Order to add.
-    OrderType type1 = OrderType::Limit;
-    OrderSide side1 = OrderSide::Ask;
     OrderTimeInForce tof1 = OrderTimeInForce::GTC;
-    uint32_t quantity1 = 200;
-    uint32_t price1 = 350;
+    uint64_t quantity1 = 200;
+    uint64_t price1 = 350;
     uint64_t id1 = 1;
-    Order order1{type1, side1, tof1, symbol_id, price1, quantity1, id1};
+    Order order1 = Order::limitAskOrder(id1, symbol_id, price1, quantity1, tof1);
 
     // Add the order.
     market.addOrder(order1);
@@ -147,13 +141,11 @@ TEST_F(MarketTest, ExecuteOrderShouldWork3)
 TEST_F(MarketTest, ExecuteOrderShouldWork4)
 {
     // Order to add.
-    OrderType type1 = OrderType::Limit;
-    OrderSide side1 = OrderSide::Bid;
     OrderTimeInForce tof1 = OrderTimeInForce::GTC;
-    uint32_t quantity1 = 200;
-    uint32_t price1 = 350;
+    uint64_t quantity1 = 200;
+    uint64_t price1 = 350;
     uint64_t id1 = 1;
-    Order order1{type1, side1, tof1, symbol_id, price1, quantity1, id1};
+    Order order1 = Order::limitBidOrder(id1, symbol_id, price1, quantity1, tof1);
 
     // Add the order.
     market.addOrder(order1);
@@ -161,7 +153,6 @@ TEST_F(MarketTest, ExecuteOrderShouldWork4)
     // Execution data.
     uint64_t executed_quantity = 200;
     uint64_t executed_price = 300;
-
 
     // Execute the order.
     market.executeOrder(symbol_id, id1, executed_quantity, executed_price);
@@ -202,13 +193,11 @@ TEST_F(MarketTest, ExecuteOrderShouldWork4)
 TEST_F(MarketTest, ExecuteOrderShouldWork5)
 {
     // Order to add.
-    OrderType type1 = OrderType::Limit;
-    OrderSide side1 = OrderSide::Ask;
     OrderTimeInForce tof1 = OrderTimeInForce::GTC;
-    uint32_t quantity1 = 200;
-    uint32_t price1 = 100;
+    uint64_t quantity1 = 200;
+    uint64_t price1 = 100;
     uint64_t id1 = 1;
-    Order order1{type1, side1, tof1, symbol_id, price1, quantity1, id1};
+    Order order1 = Order::limitAskOrder(id1, symbol_id, price1, quantity1, tof1);
 
     // Add the order.
     market.addOrder(order1);

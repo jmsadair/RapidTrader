@@ -5,13 +5,11 @@ TEST(Level, AddingOrdersToLevelShouldWork1)
 {
     // Create a LIMIT BID GTC order.
     uint32_t symbol1 = 1;
-    OrderType type1 = OrderType::Limit;
-    OrderSide side1 = OrderSide::Bid;
     OrderTimeInForce tof1 = OrderTimeInForce::GTC;
     uint32_t quantity1 = 100;
     uint64_t price1 = 100;
     uint64_t id1 = 1;
-    Order order1{type1, side1, tof1, symbol1, price1, quantity1, id1};
+    Order order1 = Order::limitBidOrder(id1, symbol1, price1, quantity1, tof1);
 
     // Create a level to add the order to.
     Level level(price1, LevelSide::Bid, symbol1);
@@ -33,13 +31,11 @@ TEST(Level, PoppingOrdersFromLevelShouldWork1)
 {
     // Create a LIMIT BID GTC order.
     uint32_t symbol1 = 1;
-    OrderType type1 = OrderType::Limit;
-    OrderSide side1 = OrderSide::Bid;
     OrderTimeInForce tof1 = OrderTimeInForce::GTC;
     uint32_t quantity1 = 100;
     uint64_t price1 = 100;
     uint64_t id1 = 1;
-    Order order1{type1, side1, tof1, symbol1, price1, quantity1, id1};
+    Order order1 = Order::limitBidOrder(id1, symbol1, price1, quantity1, tof1);
 
     // Create a level to add the order to.
     Level level(price1, LevelSide::Bid, symbol1);
@@ -67,13 +63,11 @@ TEST(Level, PoppingOrdersFromLevelShouldWork2)
 {
     // Create a LIMIT BID GTC order.
     uint32_t symbol1 = 1;
-    OrderType type1 = OrderType::Limit;
-    OrderSide side1 = OrderSide::Bid;
     OrderTimeInForce tof1 = OrderTimeInForce::GTC;
     uint64_t quantity1 = 100;
     uint64_t price1 = 100;
     uint64_t id1 = 1;
-    Order order1{type1, side1, tof1, symbol1, price1, quantity1, id1};
+    Order order1 = Order::limitBidOrder(id1, symbol1, price1, quantity1, tof1);
 
     // Create a level to add the order to.
     Level level(price1, LevelSide::Bid, symbol1);

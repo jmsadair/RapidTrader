@@ -1,12 +1,14 @@
 #include <iostream>
 #include "order.h"
 
-Order::Order(OrderType type_, OrderSide side_, OrderTimeInForce time_in_force_, uint32_t symbol_id_, uint64_t price_, uint64_t quantity_, uint64_t id_)
+Order::Order(OrderType type_, OrderSide side_, OrderTimeInForce time_in_force_, uint32_t symbol_id_, uint64_t price_, uint64_t stop_price_,
+    uint64_t quantity_, uint64_t id_)
     : type(type_)
     , side(side_)
     , time_in_force(time_in_force_)
     , symbol_id(symbol_id_)
     , price(price_)
+    , stop_price(stop_price_)
     , quantity(quantity_)
     , id(id_)
 {
