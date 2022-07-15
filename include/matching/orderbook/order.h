@@ -12,9 +12,11 @@ enum class OrderType
     Limit = 0,
     Market = 1,
     Stop = 2,
-    StopLimit = 3
+    StopLimit = 3,
+    TrailingStop = 4,
+    TrailingStopLimit = 5
 };
-static constexpr std::array order_type_to_string{"LIMIT", "MARKET", "STOP", "STOP LIMIT"};
+static constexpr std::array order_type_to_string{"LIMIT", "MARKET", "STOP", "STOP LIMIT", "TRAILING STOP", "TRAILING STOP LIMIT"};
 
 // Represents the different types of orders.
 //  Good 'Till Cancelled: A good-til-canceled order will remain active until
@@ -125,6 +127,50 @@ public:
         assert(stop_price > 0 && "Stop Price must be positive!");
         assert(quantity > 0 && "Quantity must be positive!");
         return Order{OrderType::StopLimit, OrderSide::Bid, time_in_force, symbol_id, price, stop_price, quantity, order_id};
+    }
+
+    static inline Order trailingStopAskOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force)
+    {
+        assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
+        assert(order_id > 0 && "Order ID must be positive!");
+        assert(symbol_id > 0 && "Symbol ID must be positive!");
+        assert(stop_price > 0 && "Price must be positive!");
+        assert(quantity > 0 && "Quantity must be positive!");
+        return Order{OrderType::TrailingStop, OrderSide::Ask, time_in_force, symbol_id, 0, stop_price, quantity, order_id};
+    }
+
+    static inline Order trailingStopBidOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force)
+    {
+        assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
+        assert(order_id > 0 && "Order ID must be positive!");
+        assert(symbol_id > 0 && "Symbol ID must be positive!");
+        assert(stop_price > 0 && "Stop Price must be positive!");
+        assert(quantity > 0 && "Quantity must be positive!");
+        return Order{OrderType::TrailingStop, OrderSide::Bid, time_in_force, symbol_id, 0, stop_price, quantity, order_id};
+    }
+
+    static inline Order trailingStopLimitAskOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force)
+    {
+        assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
+        assert(order_id > 0 && "Order ID must be positive!");
+        assert(symbol_id > 0 && "Symbol ID must be positive!");
+        assert(stop_price > 0 && "Price must be positive!");
+        assert(quantity > 0 && "Quantity must be positive!");
+        return Order{OrderType::TrailingStopLimit, OrderSide::Ask, time_in_force, symbol_id, 0, stop_price, quantity, order_id};
+    }
+
+    static inline Order trailingStopLimitBidOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force)
+    {
+        assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
+        assert(order_id > 0 && "Order ID must be positive!");
+        assert(symbol_id > 0 && "Symbol ID must be positive!");
+        assert(stop_price > 0 && "Stop Price must be positive!");
+        assert(quantity > 0 && "Quantity must be positive!");
+        return Order{OrderType::TrailingStopLimit, OrderSide::Bid, time_in_force, symbol_id, 0, stop_price, quantity, order_id};
     }
 
     /**
@@ -275,6 +321,22 @@ public:
     }
 
     /**
+     * @return true if the order is a trailing stop order and false otherwise.
+     */
+    [[nodiscard]] inline bool isTrailingStop() const
+    {
+        return type == OrderType::TrailingStop;
+    }
+
+    /**
+     * @return true if the order is a trailing stop limit order and false otherwise.
+     */
+    [[nodiscard]] inline bool isTrailingStopLimit() const
+    {
+        return type == OrderType::TrailingStopLimit;
+    }
+
+    /**
      * @return true if the order is an IOC order and false otherwise.
      */
     [[nodiscard]] inline bool isIoc() const
@@ -332,6 +394,7 @@ public:
 
     friend std::ostream &operator<<(std::ostream &os, const Order &order);
     friend class MapOrderBook;
+
 private:
     /**
      * A constructor for the Order.

@@ -24,6 +24,14 @@ public:
     }
 
     /**
+     * @return the orders in the level.
+     */
+    [[nodiscard]] inline list<Order> &getOrders()
+    {
+        return orders;
+    }
+
+    /**
      * @return the price associated with the level.
      */
     [[nodiscard]] inline uint64_t getPrice() const

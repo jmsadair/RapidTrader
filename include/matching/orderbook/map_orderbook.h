@@ -118,6 +118,13 @@ private:
     void addMarketOrder(Order &order);
 
     /**
+     * Inserts a trailing stop order into the book.
+     *
+     * @param order the trailing stop order to insert.
+     */
+    void insertTrailingStopOrder(const Order &order);
+
+    /**
      * Submits a stop market order to the book.
      *
      * @param order the stop market order to submit to the book.
@@ -127,16 +134,41 @@ private:
     /**
      * Inserts a stop order into the book.
      *
-     * @param order the order to insert, require that order has stop
-     *              or stop limit type.
+     * @param order the stop order to insert.
      */
     void insertStopOrder(const Order &order);
+
+    /**
+     * Updates the stop price of trailing stop orders on the bid side.
+     */
+    void updateBidStopOrders();
+
+    /**
+     * Updates the stop price of trailing stop orders on the ask side.
+     */
+    void updateAskStopOrders();
 
     /**
      * Activates stop limit and stop market orders if the last traded
      * price is suitable.
      */
     void activateStopOrders();
+
+    /**
+     * Attempts to activate stop, stop limit, trailing stop, and trailing stop limit
+     * orders on the bid side.
+     *
+     * @return true if any stop orders were activated and false otherwise.
+     */
+    bool activateBidStopOrders();
+
+    /**
+     * Attempts to activate stop, stop limit, trailing stop, and trailing stop limit
+     * orders on the ask side.
+     *
+     * @return true if any stop orders were activated and false otherwise.
+     */
+    bool activateAskStopOrders();
 
     /**
      * Removes the provided order from the orderbook, converts it into a market
@@ -176,20 +208,35 @@ private:
     void executeOrders(Order &ask, Order &bid, uint64_t executing_price);
 
     /**
-     * @returns the last traded price if any trades have been made and the maximum
-     *          64-bit integer value otherwise.
+     * @returns the last traded price if any trades have been made and zero otherwise.
      */
     [[nodiscard]] inline uint64_t lastTradedPriceAsk() const
+    {
+        return last_traded_price;
+    }
+
+    /**
+     * @returns the last traded price if any trades have been made otherwise the maximum 64-bit integer value.
+     */
+    [[nodiscard]] inline uint64_t lastTradedPriceBid() const
     {
         return last_traded_price == 0 ? std::numeric_limits<uint64_t>::max() : last_traded_price;
     }
 
     /**
-     * @returns the last traded price if any trades have been made otherwise zero.
+     * @returns the previous last traded price if more than one trade has been made and zero otherwise.
      */
-    [[nodiscard]] inline uint64_t lastTradedPriceBid() const
+    [[nodiscard]] inline uint64_t previousLastTradedPriceAsk() const
     {
-        return last_traded_price;
+        return previous_last_traded_price;
+    }
+
+    /**
+     * @returns the previous last traded price if more than one trade has been made and zero otherwise.
+     */
+    [[nodiscard]] inline uint64_t previousLastTradedPriceBid() const
+    {
+        return previous_last_traded_price == 0 ? std::numeric_limits<uint64_t>::max() : previous_last_traded_price;
     }
 
     // IMPORTANT: Note that the declaration of orders MUST be
@@ -211,7 +258,9 @@ private:
     std::map<uint64_t, Level> trailing_stop_bid_levels;
     // The current price of the symbol - based off the price that the
     // symbol was last traded at. Initially zero.
-    uint32_t last_traded_price;
+    uint64_t last_traded_price;
+    // The previous price of the symbol. Initially zero.
+    uint64_t previous_last_traded_price;
     // Sends notifications regarding the execution, deletion, and update of orders.
     Concurrent::Messaging::Sender &outgoing_messages;
     // The symbol ID associated with the book.
