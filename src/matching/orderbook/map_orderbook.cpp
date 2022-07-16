@@ -33,13 +33,14 @@ void MapOrderBook::addOrder(Order order)
     }
     // Try to activate stop orders.
     activateStopOrders();
+    BOOK_CHECK_INVARIANTS;
 }
 
 void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint64_t price)
 {
     auto orders_it = orders.find(order_id);
     assert(orders_it != orders.end() && "Order does not exist!");
-    assert(order_id > 0 && "Order ID must be positive!" );
+    assert(order_id > 0 && "Order ID must be positive!");
     assert(price > 0 && "Price must be positive!");
     assert(quantity > 0 && "Quantity must be positive!");
     Order &executing_order = orders_it->second.order;
@@ -51,6 +52,7 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint64_t p
     if (executing_order.isFilled())
         deleteOrder(order_id, true);
     activateStopOrders();
+    BOOK_CHECK_INVARIANTS;
 }
 
 void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
@@ -68,6 +70,7 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
     if (executing_order.isFilled())
         deleteOrder(order_id, true);
     activateStopOrders();
+    BOOK_CHECK_INVARIANTS;
 }
 
 void MapOrderBook::cancelOrder(uint64_t order_id, uint64_t quantity)
@@ -80,11 +83,13 @@ void MapOrderBook::cancelOrder(uint64_t order_id, uint64_t quantity)
     outgoing_messages.send(UpdatedOrder{cancelling_order});
     if (cancelling_order.isFilled())
         deleteOrder(order_id, true);
+    BOOK_CHECK_INVARIANTS;
 }
 
 void MapOrderBook::deleteOrder(uint64_t order_id)
 {
     deleteOrder(order_id, true);
+    BOOK_CHECK_INVARIANTS;
 }
 
 void MapOrderBook::deleteOrder(uint64_t order_id, bool notification)
@@ -114,7 +119,9 @@ void MapOrderBook::deleteOrder(uint64_t order_id, bool notification)
             deleting_order.isAsk() ? trailing_stop_ask_levels.erase(levels_it) : trailing_stop_bid_levels.erase(levels_it);
             break;
         default:
+            // LCOV_EXCL_START
             assert(false && "Invalid order type!");
+            // LCOV_EXCL_STOP
         }
     }
     // Erase the order from the unordered map.
@@ -491,3 +498,74 @@ bool MapOrderBook::canMatchOrder(const Order &order) const
     }
     return false;
 }
+
+// LCOV_EXCL_START
+void MapOrderBook::checkInvariants() const
+{
+    uint64_t current_best_ask = ask_levels.empty() ? std::numeric_limits<uint64_t>::max() : ask_levels.begin()->first;
+    uint64_t current_best_bid = bid_levels.empty() ? 0 : bid_levels.rbegin()->first;
+    assert(current_best_ask > current_best_bid && "Best bid price should never be lower than best ask price!");
+
+    for (const auto &[price, level] : ask_levels)
+    {
+        assert(!level.empty() && "Empty levels should never be in the orderbook!");
+        assert(level.getPrice() == price && "Level price should have same value as map key!");
+        assert(level.getSide() == LevelSide::Ask && "Level with bid side cannot be on the ask side of the book!");
+        const auto &level_orders = level.getOrders();
+        for (const auto &order : level_orders)
+            assert(order.getType() == OrderType::Limit && "Incorrect order type in level!");
+    }
+
+    for (const auto &[price, level] : bid_levels)
+    {
+        assert(!level.empty() && "Empty levels should never be in the orderbook!");
+        assert(level.getPrice() == price && "Level price should have same value as map key!");
+        assert(level.getSide() == LevelSide::Bid && "Level with ask side cannot be on the bid side of the book!");
+        const auto &level_orders = level.getOrders();
+        for (const auto &order : level_orders)
+            assert(order.getType() == OrderType::Limit && "Incorrect order type in level!");
+    }
+
+    for (const auto &[price, level] : stop_ask_levels)
+    {
+        assert(!level.empty() && "Empty levels should never be in the orderbook!");
+        assert(level.getPrice() == price && "Level price should have same value as map key!");
+        assert(level.getSide() == LevelSide::Ask && "Level with bid side cannot be on the ask side of the book!");
+        const auto &level_orders = level.getOrders();
+        for (const auto &order : level_orders)
+            assert(order.getType() == OrderType::Stop || order.getType() == OrderType::StopLimit && "Incorrect order type in level!");
+    }
+
+    for (const auto &[price, level] : stop_bid_levels)
+    {
+        assert(!level.empty() && "Empty levels should never be in the orderbook!");
+        assert(level.getPrice() == price && "Level price should have same value as map key!");
+        assert(level.getSide() == LevelSide::Bid && "Level with bid side cannot be on the ask side of the book!");
+        const auto &level_orders = level.getOrders();
+        for (const auto &order : level_orders)
+            assert(order.getType() == OrderType::Stop || order.getType() == OrderType::StopLimit && "Incorrect order type in level!");
+    }
+
+    for (const auto &[price, level] : trailing_stop_ask_levels)
+    {
+        assert(!level.empty() && "Empty levels should never be in the orderbook!");
+        assert(level.getPrice() == price && "Level price should have same value as map key!");
+        assert(level.getSide() == LevelSide::Ask && "Level with bid side cannot be on the ask side of the book!");
+        const auto &level_orders = level.getOrders();
+        for (const auto &order : level_orders)
+            assert(order.getType() == OrderType::TrailingStop ||
+                   order.getType() == OrderType::TrailingStopLimit && "Incorrect order type in level!");
+    }
+
+    for (const auto &[price, level] : trailing_stop_bid_levels)
+    {
+        assert(!level.empty() && "Empty levels should never be in the orderbook!");
+        assert(level.getPrice() == price && "Level price should have same value as map key!");
+        assert(level.getSide() == LevelSide::Bid && "Level with bid side cannot be on the ask side of the book!");
+        const auto &level_orders = level.getOrders();
+        for (const auto &order : level_orders)
+            assert(order.getType() == OrderType::TrailingStop ||
+                   order.getType() == OrderType::TrailingStopLimit && "Incorrect order type in level!");
+    }
+}
+// LCOV_EXCL_END

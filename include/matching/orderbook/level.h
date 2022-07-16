@@ -2,6 +2,13 @@
 #define RAPID_TRADER_LEVEL_H
 #include "order.h"
 
+// Only check the order level invariants in debug mode.
+#ifndef NDEBUG
+#    define LEVEL_CHECK_INVARIANTS checkInvariants()
+#else
+#    define LEVEL_CHECK_INVARIANTS
+#endif
+
 enum class LevelSide
 {
     Bid,
@@ -101,6 +108,7 @@ public:
      */
     inline Order &front()
     {
+        assert(!orders.empty() && "Level is empty!");
         return orders.front();
     }
 
@@ -110,6 +118,7 @@ public:
      */
     inline Order &back()
     {
+        assert(!orders.empty() && "Level is empty!");
         return orders.back();
     }
 
@@ -148,6 +157,17 @@ public:
     friend std::ostream &operator<<(std::ostream &os, const Level &level);
 
 private:
+    /**
+     * Enforces the representation invariants of the level.
+     *
+     * @throws Error if any order in the level has a price that does not
+     *                match the price of the level, if any order in the level
+     *                is on a different side than the level, or if the sum of the
+     *                open quantities of the orders in the level do not match the
+     *                volume of the level.
+     */
+    void checkInvariants() const;
+
     list<Order> orders;
     LevelSide side;
     uint32_t symbol_id;

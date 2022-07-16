@@ -6,6 +6,14 @@
 #include "level.h"
 #include "orderbook.h"
 #include "concurrent/messaging/sender.h"
+#include "order.h"
+
+// Only check the orderbook invariants in debug mode.
+#ifndef NDEBUG
+#    define BOOK_CHECK_INVARIANTS checkInvariants()
+#else
+#    define BOOK_CHECK_INVARIANTS
+#endif
 
 struct OrderWrapper
 {
@@ -238,6 +246,11 @@ private:
     {
         return previous_last_traded_price == 0 ? std::numeric_limits<uint64_t>::max() : previous_last_traded_price;
     }
+
+    /**
+     * Enforces the representation invariants of the orderbook.
+     */
+    void checkInvariants() const;
 
     // IMPORTANT: Note that the declaration of orders MUST be
     // declared before the declaration of the price level vectors.

@@ -4,7 +4,15 @@
 #include <limits>
 #include <array>
 
+// Only check the order invariants in debug mode.
+#ifndef NDEBUG
+#    define ORDER_CHECK_INVARIANTS checkInvariants()
+#else
+#    define ORDER_CHECK_INVARIANTS
+#endif
+
 class MapOrderBook;
+class Level;
 
 // Represents the different actions of orders.
 enum class OrderType
@@ -394,6 +402,7 @@ public:
 
     friend std::ostream &operator<<(std::ostream &os, const Order &order);
     friend class MapOrderBook;
+    friend class Level;
 
 private:
     /**
@@ -408,7 +417,7 @@ private:
      * @param stop_price_ the stop price of the order, require that stop price is positive if a stop price
      *                    applies to the order type otherwise require that stop_price_ is zero.
      * @param quantity_ the quantity of the order, require that quantity_ is positive.
-     * @param id_ the ID associated with the order.
+     * @param id_ the ID associated with the order, require that id_ is positive.
      */
     Order(OrderType type_, OrderSide side_, OrderTimeInForce time_in_force_, uint32_t symbol_id_, uint64_t price_, uint64_t stop_price_,
         uint64_t quantity_, uint64_t id_);
@@ -425,6 +434,7 @@ private:
         executed_quantity += quantity_;
         last_executed_price = price_;
         last_executed_quantity = quantity_;
+        ORDER_CHECK_INVARIANTS;
     }
 
     /**
@@ -436,6 +446,7 @@ private:
     inline void setPrice(uint64_t price_)
     {
         price = price_;
+        ORDER_CHECK_INVARIANTS;
     }
 
     /**
@@ -447,6 +458,7 @@ private:
     inline void setStopPrice(uint64_t stop_price_)
     {
         stop_price = stop_price_;
+        ORDER_CHECK_INVARIANTS;
     }
 
     /**
@@ -458,6 +470,7 @@ private:
     {
         quantity = std::min(quantity_, open_quantity);
         open_quantity -= quantity_;
+        ORDER_CHECK_INVARIANTS;
     }
 
     /**
@@ -468,6 +481,7 @@ private:
     inline void setOrderID(uint64_t id_)
     {
         id = id_;
+        ORDER_CHECK_INVARIANTS;
     }
 
     /**
@@ -479,7 +493,23 @@ private:
     inline void setType(OrderType action_)
     {
         type = action_;
+        ORDER_CHECK_INVARIANTS;
     }
+
+    /**
+     * Enforces the representation invariants of the order.
+     *
+     * @throws Error if the quantity of the order is not positive,
+     *               the order is a market, stop, or trailing stop
+     *               order and has time in force GTC, the order
+     *               is a limit, stop limit, or trailing stop limit
+     *               order and has a price that is not positive, the
+     *               executed quantity of the order exceeds the quantity
+     *               of the order, the last executed quantity of the
+     *               order exceeds the quantity of the order, or the ID
+     *               of the order is not positive.
+     */
+    void checkInvariants() const;
 
     OrderType type;
     OrderSide side;
