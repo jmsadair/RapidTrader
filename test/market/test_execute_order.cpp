@@ -188,7 +188,7 @@ TEST_F(MarketTest, ExecuteOrderShouldWork4)
 }
 
 /**
- * Tests trying to execute invalid orders.
+ * Tests trying to execute order with invalid parameters returns error.
  */
 TEST_F(MarketTest, ExecuteOrderShouldWork5)
 {
@@ -202,20 +202,46 @@ TEST_F(MarketTest, ExecuteOrderShouldWork5)
     // Add the order.
     market.addOrder(order1);
 
-    // Execution data - invalid quantity.
-    uint64_t executed_quantity = 0;
-    uint64_t executed_price = 0;
-    uint64_t executed_id = 10;
-    uint64_t executed_symbol_id = 2;
+    // Invalid execution data.
+    uint64_t invalid_executed_quantity = 0;
+    uint64_t invalid_executed_price = 0;
+    uint64_t invalid_executed_id = 0;
+    uint64_t invalid_symbol_id = 2;
 
-    // Execute order - bad quantity.
-    ASSERT_EQ(market.executeOrder(symbol_id, id1, executed_quantity), ErrorStatus::InvalidQuantity);
-    // Execute order - bad price.
-    ASSERT_EQ(market.executeOrder(symbol_id, id1, quantity1, executed_price), ErrorStatus::InvalidPrice);
-    // Execute order - bad ID.
-    ASSERT_EQ(market.executeOrder(symbol_id, executed_id, quantity1, price1), ErrorStatus::OrderDoesNotExist);
-    // Execute order - bad symbol ID.
-    ASSERT_EQ(market.executeOrder(executed_symbol_id, id1, quantity1, price1), ErrorStatus::SymbolDoesNotExist);
+    // Execute order with invalid quantity.
+    ASSERT_EQ(market.executeOrder(symbol_id, id1, invalid_executed_quantity), ErrorStatus::InvalidQuantity);
+    // Execute order with invalid price.
+    ASSERT_EQ(market.executeOrder(symbol_id, id1, quantity1, invalid_executed_price), ErrorStatus::InvalidPrice);
+    // Execute order with invalid ID - does not exist.
+    ASSERT_EQ(market.executeOrder(symbol_id, invalid_executed_id, quantity1, price1), ErrorStatus::OrderDoesNotExist);
+    // Executed order with invalid symbol ID - does not exist.
+    ASSERT_EQ(market.executeOrder(invalid_symbol_id, id1, quantity1, price1), ErrorStatus::SymbolDoesNotExist);
+
+    // Symbol data.
+    uint32_t new_symbol_id = 2;
+    std::string new_symbol_name = "MSFT";
+
+    // Add the symbol but not the orderbook.
+    market.addSymbol(new_symbol_id, new_symbol_name);
+
+    // Execute with invalid orderbook ID - does not exist.
+    // Executed order with invalid symbol ID - does not exist.
+    ASSERT_EQ(market.executeOrder(invalid_symbol_id, id1, quantity1, price1), ErrorStatus::OrderBookDoesNotExist);
 
     notification_processor.shutdown();
+
+    // Check that first order was added.
+    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
+    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
+    notification_processor.add_order_notifications.pop();
+    ASSERT_EQ(add_order_notification1.order, order1);
+
+    // Check that symbol was added.
+    ASSERT_TRUE(market.hasSymbol(new_symbol_id));
+    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
+    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, new_symbol_id);
+    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, new_symbol_name);
+    notification_processor.add_symbol_notifications.pop();
+
+    ASSERT_TRUE(notification_processor.empty());
 }

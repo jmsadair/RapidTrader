@@ -102,6 +102,8 @@ ErrorStatus Market::cancelOrder(uint32_t symbol_id, uint64_t order_id, uint64_t 
         return ErrorStatus::SymbolDoesNotExist;
     if (symbol_id >= symbol_to_book.size() || !symbol_to_book[symbol_id])
         return ErrorStatus::OrderBookDoesNotExist;
+    if (cancelled_quantity == 0)
+        return ErrorStatus::InvalidQuantity;
     OrderBook *book = symbol_to_book[symbol_id].get();
     // Check that the orderbook has the order.
     if (!book->hasOrder(order_id))
@@ -117,6 +119,8 @@ ErrorStatus Market::replaceOrder(uint32_t symbol_id, uint64_t order_id, uint64_t
         return ErrorStatus::OrderBookDoesNotExist;
     if (new_price <= 0)
         return ErrorStatus::InvalidPrice;
+    if (new_order_id == 0)
+        return ErrorStatus::InvalidOrderID;
     OrderBook *book = symbol_to_book[symbol_id].get();
     // Check that the orderbook has the order.
     if (!book->hasOrder(order_id))

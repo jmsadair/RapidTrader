@@ -39,6 +39,7 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint64_t p
 {
     auto orders_it = orders.find(order_id);
     assert(orders_it != orders.end() && "Order does not exist!");
+    assert(order_id > 0 && "Order ID must be positive!" );
     assert(price > 0 && "Price must be positive!");
     assert(quantity > 0 && "Quantity must be positive!");
     Order &executing_order = orders_it->second.order;
@@ -136,6 +137,8 @@ void MapOrderBook::replaceOrder(uint64_t order_id, uint64_t new_order_id, uint64
 void MapOrderBook::addLimitOrder(Order &order)
 {
     assert(order.isLimit() && "Order must be a limit order!");
+    assert(!order.isFilled() && "Order is already filled!");
+    assert(order.getPrice() > 0 && "Limit orders must have a positive price!");
     match(order);
     if (!order.isFilled() && !order.isIoc() && !order.isFok())
         insertLimitOrder(order);
@@ -146,6 +149,7 @@ void MapOrderBook::addLimitOrder(Order &order)
 void MapOrderBook::insertLimitOrder(const Order &order)
 {
     assert(order.isLimit() && "Order must be a limit order!");
+    assert(order.getPrice() > 0 && "Limit orders must have a positive price!");
     if (order.isAsk())
     {
         auto level_it = ask_levels
@@ -169,6 +173,8 @@ void MapOrderBook::insertLimitOrder(const Order &order)
 void MapOrderBook::addMarketOrder(Order &order)
 {
     assert(order.isMarket() && "Order must be a market order!");
+    assert(!order.isFilled() && "Order is already filled!");
+    assert(order.getPrice() == 0 && "Market orders must have 0 price!");
     assert(order.isFok() || order.isIoc() && "Market orders must have IOC or FOK time in force!");
     order.setPrice(order.isAsk() ? 0 : std::numeric_limits<uint64_t>::max());
     match(order);
@@ -249,7 +255,7 @@ void MapOrderBook::activateStopOrders()
     {
         stop = activateBidStopOrders();
         updateAskStopOrders();
-        stop = stop || activateAskStopOrders();
+        stop = activateAskStopOrders() || stop;
         updateBidStopOrders();
     }
 }
@@ -382,10 +388,10 @@ void MapOrderBook::updateAskStopOrders()
             Order &stop_order = trailing_levels_it->second.front();
             // Update the stop price of the order.
             stop_order.setStopPrice(new_stop_price);
-            // Remove the order from the current level.
-            trailing_levels_it->second.popFront();
             // Update the map iterator associated with the order.
             orders.find(stop_order.getOrderID())->second.level_it = new_trailing_levels_it;
+            // Remove the order from the current level (intrusive list - not a dangling reference).
+            trailing_levels_it->second.popFront();
             // Add it to the new level.
             new_trailing_levels_it->second.addOrder(stop_order);
             // Notify that the order's stop price has been adjusted.

@@ -36,3 +36,23 @@ TEST(MarketTestSymbol, DeleteSymbolShouldWork1)
 
     ASSERT_TRUE(notification_processor.empty());
 }
+
+/**
+ * Tests deleting a symbol that does not exist returns an error.
+ */
+TEST(MarketTestSymbol, DeleteSymbolShouldWork2)
+{
+    DebugNotificationProcessor notification_processor;
+    notification_processor.run();
+    RapidTrader::Matching::Market market(notification_processor.getSender());
+
+    // Symbol data.
+    uint32_t invalid_symbol_id = 0;
+
+    // Deleting symbol with ID that does not exist.
+    ASSERT_EQ(market.deleteSymbol(invalid_symbol_id), ErrorStatus::SymbolDoesNotExist);
+
+    notification_processor.shutdown();
+
+    ASSERT_TRUE(notification_processor.empty());
+}

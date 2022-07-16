@@ -17,7 +17,8 @@ enum class ErrorStatus
     OrderBookDoesNotExist = 5,
     OrderDoesNotExist = 6,
     InvalidQuantity = 7,
-    InvalidPrice = 8
+    InvalidPrice = 8,
+    InvalidOrderID = 9
 };
 
 namespace RapidTrader::Matching {
