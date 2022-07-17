@@ -4,23 +4,14 @@
 #include "sender.h"
 
 namespace Concurrent::Messaging {
-/**
- * An ADT responsible for receiving message.
- */
 class Receiver
 {
 public:
-    /**
-     * @return a sender that references the message queue.
-     */
     inline explicit operator Sender()
     {
         return Sender(&msg_queue);
     }
 
-    /**
-     * @return a dispatcher that references the message queue.
-     */
     inline Dispatcher wait()
     {
         return Dispatcher(&msg_queue);

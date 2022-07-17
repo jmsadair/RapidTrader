@@ -21,17 +21,11 @@ struct WrappedMessage : BaseMessage
 };
 
 /**
- * A thread-safe FIFO message queue.
+ * A thread-safe message queue.
  */
 class MessageQueue
 {
 public:
-    /**
-     * Pushes a message onto the queue.
-     *
-     * @tparam T the time_in_force of the message being pushed onto the queue.
-     * @param msg the message to push onto the queue.
-     */
     template<typename T>
     inline void push(const T &msg)
     {
@@ -40,11 +34,6 @@ public:
         c.notify_all();
     }
 
-    /**
-     * Pops a message off the queue.
-     *
-     * @return the oldest message from the queue.
-     */
     inline std::unique_ptr<BaseMessage> waitAndPop()
     {
         std::unique_lock<std::mutex> lk(m);

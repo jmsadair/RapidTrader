@@ -1590,7 +1590,6 @@ TEST_F(MarketTest, AddGIocTrailingStopOrder1)
     ASSERT_EQ(delete_order_notification5.order.getOpenQuantity(), 0);
 }
 
-
 /**
  * Tests adding trailing stop IOC order to the book that is activated after another
  * stop order was traded.

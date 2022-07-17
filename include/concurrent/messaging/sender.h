@@ -3,35 +3,17 @@
 #include "concurrent/messaging/message_queue.h"
 
 namespace Concurrent::Messaging {
-/**
- * A wrapper for MessageQueue that only allows message
- * to be pushed onto the queue.
- */
 class Sender
 {
 public:
-    /**
-     * A constructor for the Sender ADT.
-     */
     inline Sender()
         : message_queue_ptr(nullptr)
     {}
 
-    /**
-     * A constructor for the sender ADT.
-     *
-     * @param queue_ptr a pointer to a message queue.
-     */
     inline explicit Sender(MessageQueue *queue_ptr)
         : message_queue_ptr(queue_ptr)
     {}
 
-    /**
-     * Sends a message.
-     *
-     * @tparam Msg the time_in_force of the message that is to be sent.
-     * @param msg the message that is to be sent.
-     */
     template<typename Msg>
     inline void send(const Msg &msg)
     {

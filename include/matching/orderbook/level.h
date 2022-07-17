@@ -20,6 +20,13 @@ using namespace boost::intrusive;
 class Level
 {
 public:
+    /**
+     * A constructor for the level.
+     *
+     * @param price_ the price associated with the level, require that price_ is positive.
+     * @param side_ the side the level is on - either ask or bid.
+     * @param symbol_id_ the symbol ID associated with the level.
+     */
     Level(uint64_t price_, LevelSide side_, uint32_t symbol_id_);
 
     /**
