@@ -55,136 +55,127 @@ using namespace boost::intrusive;
 struct Order : public list_base_hook<>
 {
 public:
-    static inline Order marketAskOrder(uint64_t order_id, uint32_t symbol_id, uint64_t quantity, OrderTimeInForce time_in_force)
-    {
-        assert(time_in_force != OrderTimeInForce::GTC && "Market orders cannot gave GTC time in force!");
-        assert(order_id > 0 && "Order ID must be positive!");
-        assert(symbol_id > 0 && "Symbol ID must be positive!");
-        assert(quantity > 0 && "Quantity must be positive!");
-        return Order{OrderType::Market, OrderSide::Ask, time_in_force, symbol_id, 0, 0, quantity, order_id};
-    }
 
-    static inline Order marketBidOrder(uint64_t order_id, uint32_t symbol_id, uint64_t quantity, OrderTimeInForce time_in_force)
-    {
-        assert(time_in_force != OrderTimeInForce::GTC && "Market orders cannot gave GTC time in force!");
-        assert(order_id > 0 && "Order ID must be positive!");
-        assert(symbol_id > 0 && "Symbol ID must be positive!");
-        assert(quantity > 0 && "Quantity must be positive!");
-        return Order{OrderType::Market, OrderSide::Bid, time_in_force, symbol_id, 0, 0, quantity, order_id};
-    }
+    /**
+     * Creates a market order on the ask side.
+     *
+     * @param order_id the ID of the order, require that order_id is positive.
+     * @param symbol_id the symbol ID of the order, require that symbol ID is positive.
+     * @param quantity the quantity of the order, require that quantity is positive.
+     * @param time_in_force the time in force of the order, require that time_in_force is either
+     *                      FOK or IOC.
+     * @return a new market order.
+     */
+    static Order marketAskOrder(uint64_t order_id, uint32_t symbol_id, uint64_t quantity, OrderTimeInForce time_in_force);
 
-    static inline Order limitAskOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t quantity, OrderTimeInForce time_in_force)
-    {
-        assert(order_id > 0 && "Order ID must be positive!");
-        assert(symbol_id > 0 && "Symbol ID must be positive!");
-        assert(price > 0 && "Price must be positive!");
-        assert(quantity > 0 && "Quantity must be positive!");
-        return Order{OrderType::Limit, OrderSide::Ask, time_in_force, symbol_id, price, 0, quantity, order_id};
-    }
+    /**
+     * Creates a market order on the bid side.
+     *
+     * @param order_id the ID of the order, require that order_id is positive.
+     * @param symbol_id the symbol ID of the order, require that symbol ID is positive.
+     * @param quantity the quantity of the order, require that quantity is positive.
+     * @param time_in_force the time in force of the order, require that time_in_force is either
+     *                      FOK or IOC.
+     * @return a new market order.
+     */
+    static Order marketBidOrder(uint64_t order_id, uint32_t symbol_id, uint64_t quantity, OrderTimeInForce time_in_force);
 
-    static inline Order limitBidOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t quantity, OrderTimeInForce time_in_force)
-    {
-        assert(order_id > 0 && "Order ID must be positive!");
-        assert(symbol_id > 0 && "Symbol ID must be positive!");
-        assert(price > 0 && "Price must be positive!");
-        assert(quantity > 0 && "Quantity must be positive!");
-        return Order{OrderType::Limit, OrderSide::Bid, time_in_force, symbol_id, price, 0, quantity, order_id};
-    }
+    /**
+     * Creates a new limit order on the ask side.
+     *
+     * @param order_id the ID of the order, require that order_id is positive.
+     * @param symbol_id the symbol ID of the order, require that symbol ID is positive.
+     * @param price the price of the order, require that price is positive.
+     * @param quantity the quantity of the order, require that quantity is positive.
+     * @param time_in_force the time in force of the order.
+     * @return a new limit order.
+     */
+    static Order limitAskOrder(uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t quantity, OrderTimeInForce time_in_force);
 
-    static inline Order stopAskOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force)
-    {
-        assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
-        assert(order_id > 0 && "Order ID must be positive!");
-        assert(symbol_id > 0 && "Symbol ID must be positive!");
-        assert(stop_price > 0 && "Price must be positive!");
-        assert(quantity > 0 && "Quantity must be positive!");
-        return Order{OrderType::Stop, OrderSide::Ask, time_in_force, symbol_id, 0, stop_price, quantity, order_id};
-    }
+    /**
+     * Creates a new limit order on the bid side.
+     *
+     * @param order_id the ID of the order, require that order_id is positive.
+     * @param symbol_id the symbol ID of the order, require that symbol ID is positive.
+     * @param price the price of the order, require that price is positive.
+     * @param quantity the quantity of the order, require that quantity is positive.
+     * @param time_in_force the time in force of the order.
+     * @return a new limit order.
+     */
+    static Order limitBidOrder(uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t quantity, OrderTimeInForce time_in_force);
 
-    static inline Order stopBidOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force)
-    {
-        assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
-        assert(order_id > 0 && "Order ID must be positive!");
-        assert(symbol_id > 0 && "Symbol ID must be positive!");
-        assert(stop_price > 0 && "Stop Price must be positive!");
-        assert(quantity > 0 && "Quantity must be positive!");
-        return Order{OrderType::Stop, OrderSide::Bid, time_in_force, symbol_id, 0, stop_price, quantity, order_id};
-    }
+    /**
+     * Creates a new stop market order on the ask side.
+     *
+     * @param order_id the ID of the order, require that ID is positive.
+     * @param symbol_id the symbol ID of the order, require that symbol ID is positive.
+     * @param stop_price the stop price of the order, require that stop_price is positive.
+     * @param quantity the quantity of the order, require that quantity is positive.
+     * @param time_in_force the time in force of the order, require that time_in_force is either
+     *                      FOK or IOC.
+     * @return a new stop market order.
+     */
+    static Order stopAskOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
 
-    static inline Order stopLimitAskOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force)
-    {
-        assert(order_id > 0 && "Order ID must be positive!");
-        assert(symbol_id > 0 && "Symbol ID must be positive!");
-        assert(price > 0 && "Price must be positive!");
-        assert(stop_price > 0 && "Stop Price must be positive!");
-        assert(quantity > 0 && "Quantity must be positive!");
-        return Order{OrderType::StopLimit, OrderSide::Ask, time_in_force, symbol_id, price, stop_price, quantity, order_id};
-    }
+    /**
+     * Creates a new stop market order on the bid side.
+     *
+     * @param order_id the ID of the order, require that ID is positive.
+     * @param symbol_id the symbol ID of the order, require that symbol ID is positive.
+     * @param stop_price the stop price of the order, require that stop_price is positive.
+     * @param quantity the quantity of the order, require that quantity is positive.
+     * @param time_in_force the time in force of the order, require that time_in_force is either
+     *                      FOK or IOC.
+     * @return a new stop market order.
+     */
+    static Order stopBidOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
 
-    static inline Order stopLimitBidOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force)
-    {
-        assert(order_id > 0 && "Order ID must be positive!");
-        assert(symbol_id > 0 && "Symbol ID must be positive!");
-        assert(price > 0 && "Price must be positive!");
-        assert(stop_price > 0 && "Stop Price must be positive!");
-        assert(quantity > 0 && "Quantity must be positive!");
-        return Order{OrderType::StopLimit, OrderSide::Bid, time_in_force, symbol_id, price, stop_price, quantity, order_id};
-    }
+    /**
+     * Creates a new stop limit order on the ask side.
+     *
+     * @param order_id the ID of the order, require that ID is positive.
+     * @param symbol_id the symbol ID of the order, require that symbol ID is positive.
+     * @param price the price that the order, require that price is positive.
+     * @param stop_price the stop price of the order, require that stop_price is positive.
+     * @param quantity the quantity of the order, require that quantity is positive.
+     * @param time_in_force the time in force of the order.
+     * @return a new stop limit order.
+     */
+    static Order stopLimitAskOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
 
-    static inline Order trailingStopAskOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force)
-    {
-        assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
-        assert(order_id > 0 && "Order ID must be positive!");
-        assert(symbol_id > 0 && "Symbol ID must be positive!");
-        assert(stop_price > 0 && "Price must be positive!");
-        assert(quantity > 0 && "Quantity must be positive!");
-        return Order{OrderType::TrailingStop, OrderSide::Ask, time_in_force, symbol_id, 0, stop_price, quantity, order_id};
-    }
+    /**
+     * Creates a new stop limit order on the bid side.
+     *
+     * @param order_id the ID of the order, require that ID is positive.
+     * @param symbol_id the symbol ID of the order, require that symbol ID is positive.
+     * @param price the price that the order, require that price is positive.
+     * @param stop_price the stop price of the order, require that stop_price is positive.
+     * @param quantity the quantity of the order, require that quantity is positive.
+     * @param time_in_force the time in force of the order.
+     * @return a new stop limit order.
+     */
+    static Order stopLimitBidOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
 
-    static inline Order trailingStopBidOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force)
-    {
-        assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
-        assert(order_id > 0 && "Order ID must be positive!");
-        assert(symbol_id > 0 && "Symbol ID must be positive!");
-        assert(stop_price > 0 && "Stop Price must be positive!");
-        assert(quantity > 0 && "Quantity must be positive!");
-        return Order{OrderType::TrailingStop, OrderSide::Bid, time_in_force, symbol_id, 0, stop_price, quantity, order_id};
-    }
+    static Order trailingStopAskOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
 
-    static inline Order trailingStopLimitAskOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force)
-    {
-        assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
-        assert(order_id > 0 && "Order ID must be positive!");
-        assert(symbol_id > 0 && "Symbol ID must be positive!");
-        assert(stop_price > 0 && "Price must be positive!");
-        assert(quantity > 0 && "Quantity must be positive!");
-        return Order{OrderType::TrailingStopLimit, OrderSide::Ask, time_in_force, symbol_id, 0, stop_price, quantity, order_id};
-    }
+    static Order trailingStopBidOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
+
+    static Order trailingStopLimitAskOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
 
     static inline Order trailingStopLimitBidOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force)
-    {
-        assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
-        assert(order_id > 0 && "Order ID must be positive!");
-        assert(symbol_id > 0 && "Symbol ID must be positive!");
-        assert(stop_price > 0 && "Stop Price must be positive!");
-        assert(quantity > 0 && "Quantity must be positive!");
-        return Order{OrderType::TrailingStopLimit, OrderSide::Bid, time_in_force, symbol_id, 0, stop_price, quantity, order_id};
-    }
+        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
 
     /**
      * @return the quantity of the order.
      */
-    [[nodiscard]] inline uint64_t getQuantity() const
+    [[nodiscard]] uint64_t getQuantity() const
     {
         return quantity;
     }
@@ -192,7 +183,7 @@ public:
     /**
      * @return the quantity of the order that has been executed.
      */
-    [[nodiscard]] inline uint64_t getExecutedQuantity() const
+    [[nodiscard]] uint64_t getExecutedQuantity() const
     {
         return executed_quantity;
     }
@@ -200,7 +191,7 @@ public:
     /**
      * @return the quantity of the order that remains to be executed.
      */
-    [[nodiscard]] inline uint64_t getOpenQuantity() const
+    [[nodiscard]] uint64_t getOpenQuantity() const
     {
         return open_quantity;
     }
@@ -209,7 +200,7 @@ public:
      * @return the last executed quantity of the order if the order
      *         has been executed, otherwise zero.
      */
-    [[nodiscard]] inline uint64_t getLastExecutedQuantity() const
+    [[nodiscard]] uint64_t getLastExecutedQuantity() const
     {
         return last_executed_quantity;
     }
@@ -217,7 +208,7 @@ public:
     /**
      * @return the ID associated with the order.
      */
-    [[nodiscard]] inline uint64_t getOrderID() const
+    [[nodiscard]] uint64_t getOrderID() const
     {
         return id;
     }
@@ -225,16 +216,16 @@ public:
     /**
      * @return the price associated with the order.
      */
-    [[nodiscard]] inline uint64_t getPrice() const
+    [[nodiscard]] uint64_t getPrice() const
     {
         return price;
     }
 
     /**
-     * @return the stop price associated with the order
+     * @return the restart price associated with the order
      *         if applicable, otherwise zero.
      */
-    [[nodiscard]] inline uint64_t getStopPrice() const
+    [[nodiscard]] uint64_t getStopPrice() const
     {
         return stop_price;
     }
@@ -242,15 +233,15 @@ public:
     /**
      * @return the side of the order - ask or bid.
      */
-    [[nodiscard]] inline OrderSide getSide() const
+    [[nodiscard]] OrderSide getSide() const
     {
         return side;
     }
 
     /**
-     * @return the time_in_force of the order - limit, market, stop, or stop limit.
+     * @return the time_in_force of the order - limit, market, stop, or restart limit.
      */
-    [[nodiscard]] inline OrderType getType() const
+    [[nodiscard]] OrderType getType() const
     {
         return type;
     }
@@ -258,7 +249,7 @@ public:
     /**
      * @return the time in force of the order - FOK, GTC, or IOC.
      */
-    [[nodiscard]] inline OrderTimeInForce getTimeInForce() const
+    [[nodiscard]] OrderTimeInForce getTimeInForce() const
     {
         return time_in_force;
     }
@@ -267,7 +258,7 @@ public:
      * @return the price at which the order was last executed if the order
      *         has been executed, otherwise zero.
      */
-    [[nodiscard]] inline uint64_t getLastExecutedPrice() const
+    [[nodiscard]] uint64_t getLastExecutedPrice() const
     {
         return last_executed_price;
     }
@@ -275,7 +266,7 @@ public:
     /**
      * @return the symbol ID associated with the order.
      */
-    [[nodiscard]] inline uint32_t getSymbolID() const
+    [[nodiscard]] uint32_t getSymbolID() const
     {
         return symbol_id;
     }
@@ -283,7 +274,7 @@ public:
     /**
      * @return true if order is on the ask side and false otherwise.
      */
-    [[nodiscard]] inline bool isAsk() const
+    [[nodiscard]] bool isAsk() const
     {
         return side == OrderSide::Ask;
     }
@@ -291,7 +282,7 @@ public:
     /**
      * @return true if order is on the bid side and false otherwise.
      */
-    [[nodiscard]] inline bool isBid() const
+    [[nodiscard]] bool isBid() const
     {
         return side == OrderSide::Bid;
     }
@@ -299,7 +290,7 @@ public:
     /**
      * @return true if the order is a limit order and false otherwise.
      */
-    [[nodiscard]] inline bool isLimit() const
+    [[nodiscard]] bool isLimit() const
     {
         return type == OrderType::Limit;
     }
@@ -307,39 +298,39 @@ public:
     /**
      * @return true if the order is a market order and false otherwise.
      */
-    [[nodiscard]] inline bool isMarket() const
+    [[nodiscard]] bool isMarket() const
     {
         return type == OrderType::Market;
     }
 
     /**
-     * @return true if the order is a stop order and false otherwise.
+     * @return true if the order is a restart order and false otherwise.
      */
-    [[nodiscard]] inline bool isStop() const
+    [[nodiscard]] bool isStop() const
     {
         return type == OrderType::Stop;
     }
 
     /**
-     * @return true if the order is a stop limit order and false otherwise.
+     * @return true if the order is a restart limit order and false otherwise.
      */
-    [[nodiscard]] inline bool isStopLimit() const
+    [[nodiscard]] bool isStopLimit() const
     {
         return type == OrderType::StopLimit;
     }
 
     /**
-     * @return true if the order is a trailing stop order and false otherwise.
+     * @return true if the order is a trailing restart order and false otherwise.
      */
-    [[nodiscard]] inline bool isTrailingStop() const
+    [[nodiscard]] bool isTrailingStop() const
     {
         return type == OrderType::TrailingStop;
     }
 
     /**
-     * @return true if the order is a trailing stop limit order and false otherwise.
+     * @return true if the order is a trailing restart limit order and false otherwise.
      */
-    [[nodiscard]] inline bool isTrailingStopLimit() const
+    [[nodiscard]] bool isTrailingStopLimit() const
     {
         return type == OrderType::TrailingStopLimit;
     }
@@ -347,7 +338,7 @@ public:
     /**
      * @return true if the order is an IOC order and false otherwise.
      */
-    [[nodiscard]] inline bool isIoc() const
+    [[nodiscard]] bool isIoc() const
     {
         return time_in_force == OrderTimeInForce::IOC;
     }
@@ -355,7 +346,7 @@ public:
     /**
      * @return true if the order is a GTC order and false otherwise.
      */
-    [[nodiscard]] inline bool isGtc() const
+    [[nodiscard]] bool isGtc() const
     {
         return time_in_force == OrderTimeInForce::GTC;
     }
@@ -363,7 +354,7 @@ public:
     /**
      * @return true if the order is a FOK order and false otherwise.
      */
-    [[nodiscard]] inline bool isFok() const
+    [[nodiscard]] bool isFok() const
     {
         return time_in_force == OrderTimeInForce::FOK;
     }
@@ -372,7 +363,7 @@ public:
      * @return true if the order is filled (i.e. the entire quantity of the order
      *         has been executed) and false otherwise.
      */
-    [[nodiscard]] inline bool isFilled() const
+    [[nodiscard]] bool isFilled() const
     {
         return open_quantity == 0;
     }
@@ -384,7 +375,7 @@ public:
      * @param other another order.
      * @return true if the orders are equal and false otherwise.
      */
-    inline bool operator==(const Order &other) const
+    bool operator==(const Order &other) const
     {
         return id == other.id;
     }
@@ -395,7 +386,7 @@ public:
      * @param other another order.
      * @return true if the orders are equal and false otherwise.
      */
-    inline bool operator!=(const Order &other) const
+    bool operator!=(const Order &other) const
     {
         return !(*this == other);
     }
@@ -414,7 +405,7 @@ private:
      * @param symbol_id_ the symbol ID associated with the order.
      * @param price_ the price of the order, require that price_ is positive if the order is not a market
      *               order otherwise require that price_ is zero.
-     * @param stop_price_ the stop price of the order, require that stop price is positive if a stop price
+     * @param stop_price_ the stop price of the order, require that restart price is positive if a stop price
      *                    applies to the order type otherwise require that stop_price_ is zero.
      * @param quantity_ the quantity of the order, require that quantity_ is positive.
      * @param id_ the ID associated with the order, require that id_ is positive.
@@ -428,7 +419,7 @@ private:
      * @param price_ the price at which to execute the order, require that price is positive.
      * @param quantity_ the quantity of the order to execute, require that quantity is positive.
      */
-    inline void execute(uint32_t price_, uint64_t quantity_)
+    void execute(uint32_t price_, uint64_t quantity_)
     {
         open_quantity -= quantity_;
         executed_quantity += quantity_;
@@ -443,19 +434,19 @@ private:
      * @param price_ the new price of that order, require that price
      *               is positive if the order is not a market order.
      */
-    inline void setPrice(uint64_t price_)
+    void setPrice(uint64_t price_)
     {
         price = price_;
         ORDER_CHECK_INVARIANTS;
     }
 
     /**
-     * Set the stop price of the order, require that the order is a stop, stop limit,
-     * or trailing stop order.
+     * Set the stop price of the order, require that the order is a restart, stop limit,
+     * or trailing restart order.
      *
      * @param stop_price_ the new price of that order, require that price_ is positive.
      */
-    inline void setStopPrice(uint64_t stop_price_)
+    void setStopPrice(uint64_t stop_price_)
     {
         stop_price = stop_price_;
         ORDER_CHECK_INVARIANTS;
@@ -466,7 +457,7 @@ private:
      *
      * @param quantity_ the new quantity of the order, require that quantity_ is positive.
      */
-    inline void setQuantity(uint64_t quantity_)
+    void setQuantity(uint64_t quantity_)
     {
         quantity = std::min(quantity_, open_quantity);
         open_quantity -= quantity_;
@@ -478,7 +469,7 @@ private:
      *
      * @param id_ the new ID of the order.
      */
-    inline void setOrderID(uint64_t id_)
+    void setOrderID(uint64_t id_)
     {
         id = id_;
         ORDER_CHECK_INVARIANTS;
@@ -488,9 +479,9 @@ private:
      * Set the time_in_force of the order.
      *
      * @param action_ the new time_in_force of the order, require that, if type_ is
-     *                market or stop, the time_in_force of the order is FOK or IOC.
+     *                market or restart, the time_in_force of the order is FOK or IOC.
      */
-    inline void setType(OrderType action_)
+    void setType(OrderType action_)
     {
         type = action_;
         ORDER_CHECK_INVARIANTS;
@@ -500,9 +491,9 @@ private:
      * Enforces the representation invariants of the order.
      *
      * @throws Error if the quantity of the order is not positive,
-     *               the order is a market, stop, or trailing stop
+     *               the order is a market, stop, or trailing restart
      *               order and has time in force GTC, the order
-     *               is a limit, stop limit, or trailing stop limit
+     *               is a limit, restart limit, or trailing stop limit
      *               order and has a price that is not positive, the
      *               executed quantity of the order exceeds the quantity
      *               of the order, the last executed quantity of the

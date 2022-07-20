@@ -24,7 +24,7 @@ include_directories(include/matching)
 include_directories(include/matching/orderbook)
 include_directories(include/concurrent/messaging)
 include_directories(include/concurrent/thread_pool)
-include_directories(include/result_handler)
+include_directories(include/event_handler)
 include_directories(include/utils)
 include_directories(${Boost_INCLUDE_DIRS})
 
@@ -142,7 +142,7 @@ target_link_libraries(rapid_trader spdlog)
 # ------------------------------------------------------------------------------
 # Rapid Trader Example
 # ------------------------------------------------------------------------------
-#add_executable(rapid_trader_example examples/rapid_trader_example.cpp)
+#add_executable(rapid_trader_example examples/market_example.cpp)
 #target_link_libraries(rapid_trader_example rapid_trader)
 #install(TARGETS rapid_trader_example DESTINATION ${TRADER_INSTALL_BIN_DIR}/examples)
 

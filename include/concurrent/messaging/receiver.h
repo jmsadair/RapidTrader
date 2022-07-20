@@ -7,12 +7,12 @@ namespace Concurrent::Messaging {
 class Receiver
 {
 public:
-    inline explicit operator Sender()
+    explicit operator Sender()
     {
         return Sender(&msg_queue);
     }
 
-    inline Dispatcher wait()
+    Dispatcher wait()
     {
         return Dispatcher(&msg_queue);
     }

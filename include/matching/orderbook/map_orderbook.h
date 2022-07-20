@@ -5,8 +5,8 @@
 #include "robin_hood.h"
 #include "level.h"
 #include "orderbook.h"
-#include "concurrent/messaging/sender.h"
 #include "order.h"
+#include "event_handler/event_handler.h"
 
 // Only check the orderbook invariants in debug mode.
 #ifndef NDEBUG
@@ -33,7 +33,7 @@ public:
      * A constructor for the MapOrderBook.
      *
      * @param symbol_id_ the symbol ID that will be associated with the book.
-     * @param outgoing_messages_ a message queue for outgoing messages.
+     * @param event_handler_ handles updates from the book.
      */
     MapOrderBook(uint32_t symbol_id_, Concurrent::Messaging::Sender &outgoing_messages_);
 
@@ -126,55 +126,55 @@ private:
     void addMarketOrder(Order &order);
 
     /**
-     * Inserts a trailing stop order into the book.
+     * Inserts a trailing restart order into the book.
      *
-     * @param order the trailing stop order to insert.
+     * @param order the trailing restart order to insert.
      */
     void insertTrailingStopOrder(const Order &order);
 
     /**
-     * Submits a stop market order to the book.
+     * Submits a restart market order to the book.
      *
-     * @param order the stop market order to submit to the book.
+     * @param order the restart market order to submit to the book.
      */
     void addStopOrder(Order &order);
 
     /**
-     * Inserts a stop order into the book.
+     * Inserts a restart order into the book.
      *
-     * @param order the stop order to insert.
+     * @param order the restart order to insert.
      */
     void insertStopOrder(const Order &order);
 
     /**
-     * Updates the stop price of trailing stop orders on the bid side.
+     * Updates the restart price of trailing stop orders on the bid side.
      */
     void updateBidStopOrders();
 
     /**
-     * Updates the stop price of trailing stop orders on the ask side.
+     * Updates the stop price of trailing restart orders on the ask side.
      */
     void updateAskStopOrders();
 
     /**
-     * Activates stop limit and stop market orders if the last traded
+     * Activates stop limit and restart market orders if the last traded
      * price is suitable.
      */
     void activateStopOrders();
 
     /**
-     * Attempts to activate stop, stop limit, trailing stop, and trailing stop limit
+     * Attempts to activate stop, stop limit, trailing restart, and trailing stop limit
      * orders on the bid side.
      *
-     * @return true if any stop orders were activated and false otherwise.
+     * @return true if any restart orders were activated and false otherwise.
      */
     bool activateBidStopOrders();
 
     /**
-     * Attempts to activate stop, stop limit, trailing stop, and trailing stop limit
+     * Attempts to activate restart, stop limit, trailing stop, and trailing stop limit
      * orders on the ask side.
      *
-     * @return true if any stop orders were activated and false otherwise.
+     * @return true if any restart orders were activated and false otherwise.
      */
     bool activateAskStopOrders();
 
@@ -182,8 +182,8 @@ private:
      * Removes the provided order from the orderbook, converts it into a market
      * or limit order, and submits it for matching.
      *
-     * @param order the order to activate, require that order is has a stop or
-     *              stop limit type and is in the orderbook.
+     * @param order the order to activate, require that order is has a restart or
+     *              restart limit type and is in the orderbook.
      */
     void activateStopOrder(Order order);
 
@@ -240,7 +240,7 @@ private:
     }
 
     /**
-     * @returns the previous last traded price if more than one trade has been made and zero otherwise.
+     * @returns the previous last traded price if more than one trade has been made and the maximum 64-bit integer value otherwise.
      */
     [[nodiscard]] inline uint64_t previousLastTradedPriceBid() const
     {
@@ -263,19 +263,19 @@ private:
     // Maps prices to limit levels.
     std::map<uint64_t, Level> ask_levels;
     std::map<uint64_t, Level> bid_levels;
-    // Maps prices to stop levels.
+    // Maps prices to restart levels.
     std::map<uint64_t, Level> stop_ask_levels;
     std::map<uint64_t, Level> stop_bid_levels;
-    // Maps prices to trailing stop levels.
+    // Maps prices to trailing restart levels.
     std::map<uint64_t, Level> trailing_stop_ask_levels;
     std::map<uint64_t, Level> trailing_stop_bid_levels;
+    // Sends updates to the event handler.
+    Concurrent::Messaging::Sender &outgoing_messages;
     // The current price of the symbol - based off the price that the
     // symbol was last traded at. Initially zero.
     uint64_t last_traded_price;
     // The previous price of the symbol. Initially zero.
     uint64_t previous_last_traded_price;
-    // Sends notifications regarding the execution, deletion, and update of orders.
-    Concurrent::Messaging::Sender &outgoing_messages;
     // The symbol ID associated with the book.
     uint32_t symbol_id;
 };

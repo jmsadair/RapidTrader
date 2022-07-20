@@ -1,33 +1,38 @@
 #ifndef RAPID_TRADER_MARKET_TEST_FIXTURE_H
 #define RAPID_TRADER_MARKET_TEST_FIXTURE_H
 #include <gtest/gtest.h>
-#include "debug_notification_processor.h"
+#include "debug_event_handler.h"
 #include "market.h"
 
 class MarketTest : public ::testing::Test
 {
 protected:
+    MarketTest()
+        : market(event_handler.getSender())
+    {}
+
     void SetUp() override
     {
-        notification_processor.run();
         // Add the symbol.
         market.addSymbol(symbol_id, symbol_name);
         // Add the orderbook for the symbol.
         market.addOrderbook(symbol_id);
         // Make sure the market has the symbol and orderbook.
-        notification_processor.shutdown();
         assert(market.hasSymbol(symbol_id) && "Symbol was not added to market!");
         assert(market.hasOrderbook(symbol_id) && "Orderbook was not added to market!");
-        assert(!notification_processor.add_symbol_notifications.empty() && "Never received notification that symbol was added!");
-        assert(!notification_processor.add_book_notifications.empty() && "Never received notification that orderbook was added!");
-        notification_processor.add_symbol_notifications.pop();
-        notification_processor.add_book_notifications.pop();
-        assert(notification_processor.empty() && "There should not be any notifications!");
-        notification_processor.run();
+        // Join the event handling thread and make sure that add symbol and add orderbook events were received.
+        event_handler.stop();
+        assert(!event_handler.add_symbol_notifications.empty() && "There should have been a symbol added event!");
+        assert(!event_handler.add_book_notifications.empty() && "There should have been a orderbook added event!");
+        event_handler.add_symbol_notifications.pop();
+        event_handler.add_book_notifications.pop();
+        assert(event_handler.empty() && "There should not be any notifications!");
+        // Restart the event handling thread.
+        event_handler.start();
     }
 
-    DebugNotificationProcessor notification_processor;
-    RapidTrader::Matching::Market market{notification_processor.getSender()};
+    DebugEventHandler event_handler;
+    RapidTrader::Matching::Market market;
     uint32_t symbol_id = 1;
     std::string symbol_name = "GOOG";
 };

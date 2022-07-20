@@ -4,8 +4,9 @@
 #include <robin_hood.h>
 #include <memory>
 #include "order.h"
-#include "concurrent/messaging/sender.h"
 #include "orderbook.h"
+#include "event_handler/event_handler.h"
+#include "concurrent/thread_pool/thread_pool.h"
 
 enum class ErrorStatus
 {
@@ -28,12 +29,25 @@ public:
     Market(Market &&other) = delete;
     Market &operator=(Market &&other) = delete;
 
+#ifndef CONCURRENT
     /**
      * A constructor for the Market.
      *
-     * @param outgoing_messenger_ a message queue for outgoing messages.
+     * @param outgoing_messages_ sends updates from the market.
      */
-    explicit Market(Concurrent::Messaging::Sender outgoing_messenger_);
+    explicit Market(Concurrent::Messaging::Sender outgoing_messages_);
+#endif
+
+#ifdef CONCURRENT
+    /**
+     * A constructor for the Market.
+     *
+     * @param outgoing_messages_ sends updates from the market.
+     * @param num_threads the number of worker threads that will be used, require that
+     *                    num_threads is positive.
+     */
+    explicit Market(Concurrent::Messaging::Sender outgoing_messages_, uint8_t num_threads = 1);
+#endif
 
     /**
      * Adds a new symbol to market.
@@ -58,7 +72,7 @@ public:
      * @param symbol_id the ID of the symbol to check for the presence of.
      * @return true if the market has the symbol and false otherwise.
      */
-    bool hasSymbol(uint32_t symbol_id) const;
+    [[nodiscard]] bool hasSymbol(uint32_t symbol_id) const;
 
     /**
      * Adds a new orderbook for the provided symbol to the market.
@@ -85,7 +99,7 @@ public:
      *                  there exists an orderbook associated with the ID.
      * @return the orderbook.
      */
-    const OrderBook &getOrderbook(uint32_t symbol_id) const;
+    [[nodiscard]] const OrderBook &getOrderbook(uint32_t symbol_id) const;
 
     /**
      * Indicates whether an orderbook is present in the market.
@@ -93,7 +107,7 @@ public:
      * @param symbol_id the symbol ID associated with the orderbook (that may not exist).
      * @return true if the orderbook exists and false otherwise.
      */
-    bool hasOrderbook(uint32_t symbol_id) const;
+    [[nodiscard]] bool hasOrderbook(uint32_t symbol_id) const;
 
     /**
      * Submits a new order to the market.
@@ -158,9 +172,17 @@ private:
     // Maps symbol to orderbook.
     std::vector<std::unique_ptr<OrderBook>> symbol_to_book;
     // Symbol IDs to symbol names.
-    std::unordered_map<uint32_t, std::string> id_to_symbol;
-    // Sends outgoing messages regarding the statuses of orders.
-    Concurrent::Messaging::Sender outgoing_messenger;
+    robin_hood::unordered_map<uint32_t, std::string> id_to_symbol;
+    // Sends updates from market to event handler.
+    Concurrent::Messaging::Sender outgoing_messages;
+#ifdef CONCURRENT
+    // Symbol IDs to thread pool queue IDs.
+    robin_hood::unordered_map<uint32_t, uint8_t> id_to_queue_id;
+    // Thread pool for task submission.
+    Concurrent::ThreadPool thread_pool;
+    // The queue ID that a newly added symbol will be associated with.
+    uint8_t new_symbol_queue_id;
+#endif
 };
 } // namespace RapidTrader::Matching
 #endif // RAPID_TRADER_MARKET_H

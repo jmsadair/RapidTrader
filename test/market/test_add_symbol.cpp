@@ -1,12 +1,11 @@
 #include <gtest/gtest.h>
 #include "market.h"
-#include "debug_notification_processor.h"
+#include "debug_event_handler.h"
 
 TEST(MarketTestSymbol, AddSymbolShouldWork1)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
+    DebugEventHandler event_handler;
+    RapidTrader::Matching::Market market(event_handler.getSender());
 
     // Symbol data.
     uint32_t symbol_id = 1;
@@ -15,22 +14,21 @@ TEST(MarketTestSymbol, AddSymbolShouldWork1)
     // Add the symbol.
     market.addSymbol(symbol_id, symbol_name);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that symbol was added.
     ASSERT_TRUE(market.hasSymbol(symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, symbol_name);
-    notification_processor.add_symbol_notifications.pop();
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_FALSE(event_handler.add_symbol_notifications.empty());
+    ASSERT_EQ(event_handler.add_symbol_notifications.front().symbol_id, symbol_id);
+    ASSERT_EQ(event_handler.add_symbol_notifications.front().name, symbol_name);
+    event_handler.add_symbol_notifications.pop();
+    ASSERT_TRUE(event_handler.empty());
 }
 
 TEST(MarketTestSymbol, AddSymbolShouldWork2)
 {
-    DebugNotificationProcessor notification_processor;
-    notification_processor.run();
-    RapidTrader::Matching::Market market(notification_processor.getSender());
+    DebugEventHandler event_handler;
+    RapidTrader::Matching::Market market(event_handler.getSender());
 
     // Symbol data.
     uint32_t symbol_id = 1;
@@ -42,5 +40,5 @@ TEST(MarketTestSymbol, AddSymbolShouldWork2)
     // Try to add duplicate symbol
     ASSERT_EQ(market.addSymbol(symbol_id, symbol_name), ErrorStatus::DuplicateSymbol);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 }

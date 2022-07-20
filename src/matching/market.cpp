@@ -1,17 +1,28 @@
 #include "market.h"
 #include "map_orderbook.h"
-#include "notification.h"
+#include "event_handler/event.h"
 
 namespace RapidTrader::Matching {
-Market::Market(Concurrent::Messaging::Sender outgoing_messenger_)
-    : outgoing_messenger(outgoing_messenger_)
+
+#ifndef CONCURRENT
+Market::Market(Concurrent::Messaging::Sender outgoing_messages_)
+    : outgoing_messages(outgoing_messages_)
 {}
+#endif
+
+#ifdef CONCURRENT
+Market::Market(Concurrent::Messaging::Sender outgoing_messages_, uint8_t num_threads_)
+    : outgoing_messages(outgoing_messages_)
+    , thread_pool(num_threads_)
+    , new_symbol_queue_id(0)
+{}
+#endif
 
 ErrorStatus Market::addSymbol(uint32_t symbol_id, std::string symbol_name)
 {
     if (id_to_symbol.find(symbol_id) != id_to_symbol.end())
         return ErrorStatus::DuplicateSymbol;
-    outgoing_messenger.send(AddedSymbol{symbol_id, symbol_name});
+    outgoing_messages.send(SymbolAdded{symbol_id, symbol_name});
     id_to_symbol.insert({symbol_id, std::move(symbol_name)});
     return ErrorStatus::Ok;
 }
@@ -20,12 +31,15 @@ ErrorStatus Market::deleteSymbol(uint32_t symbol_id)
 {
     if (id_to_symbol.find(symbol_id) == id_to_symbol.end())
         return ErrorStatus::SymbolDoesNotExist;
-    outgoing_messenger.send(DeletedSymbol{symbol_id, id_to_symbol[symbol_id]});
+    outgoing_messages.send(SymbolDeleted{symbol_id, id_to_symbol[symbol_id]});
     // Delete the orderbook associated with the symbol if necessary.
     if (symbol_id < symbol_to_book.size() && symbol_to_book[symbol_id])
         symbol_to_book[symbol_id] = nullptr;
     // Delete the symbol.
     id_to_symbol.erase(symbol_id);
+#ifdef CONCURRENT
+    id_to_queue_id.erase(symbol_id);
+#endif
     return ErrorStatus::Ok;
 }
 
@@ -42,8 +56,12 @@ ErrorStatus Market::addOrderbook(uint32_t symbol_id)
         return ErrorStatus::DuplicateOrderBook;
     if (symbol_id >= symbol_to_book.size())
         symbol_to_book.resize(symbol_id + 1);
-    symbol_to_book[symbol_id] = std::make_unique<MapOrderBook>(symbol_id, outgoing_messenger);
-    outgoing_messenger.send(AddedOrderBook{symbol_id});
+    outgoing_messages.send(OrderBookAdded{symbol_id});
+    symbol_to_book[symbol_id] = std::make_unique<MapOrderBook>(symbol_id, outgoing_messages);
+#ifdef CONCURRENT
+    id_to_queue_id.insert({symbol_id, new_symbol_queue_id});
+    new_symbol_queue_id = (new_symbol_queue_id + 1) % thread_pool.numberOfThreads();
+#endif
     return ErrorStatus::Ok;
 }
 
@@ -52,7 +70,7 @@ ErrorStatus Market::deleteOrderbook(uint32_t symbol_id)
     if (symbol_id >= symbol_to_book.size() || !symbol_to_book[symbol_id])
         return ErrorStatus::OrderBookDoesNotExist;
     symbol_to_book[symbol_id] = nullptr;
-    outgoing_messenger.send(DeletedOrderBook{symbol_id});
+    outgoing_messages.send(OrderBookDeleted{symbol_id});
     return ErrorStatus::Ok;
 }
 
@@ -77,8 +95,11 @@ ErrorStatus Market::addOrder(const Order &order)
     // Make sure order does not already exist.
     if (book->hasOrder(order.getOrderID()))
         return ErrorStatus::DuplicateOrder;
-    // Submit order for matching.
+#ifndef CONCURRENT
     book->addOrder(order);
+#else
+    thread_pool.submitTask(id_to_queue_id[order.getSymbolID()], [book, order] { book->addOrder(order); });
+#endif
     return ErrorStatus::Ok;
 }
 
@@ -92,7 +113,11 @@ ErrorStatus Market::deleteOrder(uint32_t symbol_id, uint64_t order_id)
     // Check that the orderbook has the order.
     if (!book->hasOrder(order_id))
         return ErrorStatus::OrderDoesNotExist;
+#ifndef CONCURRENT
     book->deleteOrder(order_id);
+#else
+    thread_pool.submitTask(id_to_queue_id[symbol_id], [book, order_id] { book->deleteOrder(order_id); });
+#endif
     return ErrorStatus::Ok;
 }
 
@@ -108,7 +133,11 @@ ErrorStatus Market::cancelOrder(uint32_t symbol_id, uint64_t order_id, uint64_t 
     // Check that the orderbook has the order.
     if (!book->hasOrder(order_id))
         return ErrorStatus::OrderDoesNotExist;
+#ifndef CONCURRENT
     book->cancelOrder(order_id, cancelled_quantity);
+#else
+    thread_pool.submitTask(id_to_queue_id[symbol_id], [book, order_id, cancelled_quantity] { book->cancelOrder(order_id, cancelled_quantity); });
+#endif
     return ErrorStatus::Ok;
 }
 ErrorStatus Market::replaceOrder(uint32_t symbol_id, uint64_t order_id, uint64_t new_order_id, uint64_t new_price)
@@ -125,8 +154,11 @@ ErrorStatus Market::replaceOrder(uint32_t symbol_id, uint64_t order_id, uint64_t
     // Check that the orderbook has the order.
     if (!book->hasOrder(order_id))
         return ErrorStatus::OrderDoesNotExist;
-    // Replace the order.
+#ifndef CONCURRENT
     book->replaceOrder(order_id, new_order_id, new_price);
+#else
+    thread_pool.submitTask(id_to_queue_id[symbol_id], [book, order_id, new_order_id, new_price] { book->replaceOrder(order_id, new_order_id, new_price); });
+#endif
     return ErrorStatus::Ok;
 }
 
@@ -144,7 +176,11 @@ ErrorStatus Market::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t
     // Check that the orderbook has the order.
     if (!book->hasOrder(order_id))
         return ErrorStatus::OrderDoesNotExist;
+#ifndef CONCURRENT
     book->executeOrder(order_id, quantity, price);
+#else
+    thread_pool.submitTask(id_to_queue_id[symbol_id], [book, order_id, quantity, price] { book->executeOrder(order_id, quantity, price);});
+#endif
     return ErrorStatus::Ok;
 }
 ErrorStatus Market::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity)
@@ -159,7 +195,11 @@ ErrorStatus Market::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t
     // Check that the orderbook has the order.
     if (!book->hasOrder(order_id))
         return ErrorStatus::OrderDoesNotExist;
+#ifndef CONCURRENT
     book->executeOrder(order_id, quantity);
+#else
+    thread_pool.submitTask(id_to_queue_id[symbol_id], [book, order_id, quantity] { book->executeOrder(order_id, quantity); });
+#endif
     return ErrorStatus::Ok;
 }
 } // namespace RapidTrader::Matching

@@ -6,16 +6,16 @@ namespace Concurrent::Messaging {
 class Sender
 {
 public:
-    inline Sender()
+    Sender()
         : message_queue_ptr(nullptr)
     {}
 
-    inline explicit Sender(MessageQueue *queue_ptr)
+    explicit Sender(MessageQueue *queue_ptr)
         : message_queue_ptr(queue_ptr)
     {}
 
     template<typename Msg>
-    inline void send(const Msg &msg)
+    void send(const Msg &msg)
     {
         if (message_queue_ptr)
             message_queue_ptr->push(msg);

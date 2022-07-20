@@ -21,26 +21,26 @@ TEST_F(MarketTest, CancelOrderShouldWork1)
     // Execute the order.
     market.cancelOrder(symbol_id, id1, cancel_quantity);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that first order was cancelled.
-    ASSERT_FALSE(notification_processor.update_order_notifications.empty());
-    UpdatedOrder &update_order_notification1 = notification_processor.update_order_notifications.front();
-    notification_processor.update_order_notifications.pop();
+    ASSERT_FALSE(event_handler.update_order_notifications.empty());
+    OrderUpdated &update_order_notification1 = event_handler.update_order_notifications.front();
+    event_handler.update_order_notifications.pop();
     ASSERT_EQ(update_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(update_order_notification1.order.getLastExecutedPrice(), 0);
     ASSERT_EQ(update_order_notification1.order.getLastExecutedQuantity(), 0);
     ASSERT_EQ(update_order_notification1.order.getQuantity(), quantity1 - cancel_quantity);
     ASSERT_EQ(update_order_notification1.order.getOpenQuantity(), quantity1 - cancel_quantity);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
@@ -64,19 +64,19 @@ TEST_F(MarketTest, CancelOrderShouldWork2)
     // Execute the order.
     market.cancelOrder(symbol_id, id1, cancel_quantity);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that first order was cancelled.
-    ASSERT_FALSE(notification_processor.update_order_notifications.empty());
-    UpdatedOrder &update_order_notification1 = notification_processor.update_order_notifications.front();
-    notification_processor.update_order_notifications.pop();
+    ASSERT_FALSE(event_handler.update_order_notifications.empty());
+    OrderUpdated &update_order_notification1 = event_handler.update_order_notifications.front();
+    event_handler.update_order_notifications.pop();
     ASSERT_EQ(update_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(update_order_notification1.order.getLastExecutedPrice(), 0);
     ASSERT_EQ(update_order_notification1.order.getLastExecutedQuantity(), 0);
@@ -84,16 +84,16 @@ TEST_F(MarketTest, CancelOrderShouldWork2)
     ASSERT_EQ(update_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that the first order was deleted.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), 0);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), 0);
     ASSERT_EQ(delete_order_notification1.order.getQuantity(), cancel_quantity);
     ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
@@ -133,20 +133,20 @@ TEST_F(MarketTest, CancelOrderShouldWork3)
     // Cancel with invalid orderbook ID - orderbook does not exist.
     ASSERT_EQ(market.cancelOrder(new_symbol_id, id1, quantity1), ErrorStatus::OrderBookDoesNotExist);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that symbol was added.
     ASSERT_TRUE(market.hasSymbol(new_symbol_id));
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().symbol_id, new_symbol_id);
-    ASSERT_EQ(notification_processor.add_symbol_notifications.front().name, new_symbol_name);
-    notification_processor.add_symbol_notifications.pop();
+    ASSERT_FALSE(event_handler.add_symbol_notifications.empty());
+    ASSERT_EQ(event_handler.add_symbol_notifications.front().symbol_id, new_symbol_id);
+    ASSERT_EQ(event_handler.add_symbol_notifications.front().name, new_symbol_name);
+    event_handler.add_symbol_notifications.pop();
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }

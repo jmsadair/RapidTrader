@@ -32,18 +32,12 @@ public:
     /**
      * @return the orders in the level.
      */
-    [[nodiscard]] inline const list<Order> &getOrders() const
-    {
-        return orders;
-    }
+    [[nodiscard]] const list<Order> &getOrders() const;
 
     /**
      * @return the orders in the level.
      */
-    [[nodiscard]] inline list<Order> &getOrders()
-    {
-        return orders;
-    }
+    [[nodiscard]] list<Order> &getOrders();
 
     /**
      * @return the price associated with the level.
@@ -113,21 +107,13 @@ public:
      * @return the least recently inserted order in the level,
      *         require that the level is non-empty.
      */
-    inline Order &front()
-    {
-        assert(!orders.empty() && "Level is empty!");
-        return orders.front();
-    }
+    Order &front();
 
     /**
      * @return the most recently inserted order in the level,
      *         require that the level is non-empty.
      */
-    inline Order &back()
-    {
-        assert(!orders.empty() && "Level is empty!");
-        return orders.back();
-    }
+    Order &back();
 
     /**
      * Adds an order to the level.
@@ -155,11 +141,14 @@ public:
      * @param order the order to delete, require that the order
      *              is in the level.
      */
-    inline void deleteOrder(const Order &order)
-    {
-        volume -= order.getOpenQuantity();
-        orders.remove(order);
-    }
+    void deleteOrder(const Order &order);
+
+    /**
+     * Reduce the current volume of the level.
+     *
+     * @param amount the amount to reduce the volume by, require that 0 < amount <= volume.
+     */
+    void reduceVolume(uint64_t amount);
 
     friend std::ostream &operator<<(std::ostream &os, const Level &level);
 

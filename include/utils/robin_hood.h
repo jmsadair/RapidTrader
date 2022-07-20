@@ -957,7 +957,7 @@ struct WrapKeyEqual : public T
 //   actually belongs to the previous position and was pushed out because that place is already
 //   taken.
 //
-// * infoSentinel: Sentinel byte set to 1, so that iterator's ++ can stop at end() without the
+// * infoSentinel: Sentinel byte set to 1, so that iterator's ++ can restart at end() without the
 //   need for a idx variable.
 //
 // According to STL, order of templates has effect on throughput. That's why I've moved the

@@ -27,14 +27,14 @@ class MessageQueue
 {
 public:
     template<typename T>
-    inline void push(const T &msg)
+    void push(const T &msg)
     {
         std::lock_guard<std::mutex> lk(m);
         message_queue.push(std::make_unique<WrappedMessage<T>>(msg));
         c.notify_all();
     }
 
-    inline std::unique_ptr<BaseMessage> waitAndPop()
+    std::unique_ptr<BaseMessage> waitAndPop()
     {
         std::unique_lock<std::mutex> lk(m);
         // Wait until queue is not empty.
@@ -47,7 +47,6 @@ public:
 private:
     std::mutex m;
     std::condition_variable c;
-    // Stores pointers to message.
     std::queue<std::unique_ptr<BaseMessage>> message_queue;
 };
 } // namespace Concurrent::Messaging

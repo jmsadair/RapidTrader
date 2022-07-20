@@ -16,9 +16,9 @@ TEST_F(MarketTest, AddInvalidOrder1)
     // Add the order.
     ASSERT_EQ(market.addOrder(order1), ErrorStatus::SymbolDoesNotExist);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
@@ -43,13 +43,13 @@ TEST_F(MarketTest, AddInvalidOrder2)
     // Add the order.
     ASSERT_EQ(market.addOrder(order1), ErrorStatus::OrderBookDoesNotExist);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that the symbol was added.
-    ASSERT_FALSE(notification_processor.add_symbol_notifications.empty());
-    notification_processor.add_symbol_notifications.pop();
+    ASSERT_FALSE(event_handler.add_symbol_notifications.empty());
+    event_handler.add_symbol_notifications.pop();
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
@@ -67,16 +67,16 @@ TEST_F(MarketTest, AddGtcLimitOrder1)
     // Add the order.
     market.addOrder(order1);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &notification = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &notification = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(notification.order, order1);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
@@ -104,51 +104,51 @@ TEST_F(MarketTest, AddGtcLimitOrder2)
     // Add the order.
     market.addOrder(order2);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that second order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification2 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification2 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification2.order, order2);
 
     // Check that first order was executed - should be completely filled.
     // Note that bid orders are always processed first.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification1 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification1 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that second order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification2 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification2 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification2.order.getOrderID(), id2);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification2.order.getOpenQuantity(), quantity2 - quantity1);
 
     // Check that the first order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
@@ -186,93 +186,93 @@ TEST_F(MarketTest, AddIocLimitOrder1)
     // Add the order.
     market.addOrder(order3);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that second order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification2 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification2 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification2.order, order2);
 
     // Check that third order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification3 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification3 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification3.order, order3);
 
     // Check that third order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification1 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification1 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification1.order.getOrderID(), id3);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification1.order.getOpenQuantity(), quantity3 - quantity1);
 
     // Check that first order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification2 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification2 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification2.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification2.order.getOpenQuantity(), 0);
 
     // Check that third order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification3 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification3 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification3.order.getOrderID(), id3);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(execute_order_notification3.order.getOpenQuantity(), 0);
 
     // Check that second order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification4 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification4 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification4.order.getOrderID(), id2);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedQuantity(), quantity3 - quantity1);
     ASSERT_EQ(execute_order_notification4.order.getOpenQuantity(), 0);
 
     // Check that the first order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that the second order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification2 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification2 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification2.order.getOrderID(), id2);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(delete_order_notification2.order.getOpenQuantity(), 0);
 
     // Check that the third was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification3 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification3 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification3.order.getOrderID(), id3);
     ASSERT_EQ(delete_order_notification3.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(delete_order_notification3.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(delete_order_notification3.order.getOpenQuantity(), 0);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
@@ -300,59 +300,59 @@ TEST_F(MarketTest, AddIocLimitOrder2)
     // Add the order.
     market.addOrder(order2);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that second order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification2 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification2 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification2.order, order2);
 
     // Check that first order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification1 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification1 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that second order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification2 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification2 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification2.order.getOrderID(), id2);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification2.order.getOpenQuantity(), quantity2 - quantity1);
 
     // Check that the first order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that the second order was deleted since it could not be filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification2 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification2 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification2.order.getOrderID(), id2);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(delete_order_notification2.order.getOpenQuantity(), quantity2 - quantity1);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
@@ -390,84 +390,84 @@ TEST_F(MarketTest, AddFokLimitOrder1)
     // Add the order.
     market.addOrder(order3);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that second order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification2 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification2 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification2.order, order2);
 
     // Check that third order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification3 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification3 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification3.order, order3);
 
     // Check that third order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification1 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification1 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification1.order.getOrderID(), id3);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification1.order.getOpenQuantity(), quantity3 - quantity1);
 
     // Check that first order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification2 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification2 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification2.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification2.order.getOpenQuantity(), 0);
 
     // Check that third order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification3 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification3 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification3.order.getOrderID(), id3);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedQuantity(), quantity3 - quantity1);
     ASSERT_EQ(execute_order_notification3.order.getOpenQuantity(), 0);
 
     // Check that second order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification4 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification4 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification4.order.getOrderID(), id2);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedQuantity(), quantity3 - quantity1);
     ASSERT_EQ(execute_order_notification4.order.getOpenQuantity(), quantity2 - (quantity3 - quantity1));
 
     // Check that the first order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that the third was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification2 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification2 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification2.order.getOrderID(), id3);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedQuantity(), quantity3 - quantity1);
     ASSERT_EQ(delete_order_notification2.order.getOpenQuantity(), 0);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
@@ -505,36 +505,36 @@ TEST_F(MarketTest, AddFokLimitOrder2)
     // Add the order.
     market.addOrder(order3);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that second order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification2 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification2 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification2.order, order2);
 
     // Check that third order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification3 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification3 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification3.order, order3);
 
     // Check that the third was deleted since it could not be filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification2 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification2 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification2.order, order3);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
@@ -571,94 +571,94 @@ TEST_F(MarketTest, AddIocMarketOrder1)
     // Add the order.
     market.addOrder(order3);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that second order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification2 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification2 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification2.order, order2);
 
     // Check that third order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification3 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification3 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification3.order, order3);
 
     // Check that first order was executed - should be completely filled.
     // Note that bid orders are always processed first.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification1 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification1 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that third order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification2 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification2 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification2.order.getOrderID(), id3);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification2.order.getOpenQuantity(), quantity3 - quantity1);
 
     // Check that second order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification3 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification3 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification3.order.getOrderID(), id2);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(execute_order_notification3.order.getOpenQuantity(), 0);
 
     // Check that third order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification4 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification4 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification4.order.getOrderID(), id3);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(execute_order_notification4.order.getOpenQuantity(), quantity3 - quantity2 - quantity1);
 
     // Check that the first order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that the second order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification2 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification2 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification2.order.getOrderID(), id2);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(delete_order_notification2.order.getOpenQuantity(), 0);
 
     // Check that third order was deleted since it could not be filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification3 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification3 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification3.order.getOrderID(), id3);
     ASSERT_EQ(delete_order_notification3.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(delete_order_notification3.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(delete_order_notification3.order.getOpenQuantity(), quantity3 - quantity2 - quantity1);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
@@ -690,54 +690,54 @@ TEST_F(MarketTest, AddIocMarketOrder2)
     // Add the order.
     market.addOrder(order2);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that second order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification2 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification2 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification2.order, order2);
 
     // Check that second order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification1 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification1 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification1.order.getOrderID(), id2);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(execute_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that first order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification2 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification2 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification2.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(execute_order_notification2.order.getOpenQuantity(), quantity1 - quantity2);
 
     // Check that the second order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification1.order.getOrderID(), id2);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
- * Tests adding stop IOC order that is activated when it is added to the book.
+ * Tests adding restart IOC order that is activated when it is added to the book.
  */
 TEST_F(MarketTest, AddIocStopOrder1)
 {
@@ -771,33 +771,33 @@ TEST_F(MarketTest, AddIocStopOrder1)
     // Add the order.
     market.addOrder(order3);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that second order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification2 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification2 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification2.order, order2);
 
     // Check that third order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification3 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification3 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification3.order, order3);
 
     // Check that third order was updated to be a market order since it was activated.
-    ASSERT_FALSE(notification_processor.update_order_notifications.empty());
-    UpdatedOrder &update_order_notification1 = notification_processor.update_order_notifications.front();
-    notification_processor.update_order_notifications.pop();
+    ASSERT_FALSE(event_handler.update_order_notifications.empty());
+    OrderUpdated &update_order_notification1 = event_handler.update_order_notifications.front();
+    event_handler.update_order_notifications.pop();
     ASSERT_EQ(update_order_notification1.order.getOrderID(), id3);
     ASSERT_EQ(update_order_notification1.order.getType(), OrderType::Market);
     ASSERT_EQ(update_order_notification1.order.getTimeInForce(), tof3);
@@ -807,64 +807,64 @@ TEST_F(MarketTest, AddIocStopOrder1)
     ASSERT_EQ(update_order_notification1.order.getOpenQuantity(), quantity3);
 
     // Check that first order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification1 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification1 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that second order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification2 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification2 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification2.order.getOrderID(), id2);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification2.order.getOpenQuantity(), quantity2 - quantity1);
 
     // Check that third order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification3 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification3 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification3.order.getOrderID(), id3);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(execute_order_notification3.order.getOpenQuantity(), 0);
 
     // Check that second order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification4 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification4 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification4.order.getOrderID(), id2);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(execute_order_notification4.order.getOpenQuantity(), quantity2 - quantity1 - quantity3);
 
     // Check that the first order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that third order was deleted since it was converted to a market order.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification2 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification2 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification2.order.getOrderID(), id3);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(delete_order_notification2.order.getOpenQuantity(), 0);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
- * Tests adding stop IOC order that is activated after new limit order is added to the book.
+ * Tests adding restart IOC order that is activated after new limit order is added to the book.
  */
 TEST_F(MarketTest, AddIocStopOrder2)
 {
@@ -898,33 +898,33 @@ TEST_F(MarketTest, AddIocStopOrder2)
     // Add the order.
     market.addOrder(order3);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that second order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification2 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification2 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification2.order, order2);
 
     // Check that third order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification3 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification3 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification3.order, order3);
 
     // Check that second order was updated to be a market order since it was activated.
-    ASSERT_FALSE(notification_processor.update_order_notifications.empty());
-    UpdatedOrder &update_order_notification1 = notification_processor.update_order_notifications.front();
-    notification_processor.update_order_notifications.pop();
+    ASSERT_FALSE(event_handler.update_order_notifications.empty());
+    OrderUpdated &update_order_notification1 = event_handler.update_order_notifications.front();
+    event_handler.update_order_notifications.pop();
     ASSERT_EQ(update_order_notification1.order.getOrderID(), id2);
     ASSERT_EQ(update_order_notification1.order.getType(), OrderType::Market);
     ASSERT_EQ(update_order_notification1.order.getTimeInForce(), tof2);
@@ -934,64 +934,64 @@ TEST_F(MarketTest, AddIocStopOrder2)
     ASSERT_EQ(update_order_notification1.order.getOpenQuantity(), quantity2);
 
     // Check that third order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification2 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification2 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification2.order.getOrderID(), id3);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(execute_order_notification2.order.getOpenQuantity(), 0);
 
     // Check that first order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification1 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification1 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(execute_order_notification1.order.getOpenQuantity(), quantity1 - quantity3);
 
     // Check second order was executed - should be fully filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification3 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification3 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification3.order.getOrderID(), id2);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(execute_order_notification3.order.getOpenQuantity(), 0);
 
     // Check that first order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification4 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification4 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification4.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(execute_order_notification4.order.getOpenQuantity(), quantity1 - quantity2 - quantity3);
 
     // Check that the third order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification1.order.getOrderID(), id3);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that second order was deleted since it was a market order.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification2 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification2 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification2.order.getOrderID(), id2);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(delete_order_notification2.order.getOpenQuantity(), 0);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
- * Tests adding multiple stop IOC orders that are activated after new limit order is added to the book.
+ * Tests adding multiple restart IOC orders that are activated after new limit order is added to the book.
  */
 TEST_F(MarketTest, AddIocStopOrder3)
 {
@@ -1045,47 +1045,47 @@ TEST_F(MarketTest, AddIocStopOrder3)
     // Add the order.
     market.addOrder(order5);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that second order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification2 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification2 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification2.order, order2);
 
     // Check that third order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification3 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification3 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification3.order, order3);
 
     // Check that fourth order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification4 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification4 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification4.order, order4);
 
     // Check that fifth order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification5 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification5 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification5.order, order5);
 
     // Check that fourth order was updated to be a market order since it was activated.
-    ASSERT_FALSE(notification_processor.update_order_notifications.empty());
-    UpdatedOrder &update_order_notification1 = notification_processor.update_order_notifications.front();
-    notification_processor.update_order_notifications.pop();
+    ASSERT_FALSE(event_handler.update_order_notifications.empty());
+    OrderUpdated &update_order_notification1 = event_handler.update_order_notifications.front();
+    event_handler.update_order_notifications.pop();
     ASSERT_EQ(update_order_notification1.order.getOrderID(), id4);
     ASSERT_EQ(update_order_notification1.order.getType(), OrderType::Market);
     ASSERT_EQ(update_order_notification1.order.getTimeInForce(), tof4);
@@ -1094,9 +1094,9 @@ TEST_F(MarketTest, AddIocStopOrder3)
     ASSERT_EQ(update_order_notification1.order.getQuantity(), quantity4);
 
     // Check that third order was updated to be a market order since it was activated.
-    ASSERT_FALSE(notification_processor.update_order_notifications.empty());
-    UpdatedOrder &update_order_notification2 = notification_processor.update_order_notifications.front();
-    notification_processor.update_order_notifications.pop();
+    ASSERT_FALSE(event_handler.update_order_notifications.empty());
+    OrderUpdated &update_order_notification2 = event_handler.update_order_notifications.front();
+    event_handler.update_order_notifications.pop();
     ASSERT_EQ(update_order_notification2.order.getOrderID(), id3);
     ASSERT_EQ(update_order_notification2.order.getType(), OrderType::Market);
     ASSERT_EQ(update_order_notification2.order.getTimeInForce(), tof3);
@@ -1106,9 +1106,9 @@ TEST_F(MarketTest, AddIocStopOrder3)
     ASSERT_EQ(update_order_notification2.order.getOpenQuantity(), quantity3);
 
     // Check that second order was updated to be a market order since it was activated.
-    ASSERT_FALSE(notification_processor.update_order_notifications.empty());
-    UpdatedOrder &update_order_notification3 = notification_processor.update_order_notifications.front();
-    notification_processor.update_order_notifications.pop();
+    ASSERT_FALSE(event_handler.update_order_notifications.empty());
+    OrderUpdated &update_order_notification3 = event_handler.update_order_notifications.front();
+    event_handler.update_order_notifications.pop();
     ASSERT_EQ(update_order_notification3.order.getOrderID(), id2);
     ASSERT_EQ(update_order_notification3.order.getType(), OrderType::Market);
     ASSERT_EQ(update_order_notification3.order.getTimeInForce(), tof2);
@@ -1118,118 +1118,118 @@ TEST_F(MarketTest, AddIocStopOrder3)
     ASSERT_EQ(update_order_notification3.order.getOpenQuantity(), quantity2);
 
     // Check that fifth order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification1 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification1 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification1.order.getOrderID(), id5);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedQuantity(), quantity5);
     ASSERT_EQ(execute_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that first order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification2 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification2 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification2.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedQuantity(), quantity5);
     ASSERT_EQ(execute_order_notification2.order.getOpenQuantity(), quantity1 - quantity5);
 
     // Check that fourth order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification3 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification3 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification3.order.getOrderID(), id4);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedQuantity(), quantity4);
     ASSERT_EQ(execute_order_notification3.order.getOpenQuantity(), 0);
 
     // Check that first order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification4 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification4 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification4.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedQuantity(), quantity4);
     ASSERT_EQ(execute_order_notification4.order.getOpenQuantity(), quantity1 - quantity5 - quantity4);
 
     // Check that third order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification5 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification5 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification5.order.getOrderID(), id3);
     ASSERT_EQ(execute_order_notification5.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification5.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(execute_order_notification5.order.getOpenQuantity(), 0);
 
     // Check that first order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification6 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification6 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification6.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification6.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification6.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(execute_order_notification6.order.getOpenQuantity(), quantity1 - quantity5 - quantity4 - quantity3);
 
     // Check that second order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification7 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification7 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification7.order.getOrderID(), id2);
     ASSERT_EQ(execute_order_notification7.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification7.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(execute_order_notification7.order.getOpenQuantity(), 0);
 
     // Check that first order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification8 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification8 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification8.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification8.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification8.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(execute_order_notification8.order.getOpenQuantity(), quantity1 - quantity5 - quantity4 - quantity3 - quantity2);
 
     // Check that fifth order was deleted since it was filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification1.order.getOrderID(), id5);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), quantity5);
     ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that the fourth order was deleted since it was a market order.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification2 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification2 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification2.order.getOrderID(), id4);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedQuantity(), quantity4);
     ASSERT_EQ(delete_order_notification2.order.getOpenQuantity(), 0);
 
     // Check that third order was deleted since it was a market order.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification3 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification3 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification3.order.getOrderID(), id3);
     ASSERT_EQ(delete_order_notification3.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification3.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(delete_order_notification3.order.getOpenQuantity(), 0);
 
     // Check that second order was deleted since it was a market order.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification4 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification4 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification4.order.getOrderID(), id2);
     ASSERT_EQ(delete_order_notification4.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification4.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(delete_order_notification4.order.getOpenQuantity(), 0);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
- * Tests adding stop limit GTC order that is activated when it is added to the book.
+ * Tests adding restart limit GTC order that is activated when it is added to the book.
  */
 TEST_F(MarketTest, AddGtcStopLimitOrder1)
 {
@@ -1264,33 +1264,33 @@ TEST_F(MarketTest, AddGtcStopLimitOrder1)
     // Add the order.
     market.addOrder(order3);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that second order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification2 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification2 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification2.order, order2);
 
     // Check that third order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification3 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification3 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification3.order, order3);
 
     // Check that third order was updated to be a limit order since it was activated.
-    ASSERT_FALSE(notification_processor.update_order_notifications.empty());
-    UpdatedOrder &update_order_notification1 = notification_processor.update_order_notifications.front();
-    notification_processor.update_order_notifications.pop();
+    ASSERT_FALSE(event_handler.update_order_notifications.empty());
+    OrderUpdated &update_order_notification1 = event_handler.update_order_notifications.front();
+    event_handler.update_order_notifications.pop();
     ASSERT_EQ(update_order_notification1.order.getOrderID(), id3);
     ASSERT_EQ(update_order_notification1.order.getType(), OrderType::Limit);
     ASSERT_EQ(update_order_notification1.order.getTimeInForce(), tof3);
@@ -1300,42 +1300,42 @@ TEST_F(MarketTest, AddGtcStopLimitOrder1)
     ASSERT_EQ(update_order_notification1.order.getOpenQuantity(), quantity3);
 
     // Check that second order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification1 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification1 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification1.order.getOrderID(), id2);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification1.order.getOpenQuantity(), quantity2 - quantity1);
 
     // Check that first order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification2 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification2 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification2.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification2.order.getOpenQuantity(), 0);
 
     // Check that the first order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), price1);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
 
-    ASSERT_TRUE(notification_processor.empty());
+    ASSERT_TRUE(event_handler.empty());
 }
 
 /**
- * Tests adding trailing stop IOC order to the book that is activated after a trade.
+ * Tests adding trailing restart IOC order to the book that is activated after a trade.
  */
 TEST_F(MarketTest, AddGIocTrailingStopOrder1)
 {
-    // The stop price of the trailing stop order below is originally 100.
-    // Price goes up by 10 so stop price becomes 110.
+    // The stop price of the trailing restart order below is originally 100.
+    // Price goes up by 10 so restart price becomes 110.
     uint64_t expected_stop_price = 110;
 
     // Order to add.
@@ -1377,7 +1377,7 @@ TEST_F(MarketTest, AddGIocTrailingStopOrder1)
 
     // Add the order.
     // This order and the previous two orders will match at 160 and 170, bringing the last traded price to 170.
-    // The stop price of the trailing stop should then increase by 10.
+    // The stop price of the trailing restart should then increase by 10.
     market.addOrder(order4);
 
     // Order to add.
@@ -1399,57 +1399,57 @@ TEST_F(MarketTest, AddGIocTrailingStopOrder1)
 
     // Add the order.
     // This order and the previous order should match at 105, bringing the last traded price to 105.
-    // This should activate the trailing stop since it has a stop price of 110.
+    // This should activate the trailing stop since it has a restart price of 110.
     market.addOrder(order6);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that second order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification2 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification2 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification2.order, order2);
 
     // Check that third order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification3 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification3 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification3.order, order3);
 
     // Check that fourth order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification4 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification4 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification4.order, order4);
 
     // Check that fifth order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification5 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification5 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification5.order, order5);
 
     // Check that sixth order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification6 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification6 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification6.order, order6);
 
-    // Check that first order's stop price was adjusted.
-    ASSERT_FALSE(notification_processor.update_order_notifications.empty());
-    UpdatedOrder &update_order_notification1 = notification_processor.update_order_notifications.front();
-    notification_processor.update_order_notifications.pop();
+    // Check that first order's restart price was adjusted.
+    ASSERT_FALSE(event_handler.update_order_notifications.empty());
+    OrderUpdated &update_order_notification1 = event_handler.update_order_notifications.front();
+    event_handler.update_order_notifications.pop();
     ASSERT_EQ(update_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(update_order_notification1.order.getType(), OrderType::TrailingStop);
     ASSERT_EQ(update_order_notification1.order.getTimeInForce(), tof1);
@@ -1460,9 +1460,9 @@ TEST_F(MarketTest, AddGIocTrailingStopOrder1)
     ASSERT_EQ(update_order_notification1.order.getOpenQuantity(), quantity1);
 
     // Check that first order was converted to a market order.
-    ASSERT_FALSE(notification_processor.update_order_notifications.empty());
-    UpdatedOrder &update_order_notification2 = notification_processor.update_order_notifications.front();
-    notification_processor.update_order_notifications.pop();
+    ASSERT_FALSE(event_handler.update_order_notifications.empty());
+    OrderUpdated &update_order_notification2 = event_handler.update_order_notifications.front();
+    event_handler.update_order_notifications.pop();
     ASSERT_EQ(update_order_notification2.order.getOrderID(), id1);
     ASSERT_EQ(update_order_notification2.order.getType(), OrderType::Market);
     ASSERT_EQ(update_order_notification2.order.getTimeInForce(), tof1);
@@ -1473,117 +1473,117 @@ TEST_F(MarketTest, AddGIocTrailingStopOrder1)
     ASSERT_EQ(update_order_notification2.order.getOpenQuantity(), quantity1);
 
     // Check that fourth order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification1 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification1 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification1.order.getOrderID(), id4);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), price3);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(execute_order_notification1.order.getOpenQuantity(), quantity4 - quantity3);
 
     // Check that third order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification2 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification2 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification2.order.getOrderID(), id3);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedPrice(), price3);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(execute_order_notification2.order.getOpenQuantity(), 0);
 
     // Check that fourth order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification3 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification3 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification3.order.getOrderID(), id4);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(execute_order_notification3.order.getOpenQuantity(), 0);
 
     // Check that second order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification4 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification4 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification4.order.getOrderID(), id2);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(execute_order_notification4.order.getOpenQuantity(), 0);
 
     // Check that fifth order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification5 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification5 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification5.order.getOrderID(), id5);
     ASSERT_EQ(execute_order_notification5.order.getLastExecutedPrice(), price5);
     ASSERT_EQ(execute_order_notification5.order.getLastExecutedQuantity(), quantity6);
     ASSERT_EQ(execute_order_notification5.order.getOpenQuantity(), quantity5 - quantity6);
 
     // Check that sixth order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification6 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification6 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification6.order.getOrderID(), id6);
     ASSERT_EQ(execute_order_notification6.order.getLastExecutedPrice(), price5);
     ASSERT_EQ(execute_order_notification6.order.getLastExecutedQuantity(), quantity6);
     ASSERT_EQ(execute_order_notification6.order.getOpenQuantity(), 0);
 
     // Check that fifth order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification7 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification7 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification7.order.getOrderID(), id5);
     ASSERT_EQ(execute_order_notification7.order.getLastExecutedPrice(), price5);
     ASSERT_EQ(execute_order_notification7.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification7.order.getOpenQuantity(), quantity5 - quantity6 - quantity1);
 
     // Check that first order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification8 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification8 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification8.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification8.order.getLastExecutedPrice(), price5);
     ASSERT_EQ(execute_order_notification8.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification8.order.getOpenQuantity(), 0);
 
     // Check that the third order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification1.order.getOrderID(), id3);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), price3);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that the second order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification2 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification2 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification2.order.getOrderID(), id2);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(delete_order_notification2.order.getOpenQuantity(), 0);
 
     // Check that the fourth order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification3 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification3 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification3.order.getOrderID(), id4);
     ASSERT_EQ(delete_order_notification3.order.getLastExecutedPrice(), price2);
     ASSERT_EQ(delete_order_notification3.order.getLastExecutedQuantity(), quantity4 - quantity3);
     ASSERT_EQ(delete_order_notification3.order.getOpenQuantity(), 0);
 
     // Check that the sixth order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification4 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification4 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification4.order.getOrderID(), id6);
     ASSERT_EQ(delete_order_notification4.order.getLastExecutedPrice(), price5);
     ASSERT_EQ(delete_order_notification4.order.getLastExecutedQuantity(), quantity6);
     ASSERT_EQ(delete_order_notification4.order.getOpenQuantity(), 0);
 
     // Check that the first order was deleted since it became a market order.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification5 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification5 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification5.order.getOrderID(), id1);
     ASSERT_EQ(delete_order_notification5.order.getLastExecutedPrice(), price5);
     ASSERT_EQ(delete_order_notification5.order.getLastExecutedQuantity(), quantity1);
@@ -1591,8 +1591,8 @@ TEST_F(MarketTest, AddGIocTrailingStopOrder1)
 }
 
 /**
- * Tests adding trailing stop IOC order to the book that is activated after another
- * stop order was traded.
+ * Tests adding trailing restart IOC order to the book that is activated after another
+ * restart order was traded.
  */
 TEST_F(MarketTest, AddIocTrailingStopOrder2)
 {
@@ -1649,7 +1649,7 @@ TEST_F(MarketTest, AddIocTrailingStopOrder2)
     // Add the order.
     market.addOrder(order5);
 
-    // Order to add - matches with ask order at 90 and then 95 activating stop orders.
+    // Order to add - matches with ask order at 90 and then 95 activating restart orders.
     OrderTimeInForce tof6 = OrderTimeInForce::GTC;
     uint64_t quantity6 = 200;
     uint64_t price6 = 100;
@@ -1658,57 +1658,57 @@ TEST_F(MarketTest, AddIocTrailingStopOrder2)
 
     // Add the order.
     // This order and the previous order should match at 105, bringing the last traded price to 105.
-    // This should activate the trailing stop since it has a stop price of 110.
+    // This should activate the trailing restart since it has a stop price of 110.
     market.addOrder(order6);
 
-    notification_processor.shutdown();
+    event_handler.stop();
 
     // Check that first order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification1 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification1.order, order1);
 
     // Check that second order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification2 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification2 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification2.order, order2);
 
     // Check that third order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification3 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification3 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification3.order, order3);
 
     // Check that fourth order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification4 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification4 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification4.order, order4);
 
     // Check that fifth order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification5 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification5 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification5.order, order5);
 
     // Check that sixth order was added. Order should be identical to original
     // order since it should not have been matched.
-    ASSERT_FALSE(notification_processor.add_order_notifications.empty());
-    AddedOrder &add_order_notification6 = notification_processor.add_order_notifications.front();
-    notification_processor.add_order_notifications.pop();
+    ASSERT_FALSE(event_handler.add_order_notifications.empty());
+    OrderAdded &add_order_notification6 = event_handler.add_order_notifications.front();
+    event_handler.add_order_notifications.pop();
     ASSERT_EQ(add_order_notification6.order, order6);
 
     // Check that first order was converted to a market order.
-    ASSERT_FALSE(notification_processor.update_order_notifications.empty());
-    UpdatedOrder &update_order_notification1 = notification_processor.update_order_notifications.front();
-    notification_processor.update_order_notifications.pop();
+    ASSERT_FALSE(event_handler.update_order_notifications.empty());
+    OrderUpdated &update_order_notification1 = event_handler.update_order_notifications.front();
+    event_handler.update_order_notifications.pop();
     ASSERT_EQ(update_order_notification1.order.getOrderID(), id1);
     ASSERT_EQ(update_order_notification1.order.getType(), OrderType::Market);
     ASSERT_EQ(update_order_notification1.order.getTimeInForce(), tof1);
@@ -1719,9 +1719,9 @@ TEST_F(MarketTest, AddIocTrailingStopOrder2)
     ASSERT_EQ(update_order_notification1.order.getOpenQuantity(), quantity1);
 
     // Check that second order was converted to a market order.
-    ASSERT_FALSE(notification_processor.update_order_notifications.empty());
-    UpdatedOrder &update_order_notification2 = notification_processor.update_order_notifications.front();
-    notification_processor.update_order_notifications.pop();
+    ASSERT_FALSE(event_handler.update_order_notifications.empty());
+    OrderUpdated &update_order_notification2 = event_handler.update_order_notifications.front();
+    event_handler.update_order_notifications.pop();
     ASSERT_EQ(update_order_notification2.order.getOrderID(), id2);
     ASSERT_EQ(update_order_notification2.order.getType(), OrderType::Market);
     ASSERT_EQ(update_order_notification2.order.getTimeInForce(), tof2);
@@ -1732,117 +1732,117 @@ TEST_F(MarketTest, AddIocTrailingStopOrder2)
     ASSERT_EQ(update_order_notification2.order.getOpenQuantity(), quantity2);
 
     // Check that sixth order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification1 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification1 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification1.order.getOrderID(), id6);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedPrice(), price4);
     ASSERT_EQ(execute_order_notification1.order.getLastExecutedQuantity(), quantity4);
     ASSERT_EQ(execute_order_notification1.order.getOpenQuantity(), quantity6 - quantity4);
 
     // Check that fourth order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification2 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification2 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification2.order.getOrderID(), id4);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedPrice(), price4);
     ASSERT_EQ(execute_order_notification2.order.getLastExecutedQuantity(), quantity4);
     ASSERT_EQ(execute_order_notification2.order.getOpenQuantity(), 0);
 
     // Check that sixth order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification3 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification3 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification3.order.getOrderID(), id6);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedPrice(), price3);
     ASSERT_EQ(execute_order_notification3.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(execute_order_notification3.order.getOpenQuantity(), 0);
 
     // Check that third order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification4 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification4 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification4.order.getOrderID(), id3);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedPrice(), price3);
     ASSERT_EQ(execute_order_notification4.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(execute_order_notification4.order.getOpenQuantity(), 0);
 
     // Check that first order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification5 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification5 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification5.order.getOrderID(), id1);
     ASSERT_EQ(execute_order_notification5.order.getLastExecutedPrice(), price5);
     ASSERT_EQ(execute_order_notification5.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification5.order.getOpenQuantity(), 0);
 
     // Check that fifth order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification6 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification6 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification6.order.getOrderID(), id5);
     ASSERT_EQ(execute_order_notification6.order.getLastExecutedPrice(), price5);
     ASSERT_EQ(execute_order_notification6.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(execute_order_notification6.order.getOpenQuantity(), quantity5 - quantity1);
 
     // Check that second order was executed - should be completely filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification7 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification7 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification7.order.getOrderID(), id2);
     ASSERT_EQ(execute_order_notification7.order.getLastExecutedPrice(), price5);
     ASSERT_EQ(execute_order_notification7.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(execute_order_notification7.order.getOpenQuantity(), 0);
 
     // Check that fifth order was executed - should be partially filled.
-    ASSERT_FALSE(notification_processor.execute_order_notifications.empty());
-    ExecutedOrder &execute_order_notification8 = notification_processor.execute_order_notifications.front();
-    notification_processor.execute_order_notifications.pop();
+    ASSERT_FALSE(event_handler.execute_order_notifications.empty());
+    ExecutedOrder &execute_order_notification8 = event_handler.execute_order_notifications.front();
+    event_handler.execute_order_notifications.pop();
     ASSERT_EQ(execute_order_notification8.order.getOrderID(), id5);
     ASSERT_EQ(execute_order_notification8.order.getLastExecutedPrice(), price5);
     ASSERT_EQ(execute_order_notification8.order.getLastExecutedQuantity(), quantity2);
     ASSERT_EQ(execute_order_notification8.order.getOpenQuantity(), quantity5 - quantity2 - quantity1);
 
     // Check that the fourth order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification1 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification1.order.getOrderID(), id4);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), price4);
     ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), quantity4);
     ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
 
     // Check that the third order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification2 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification2 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification2.order.getOrderID(), id3);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedPrice(), price3);
     ASSERT_EQ(delete_order_notification2.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(delete_order_notification2.order.getOpenQuantity(), 0);
 
     // Check that the sixth order was deleted since it was completely filled.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification3 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification3 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification3.order.getOrderID(), id6);
     ASSERT_EQ(delete_order_notification3.order.getLastExecutedPrice(), price3);
     ASSERT_EQ(delete_order_notification3.order.getLastExecutedQuantity(), quantity3);
     ASSERT_EQ(delete_order_notification3.order.getOpenQuantity(), 0);
 
     // Check that the first order was deleted since it was a market order.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification4 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification4 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification4.order.getOrderID(), id1);
     ASSERT_EQ(delete_order_notification4.order.getLastExecutedPrice(), price5);
     ASSERT_EQ(delete_order_notification4.order.getLastExecutedQuantity(), quantity1);
     ASSERT_EQ(delete_order_notification4.order.getOpenQuantity(), 0);
 
     // Check that the second order was deleted since it became a market order.
-    ASSERT_FALSE(notification_processor.delete_order_notifications.empty());
-    DeletedOrder &delete_order_notification5 = notification_processor.delete_order_notifications.front();
-    notification_processor.delete_order_notifications.pop();
+    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
+    OrderDeleted &delete_order_notification5 = event_handler.delete_order_notifications.front();
+    event_handler.delete_order_notifications.pop();
     ASSERT_EQ(delete_order_notification5.order.getOrderID(), id2);
     ASSERT_EQ(delete_order_notification5.order.getLastExecutedPrice(), price5);
     ASSERT_EQ(delete_order_notification5.order.getLastExecutedQuantity(), quantity2);

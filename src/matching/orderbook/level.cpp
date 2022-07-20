@@ -9,6 +9,16 @@ Level::Level(uint64_t price_, LevelSide side_, uint32_t symbol_id_)
     volume = 0;
 }
 
+const list<Order> &Level::getOrders() const
+{
+    return orders;
+}
+
+list<Order> &Level::getOrders()
+{
+    return orders;
+}
+
 void Level::addOrder(Order &order)
 {
     assert(order.isAsk() ? side == LevelSide::Ask : side == LevelSide::Bid && "Order is on different side than level!");
@@ -36,6 +46,32 @@ void Level::popBack()
     LEVEL_CHECK_INVARIANTS;
 }
 
+void Level::deleteOrder(const Order &order)
+{
+    volume -= order.getOpenQuantity();
+    orders.remove(order);
+    LEVEL_CHECK_INVARIANTS;
+}
+
+void Level::reduceVolume(uint64_t amount)
+{
+    assert(volume >= amount && "Cannot reduce level volume by amount greater than its current volume!");
+    volume -= amount;
+    LEVEL_CHECK_INVARIANTS;
+}
+
+Order& Level::front()
+{
+    assert(!orders.empty() && "Level is empty!");
+    return orders.front();
+}
+
+Order& Level::back()
+{
+    assert(!orders.empty() && "Level is empty!");
+    return orders.back();
+}
+
 // LCOV_EXCL_START
 std::ostream &operator<<(std::ostream &os, const Level &level)
 {
@@ -57,6 +93,12 @@ void Level::checkInvariants() const
         else
             assert(order.getPrice() == price && "Order price does not match price of the level!");
         actual_volume += order.getOpenQuantity();
+    }
+
+    if (actual_volume != volume)
+    {
+        std::cout << actual_volume << std::endl;
+        std::cout << *this << std::endl;
     }
     assert(actual_volume == volume && "Level has incorrect volume!");
 }

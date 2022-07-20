@@ -32,7 +32,7 @@ public:
     T waitAndPop()
     {
         std::unique_lock<std::mutex> lk(m);
-        c.wait(lk, [&] { return !queue.empty(); });
+        c.wait(lk, [this] { return !queue.empty(); });
         auto data = queue.front();
         queue.pop();
         return data;
@@ -66,8 +66,8 @@ public:
 
 private:
     mutable std::mutex m;
-    std::condition_variable c;
     std::queue<T> queue;
+    std::condition_variable c;
 };
 } // namespace Concurrent
 #endif // RAPID_TRADER_QUEUE_H
