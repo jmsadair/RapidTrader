@@ -55,7 +55,6 @@ using namespace boost::intrusive;
 struct Order : public list_base_hook<>
 {
 public:
-
     /**
      * Creates a market order on the ask side.
      *
@@ -138,13 +137,13 @@ public:
      * @param order_id the ID of the order, require that ID is positive.
      * @param symbol_id the symbol ID of the order, require that symbol ID is positive.
      * @param price the price that the order, require that price is positive.
-     * @param stop_price the stop price of the order, require that stop_price is positive.
+     * @param stop_price_ the stop price of the order, require that stop_price_ is positive.
      * @param quantity the quantity of the order, require that quantity is positive.
      * @param time_in_force the time in force of the order.
      * @return a new stop limit order.
      */
     static Order stopLimitAskOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
+        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price_, uint64_t quantity, OrderTimeInForce time_in_force);
 
     /**
      * Creates a new stop limit order on the bid side.
@@ -160,17 +159,64 @@ public:
     static Order stopLimitBidOrder(
         uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
 
-    static Order trailingStopAskOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
 
-    static Order trailingStopBidOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
+    /**
+     * Create a new trailing stop order on the ask side.
+     *
+     * @param order_id the ID of the order, require that ID is positive.
+     * @param symbol_id the symbol ID of the order, require that the symbol ID is positive.
+     * @param stop_price the initial stop price of the order, require that the stop price is positive.
+     * @param trail_amount the trail amount, require that trail amount is positive.
+     * @param quantity the quantity of the order, require that quantity is positive.
+     * @param time_in_force the time in force of the order, require that time in force is IOC or FOK.
+     * @return a new trailing stop order.
+     */
+    static Order trailingStopAskOrder(uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t trail_amount, uint64_t quantity,
+        OrderTimeInForce time_in_force);
 
-    static Order trailingStopLimitAskOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
+    /**
+     * Create a new trailing stop order on the bid side.
+     *
+     * @param order_id the ID of the order, require that ID is positive.
+     * @param symbol_id the symbol ID of the order, require that the symbol ID is positive.
+     * @param stop_price the initial stop price of the order, require that the stop price is positive.
+     * @param trail_amount the trail amount, require that trail amount is positive.
+     * @param quantity the quantity of the order, require that quantity is positive.
+     * @param time_in_force the time in force of the order, require that time in force is IOC or FOK.
+     * @return a new trailing stop order.
+     */
+    static Order trailingStopBidOrder(uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t trail_amount, uint64_t quantity,
+        OrderTimeInForce time_in_force);
 
-    static inline Order trailingStopLimitBidOrder(
-        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
+    /**
+     * Create a new trailing stop limit order on the ask side.
+     *
+     * @param order_id the ID of the order, require that ID is positive.
+     * @param symbol_id the symbol ID of the order, require that the symbol ID is positive.
+     * @param price the price of the order, require that price is positive.
+     * @param stop_price the initial stop price of the order, require that the stop price is positive.
+     * @param trail_amount the trail amount, require that trail amount is positive.
+     * @param quantity the quantity of the order, require that quantity is positive.
+     * @param time_in_force the time in force of the order, require that time in force is IOC or FOK.
+     * @return a new trailing stop limit order.
+     */
+    static Order trailingStopLimitAskOrder(uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price,
+        uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force);
+
+    /**
+     * Create a new trailing stop limit order on the bid side.
+     *
+     * @param order_id the ID of the order, require that ID is positive.
+     * @param symbol_id the symbol ID of the order, require that the symbol ID is positive.
+     * @param price the price of the order, require that price is positive.
+     * @param stop_price the initial stop price of the order, require that the stop price is positive.
+     * @param trail_amount the trail amount, require that trail amount is positive.
+     * @param quantity the quantity of the order, require that quantity is positive.
+     * @param time_in_force the time in force of the order, require that time in force is IOC or FOK.
+     * @return a new trailing stop limit order.
+     */
+    static inline Order trailingStopLimitBidOrder(uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price,
+        uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force);
 
     /**
      * @return the quantity of the order.
@@ -222,12 +268,21 @@ public:
     }
 
     /**
-     * @return the restart price associated with the order
+     * @return the stop price associated with the order
      *         if applicable, otherwise zero.
      */
     [[nodiscard]] uint64_t getStopPrice() const
     {
         return stop_price;
+    }
+
+    /**
+     * @return the trail amount associated with the order
+     *         if applicable, otherwise zero.
+     */
+    [[nodiscard]] uint64_t getTrailAmount() const
+    {
+        return trail_amount;
     }
 
     /**
@@ -239,7 +294,8 @@ public:
     }
 
     /**
-     * @return the time_in_force of the order - limit, market, stop, or restart limit.
+     * @return the type of the order - limit, market, stop, stop limit, trailing stop,
+     *         or trailing stop limit.
      */
     [[nodiscard]] OrderType getType() const
     {
@@ -304,7 +360,7 @@ public:
     }
 
     /**
-     * @return true if the order is a restart order and false otherwise.
+     * @return true if the order is a stop order and false otherwise.
      */
     [[nodiscard]] bool isStop() const
     {
@@ -312,7 +368,7 @@ public:
     }
 
     /**
-     * @return true if the order is a restart limit order and false otherwise.
+     * @return true if the order is a stop limit order and false otherwise.
      */
     [[nodiscard]] bool isStopLimit() const
     {
@@ -320,7 +376,7 @@ public:
     }
 
     /**
-     * @return true if the order is a trailing restart order and false otherwise.
+     * @return true if the order is a trailing stop order and false otherwise.
      */
     [[nodiscard]] bool isTrailingStop() const
     {
@@ -328,7 +384,7 @@ public:
     }
 
     /**
-     * @return true if the order is a trailing restart limit order and false otherwise.
+     * @return true if the order is a trailing stop limit order and false otherwise.
      */
     [[nodiscard]] bool isTrailingStopLimit() const
     {
@@ -405,13 +461,16 @@ private:
      * @param symbol_id_ the symbol ID associated with the order.
      * @param price_ the price of the order, require that price_ is positive if the order is not a market
      *               order otherwise require that price_ is zero.
-     * @param stop_price_ the stop price of the order, require that restart price is positive if a stop price
-     *                    applies to the order type otherwise require that stop_price_ is zero.
+     * @param stop_price_ the stop price of the order, require that stop_price is positive if the order is
+     *                    order is stop or stop limit and zero otherwise.
+     * @param trail_amount_ the absolute distance from the market price that trailing stop and trailing
+     *                      stop limit orders will trail, require that trail_amount_ is positive if the order
+     *                      is a trailing stop or trailing stop limit and zero otherwise.
      * @param quantity_ the quantity of the order, require that quantity_ is positive.
      * @param id_ the ID associated with the order, require that id_ is positive.
      */
     Order(OrderType type_, OrderSide side_, OrderTimeInForce time_in_force_, uint32_t symbol_id_, uint64_t price_, uint64_t stop_price_,
-        uint64_t quantity_, uint64_t id_);
+        uint64_t trail_amount_, uint64_t quantity_, uint64_t id_);
 
     /**
      * Executes the order.
@@ -449,6 +508,18 @@ private:
     void setStopPrice(uint64_t stop_price_)
     {
         stop_price = stop_price_;
+        ORDER_CHECK_INVARIANTS;
+    }
+
+    /**
+     * Set the stop trail amount of the order, require that the order is a
+     * or trailing stop or trailing stop limit order.
+     *
+     * @param trail_amount_ the new trail amount of the order.
+     */
+    void setTrailAmount(uint64_t trail_amount_)
+    {
+        trail_amount = trail_amount_;
         ORDER_CHECK_INVARIANTS;
     }
 
@@ -491,9 +562,9 @@ private:
      * Enforces the representation invariants of the order.
      *
      * @throws Error if the quantity of the order is not positive,
-     *               the order is a market, stop, or trailing restart
+     *               the order is a market, stop, or trailing stop
      *               order and has time in force GTC, the order
-     *               is a limit, restart limit, or trailing stop limit
+     *               is a limit, stop limit, or trailing stop limit
      *               order and has a price that is not positive, the
      *               executed quantity of the order exceeds the quantity
      *               of the order, the last executed quantity of the
@@ -508,6 +579,7 @@ private:
     uint32_t symbol_id;
     uint64_t price;
     uint64_t stop_price;
+    uint64_t trail_amount;
     uint64_t last_executed_price;
     uint64_t id;
     uint64_t quantity;

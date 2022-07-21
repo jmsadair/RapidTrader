@@ -136,7 +136,8 @@ ErrorStatus Market::cancelOrder(uint32_t symbol_id, uint64_t order_id, uint64_t 
 #ifndef CONCURRENT
     book->cancelOrder(order_id, cancelled_quantity);
 #else
-    thread_pool.submitTask(id_to_queue_id[symbol_id], [book, order_id, cancelled_quantity] { book->cancelOrder(order_id, cancelled_quantity); });
+    thread_pool.submitTask(
+        id_to_queue_id[symbol_id], [book, order_id, cancelled_quantity] { book->cancelOrder(order_id, cancelled_quantity); });
 #endif
     return ErrorStatus::Ok;
 }
@@ -157,7 +158,8 @@ ErrorStatus Market::replaceOrder(uint32_t symbol_id, uint64_t order_id, uint64_t
 #ifndef CONCURRENT
     book->replaceOrder(order_id, new_order_id, new_price);
 #else
-    thread_pool.submitTask(id_to_queue_id[symbol_id], [book, order_id, new_order_id, new_price] { book->replaceOrder(order_id, new_order_id, new_price); });
+    thread_pool.submitTask(
+        id_to_queue_id[symbol_id], [book, order_id, new_order_id, new_price] { book->replaceOrder(order_id, new_order_id, new_price); });
 #endif
     return ErrorStatus::Ok;
 }
@@ -179,7 +181,7 @@ ErrorStatus Market::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t
 #ifndef CONCURRENT
     book->executeOrder(order_id, quantity, price);
 #else
-    thread_pool.submitTask(id_to_queue_id[symbol_id], [book, order_id, quantity, price] { book->executeOrder(order_id, quantity, price);});
+    thread_pool.submitTask(id_to_queue_id[symbol_id], [book, order_id, quantity, price] { book->executeOrder(order_id, quantity, price); });
 #endif
     return ErrorStatus::Ok;
 }

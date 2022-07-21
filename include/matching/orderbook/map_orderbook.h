@@ -147,6 +147,16 @@ private:
     void insertStopOrder(const Order &order);
 
     /**
+     * Calculates the stop price of a trailing stop
+     * order and sets the order's stop price to that price.
+     *
+     * @param order the order to set the stop price of, require that
+     *              order is a trailing stop ir trailing stop limit order.
+     * @return the new stop price of the order.
+     */
+    uint64_t calculateStopPrice(Order &order);
+
+    /**
      * Updates the restart price of trailing stop orders on the bid side.
      */
     void updateBidStopOrders();
@@ -220,7 +230,7 @@ private:
      */
     [[nodiscard]] inline uint64_t lastTradedPriceAsk() const
     {
-        return last_traded_price;
+        return last_traded_price == 0 ? std::numeric_limits<uint64_t>::max() : last_traded_price;
     }
 
     /**
@@ -228,7 +238,7 @@ private:
      */
     [[nodiscard]] inline uint64_t lastTradedPriceBid() const
     {
-        return last_traded_price == 0 ? std::numeric_limits<uint64_t>::max() : last_traded_price;
+        return last_traded_price;
     }
 
     /**
@@ -236,7 +246,7 @@ private:
      */
     [[nodiscard]] inline uint64_t previousLastTradedPriceAsk() const
     {
-        return previous_last_traded_price;
+        return previous_last_traded_price == 0 ? last_traded_price : previous_last_traded_price;
     }
 
     /**
@@ -244,7 +254,7 @@ private:
      */
     [[nodiscard]] inline uint64_t previousLastTradedPriceBid() const
     {
-        return previous_last_traded_price == 0 ? std::numeric_limits<uint64_t>::max() : previous_last_traded_price;
+        return previous_last_traded_price == 0 ? last_traded_price : previous_last_traded_price;
     }
 
     /**

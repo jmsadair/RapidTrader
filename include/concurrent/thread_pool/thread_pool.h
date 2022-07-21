@@ -6,7 +6,7 @@
 #include "concurrent/thread_pool/thread_joiner.h"
 #include "concurrent/thread_pool/queue.h"
 
-namespace Concurrent{
+namespace Concurrent {
 class ThreadPool
 {
 public:
@@ -71,7 +71,6 @@ public:
     };
 
 private:
-
     /**
      * Wait for and execute incoming tasks.
      *

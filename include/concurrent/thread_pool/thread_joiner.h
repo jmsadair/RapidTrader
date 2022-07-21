@@ -15,7 +15,7 @@ struct ThreadJoiner
     ~ThreadJoiner()
     {
         // Join all joinable threads.
-        for (auto& thread : threads)
+        for (auto &thread : threads)
         {
             if (thread.joinable())
                 thread.join();

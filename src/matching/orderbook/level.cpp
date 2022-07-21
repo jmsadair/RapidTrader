@@ -24,7 +24,7 @@ void Level::addOrder(Order &order)
     assert(order.isAsk() ? side == LevelSide::Ask : side == LevelSide::Bid && "Order is on different side than level!");
     assert(order.getSymbolID() == symbol_id && "Order does not have the same symbol ID as the level!");
     volume += order.getOpenQuantity();
-    orders.push_front(order);
+    orders.push_back(order);
     LEVEL_CHECK_INVARIANTS;
 }
 
@@ -60,13 +60,13 @@ void Level::reduceVolume(uint64_t amount)
     LEVEL_CHECK_INVARIANTS;
 }
 
-Order& Level::front()
+Order &Level::front()
 {
     assert(!orders.empty() && "Level is empty!");
     return orders.front();
 }
 
-Order& Level::back()
+Order &Level::back()
 {
     assert(!orders.empty() && "Level is empty!");
     return orders.back();
