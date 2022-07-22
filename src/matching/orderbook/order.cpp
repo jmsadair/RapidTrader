@@ -100,55 +100,49 @@ Order Order::stopLimitBidOrder(
 }
 
 Order Order::trailingStopAskOrder(
-    uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force)
+    uint64_t order_id, uint32_t symbol_id, uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force)
 {
     assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
     assert(order_id > 0 && "Order ID must be positive!");
     assert(symbol_id > 0 && "Symbol ID must be positive!");
-    assert(stop_price > 0 && "Stop Price must be positive!");
     assert(trail_amount > 0 && "Stop Price must be positive!");
     assert(quantity > 0 && "Quantity must be positive!");
-    return Order{OrderType::TrailingStop, OrderSide::Ask, time_in_force, symbol_id, 0, stop_price, trail_amount, quantity, order_id};
+    return Order{OrderType::TrailingStop, OrderSide::Ask, time_in_force, symbol_id, 0, 0, trail_amount, quantity, order_id};
 }
 
 Order Order::trailingStopBidOrder(
-    uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force)
+    uint64_t order_id, uint32_t symbol_id, uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force)
 {
     assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
     assert(order_id > 0 && "Order ID must be positive!");
     assert(symbol_id > 0 && "Symbol ID must be positive!");
-    assert(stop_price > 0 && "Stop Price must be positive!");
     assert(trail_amount > 0 && "Stop Price must be positive!");
     assert(quantity > 0 && "Quantity must be positive!");
-    return Order{OrderType::TrailingStop, OrderSide::Bid, time_in_force, symbol_id, 0, stop_price, trail_amount, quantity, order_id};
+    return Order{OrderType::TrailingStop, OrderSide::Bid, time_in_force, symbol_id, 0, 0, trail_amount, quantity, order_id};
 }
 
-Order Order::trailingStopLimitAskOrder(uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t trail_amount,
-    uint64_t quantity, OrderTimeInForce time_in_force)
+Order Order::trailingStopLimitAskOrder(
+    uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force)
 {
     assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
     assert(order_id > 0 && "Order ID must be positive!");
     assert(symbol_id > 0 && "Symbol ID must be positive!");
     assert(price > 0 && "Price must be positive!");
-    assert(stop_price > 0 && "Stop Price must be positive!");
     assert(trail_amount > 0 && "Trail amount must be positive!");
     assert(quantity > 0 && "Quantity must be positive!");
-    return Order{
-        OrderType::TrailingStopLimit, OrderSide::Ask, time_in_force, symbol_id, price, stop_price, trail_amount, quantity, order_id};
+    return Order{OrderType::TrailingStopLimit, OrderSide::Ask, time_in_force, symbol_id, price, 0, trail_amount, quantity, order_id};
 }
 
-Order Order::trailingStopLimitBidOrder(uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t trail_amount,
-    uint64_t quantity, OrderTimeInForce time_in_force)
+Order Order::trailingStopLimitBidOrder(
+    uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force)
 {
     assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
     assert(order_id > 0 && "Order ID must be positive!");
     assert(symbol_id > 0 && "Symbol ID must be positive!");
     assert(price > 0 && "Price must be positive!");
-    assert(stop_price > 0 && "Stop Price must be positive!");
     assert(trail_amount > 0 && "Trail amount must be positive!");
     assert(quantity > 0 && "Quantity must be positive!");
-    return Order{
-        OrderType::TrailingStopLimit, OrderSide::Bid, time_in_force, symbol_id, price, stop_price, trail_amount, quantity, order_id};
+    return Order{OrderType::TrailingStopLimit, OrderSide::Bid, time_in_force, symbol_id, price, 0, trail_amount, quantity, order_id};
 }
 
 // LCOV_EXCL_START

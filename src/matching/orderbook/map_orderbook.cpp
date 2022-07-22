@@ -16,9 +16,7 @@ MapOrderBook::MapOrderBook(uint32_t symbol_id_, Concurrent::Messaging::Sender &o
 void MapOrderBook::addOrder(Order order)
 {
     assert(order.getSymbolID() == symbol_id && "Order symbol ID does not match the orderbook symbol ID!");
-    // Notify that order has been submitted.
     outgoing_messages.send(OrderAdded{order});
-    // Add the order to the book.
     switch (order.getType())
     {
     case OrderType::Limit:
@@ -34,7 +32,6 @@ void MapOrderBook::addOrder(Order order)
         addStopOrder(order);
         break;
     }
-    // Try to activate restart orders.
     activateStopOrders();
     BOOK_CHECK_INVARIANTS;
 }
@@ -42,10 +39,6 @@ void MapOrderBook::addOrder(Order order)
 void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint64_t price)
 {
     auto orders_it = orders.find(order_id);
-    assert(orders_it != orders.end() && "Order does not exist!");
-    assert(order_id > 0 && "Order ID must be positive!");
-    assert(price > 0 && "Price must be positive!");
-    assert(quantity > 0 && "Quantity must be positive!");
     Level &executing_level = orders_it->second.level_it->second;
     Order &executing_order = orders_it->second.order;
     uint64_t executing_quantity = std::min(quantity, executing_order.getOpenQuantity());
@@ -63,8 +56,6 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint64_t p
 void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
 {
     auto orders_it = orders.find(order_id);
-    assert(orders_it != orders.end() && "Order does not exist!");
-    assert(quantity > 0 && "Quantity must be positive!");
     Level &executing_level = orders_it->second.level_it->second;
     Order &executing_order = orders_it->second.order;
     uint64_t executing_quantity = std::min(quantity, executing_order.getOpenQuantity());
@@ -83,8 +74,6 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
 void MapOrderBook::cancelOrder(uint64_t order_id, uint64_t quantity)
 {
     auto orders_it = orders.find(order_id);
-    assert(orders_it != orders.end() && "Order does not exist!");
-    assert(quantity > 0 && "Quantity must be positive!");
     Level &cancelling_level = orders_it->second.level_it->second;
     Order &cancelling_order = orders_it->second.order;
     uint64_t pre_cancellation_quantity = cancelling_order.getOpenQuantity();
@@ -105,7 +94,6 @@ void MapOrderBook::deleteOrder(uint64_t order_id)
 void MapOrderBook::deleteOrder(uint64_t order_id, bool notification)
 {
     auto orders_it = orders.find(order_id);
-    assert(orders_it != orders.end() && "Order does not exist!");
     auto &levels_it = orders_it->second.level_it;
     Order &deleting_order = orders_it->second.order;
     if (notification)
@@ -136,9 +124,6 @@ void MapOrderBook::deleteOrder(uint64_t order_id, bool notification)
 void MapOrderBook::replaceOrder(uint64_t order_id, uint64_t new_order_id, uint64_t new_price)
 {
     auto orders_it = orders.find(order_id);
-    assert(orders_it != orders.end() && "Order does not exist!");
-    assert(new_price > 0 && "Price must be positive!");
-    assert(new_order_id > 0 && "Order ID must be positive!");
     Order new_order = orders_it->second.order;
     new_order.setOrderID(new_order_id);
     new_order.setPrice(new_price);
@@ -148,8 +133,6 @@ void MapOrderBook::replaceOrder(uint64_t order_id, uint64_t new_order_id, uint64
 
 void MapOrderBook::addLimitOrder(Order &order)
 {
-    assert(order.isLimit() && "Order must be a limit order!");
-    assert(!order.isFilled() && "Order is already filled!");
     match(order);
     if (!order.isFilled() && !order.isIoc() && !order.isFok())
         insertLimitOrder(order);
@@ -181,8 +164,6 @@ void MapOrderBook::insertLimitOrder(const Order &order)
 
 void MapOrderBook::addMarketOrder(Order &order)
 {
-    assert(order.isMarket() && "Order must be a market order!");
-    assert(!order.isFilled() && "Order is already filled!");
     order.setPrice(order.isAsk() ? 0 : std::numeric_limits<uint64_t>::max());
     match(order);
     outgoing_messages.send(OrderDeleted{order});
@@ -207,7 +188,6 @@ void MapOrderBook::addStopOrder(Order &order)
 
 void MapOrderBook::insertStopOrder(const Order &order)
 {
-    assert(order.isStop() || order.isStopLimit() && "Order must be a restart order!");
     if (order.isAsk())
     {
         auto level_it = stop_ask_levels
@@ -230,7 +210,6 @@ void MapOrderBook::insertStopOrder(const Order &order)
 
 void MapOrderBook::insertTrailingStopOrder(const Order &order)
 {
-    assert(order.isTrailingStop() || order.isTrailingStopLimit() && "Order must be a trailing restart order!");
     if (order.isAsk())
     {
         auto level_it = trailing_stop_ask_levels
@@ -259,24 +238,22 @@ uint64_t MapOrderBook::calculateStopPrice(Order &order)
     {
         uint64_t market_price = lastTradedPriceBid();
         uint64_t trail_amount = order.getTrailAmount();
-        uint64_t old_stop_price = order.getStopPrice();
         // Set the new stop price to zero if the trail amount meets or exceeds the market price.
         uint64_t new_stop_price = market_price > trail_amount ? market_price - trail_amount : 0;
-        order.setStopPrice(new_stop_price > old_stop_price ? new_stop_price : old_stop_price);
-        return order.getStopPrice();
+        order.setStopPrice(new_stop_price);
+        return new_stop_price;
     }
     else
     {
         uint64_t market_price = lastTradedPriceAsk();
         uint64_t trail_amount = order.getTrailAmount();
-        uint64_t old_stop_price = order.getStopPrice();
         // Set the new stop price to max 64-bit integer value if the sum of trail amount and the market
         // price exceeds the max 64-bit integer value.
         uint64_t new_stop_price = market_price < (std::numeric_limits<uint64_t>::max() - trail_amount)
                                       ? market_price + trail_amount
                                       : std::numeric_limits<uint64_t>::max();
-        order.setStopPrice(new_stop_price < old_stop_price ? new_stop_price : old_stop_price);
-        return order.getStopPrice();
+        order.setStopPrice(new_stop_price);
+        return new_stop_price;
     }
 }
 
@@ -299,8 +276,6 @@ bool MapOrderBook::activateBidStopOrders()
     bool activated_orders = false;
     auto stop_levels_it = stop_bid_levels.begin();
     uint64_t last_ask_price = lastTradedPriceAsk();
-    // Starting with the stop order on the bid side at the lowest stop price, check if the stop
-    // price is at most the last traded price. If it is, activate the stop order.
     while (stop_levels_it != stop_bid_levels.end() && stop_levels_it->first <= last_ask_price)
     {
         activated_orders = true;
@@ -308,7 +283,6 @@ bool MapOrderBook::activateBidStopOrders()
         activateStopOrder(stop_order);
         stop_levels_it = stop_bid_levels.begin();
     }
-    // Repeat for trailing stops.
     auto trailing_stop_levels_it = trailing_stop_bid_levels.begin();
     last_ask_price = lastTradedPriceAsk();
     while (trailing_stop_levels_it != trailing_stop_bid_levels.end() && trailing_stop_levels_it->first <= last_ask_price)
@@ -326,8 +300,6 @@ bool MapOrderBook::activateAskStopOrders()
     bool activated_orders = false;
     uint64_t last_bid_price = lastTradedPriceBid();
     auto stop_levels_it = stop_ask_levels.rbegin();
-    // Starting with the stop order on the ask side at the highest stop price, check if the stop
-    // price is at least the last traded price. If it is, activate the stop order.
     while (stop_levels_it != stop_ask_levels.rend() && stop_levels_it->first >= last_bid_price)
     {
         activated_orders = true;
@@ -335,7 +307,6 @@ bool MapOrderBook::activateAskStopOrders()
         activateStopOrder(stop_order);
         stop_levels_it = stop_ask_levels.rbegin();
     }
-    // Repeat for trailing stops.
     auto trailing_stop_levels_it = trailing_stop_ask_levels.rbegin();
     last_bid_price = lastTradedPriceBid();
     while (trailing_stop_levels_it != trailing_stop_ask_levels.rend() && trailing_stop_levels_it->first >= last_bid_price)
@@ -350,10 +321,7 @@ bool MapOrderBook::activateAskStopOrders()
 
 void MapOrderBook::activateStopOrder(Order order)
 {
-    // Remove order from book - this is safe since a copy of the order was made.
-    // Do not notify that order was deleted.
     deleteOrder(order.getOrderID(), false);
-    // Set the stop price and trail amount to zero since the order is now active.
     order.setStopPrice(0);
     order.setTrailAmount(0);
     // Convert the stop / trailing stop order to a limit or market order and match it.
@@ -373,7 +341,7 @@ void MapOrderBook::activateStopOrder(Order order)
 
 void MapOrderBook::updateBidStopOrders()
 {
-    if (previousLastTradedPriceAsk() <= lastTradedPriceAsk())
+    if (previousLastTradedPrice() <= lastTradedPriceAsk())
         return;
     std::map<uint64_t, Level> new_trailing_levels;
     auto trailing_levels_it = trailing_stop_bid_levels.begin();
@@ -381,13 +349,10 @@ void MapOrderBook::updateBidStopOrders()
     {
         while (!trailing_levels_it->second.empty())
         {
-            Level &stop_level = trailing_levels_it->second;
-            Order &stop_order = stop_level.front();
+            Order &stop_order = trailing_levels_it->second.front();
             uint64_t new_stop_price = calculateStopPrice(stop_order);
-            auto new_trailing_levels_it = new_trailing_levels
-                                              .emplace(std::piecewise_construct, std::make_tuple(new_stop_price),
-                                                  std::make_tuple(new_stop_price, LevelSide::Bid, symbol_id))
-                                              .first;
+            auto new_trailing_levels_it = new_trailing_levels.emplace_hint(new_trailing_levels.begin(), std::piecewise_construct,
+                std::make_tuple(new_stop_price), std::make_tuple(new_stop_price, LevelSide::Bid, symbol_id));
             orders.find(stop_order.getOrderID())->second.level_it = new_trailing_levels_it;
             trailing_levels_it->second.popFront();
             new_trailing_levels_it->second.addOrder(stop_order);
@@ -401,7 +366,7 @@ void MapOrderBook::updateBidStopOrders()
 
 void MapOrderBook::updateAskStopOrders()
 {
-    if (previousLastTradedPriceBid() >= lastTradedPriceBid() || trailing_stop_ask_levels.empty())
+    if (previousLastTradedPrice() >= lastTradedPriceBid() || trailing_stop_ask_levels.empty())
         return;
     std::map<uint64_t, Level> new_trailing_levels;
     auto trailing_levels_it = trailing_stop_ask_levels.begin();
@@ -409,13 +374,10 @@ void MapOrderBook::updateAskStopOrders()
     {
         while (!trailing_levels_it->second.empty())
         {
-            Level &stop_level = trailing_levels_it->second;
-            Order &stop_order = stop_level.front();
+            Order &stop_order = trailing_levels_it->second.front();
             uint64_t new_stop_price = calculateStopPrice(stop_order);
-            auto new_trailing_levels_it = new_trailing_levels
-                                              .emplace(std::piecewise_construct, std::make_tuple(new_stop_price),
-                                                  std::make_tuple(new_stop_price, LevelSide::Ask, symbol_id))
-                                              .first;
+            auto new_trailing_levels_it = new_trailing_levels.emplace_hint(new_trailing_levels.end(), std::piecewise_construct,
+                std::make_tuple(new_stop_price), std::make_tuple(new_stop_price, LevelSide::Ask, symbol_id));
             orders.find(stop_order.getOrderID())->second.level_it = new_trailing_levels_it;
             trailing_levels_it->second.popFront();
             new_trailing_levels_it->second.addOrder(stop_order);
@@ -434,7 +396,6 @@ void MapOrderBook::match(Order &order)
         return;
     if (order.isAsk())
     {
-        // Maximum price bid level.
         auto bid_levels_it = bid_levels.rbegin();
         Order &ask_order = order;
         while (bid_levels_it != bid_levels.rend() && bid_levels_it->first >= ask_order.getPrice() && !ask_order.isFilled())
@@ -443,7 +404,6 @@ void MapOrderBook::match(Order &order)
             Order &bid_order = bid_level.front();
             uint64_t executing_price = bid_order.getPrice();
             executeOrders(ask_order, bid_order, executing_price);
-            // Update volume of price level and delete order if it is filled.
             bid_level.reduceVolume(bid_order.getLastExecutedQuantity());
             if (bid_order.isFilled())
                 deleteOrder(bid_order.getOrderID(), true);
@@ -452,7 +412,6 @@ void MapOrderBook::match(Order &order)
     }
     if (order.isBid())
     {
-        // Minimum price ask level.
         auto ask_levels_it = ask_levels.begin();
         Order &bid_order = order;
         while (ask_levels_it != ask_levels.end() && ask_levels_it->first <= bid_order.getPrice() && !bid_order.isFilled())
@@ -461,7 +420,6 @@ void MapOrderBook::match(Order &order)
             Order &ask_order = ask_level.front();
             uint64_t executing_price = ask_order.getPrice();
             executeOrders(ask_order, bid_order, executing_price);
-            // Update volume of price level and delete order if it is filled.
             ask_level.reduceVolume(ask_order.getLastExecutedQuantity());
             if (ask_order.isFilled())
                 deleteOrder(ask_order.getOrderID(), true);
@@ -472,15 +430,12 @@ void MapOrderBook::match(Order &order)
 
 void MapOrderBook::executeOrders(Order &ask, Order &bid, uint64_t executing_price)
 {
-    assert(ask.isAsk() && bid.isBid() && "Cannot match orders on same side!");
     // Calculate the minimum quantity to match.
     uint64_t matched_quantity = std::min(ask.getOpenQuantity(), bid.getOpenQuantity());
     bid.execute(executing_price, matched_quantity);
     ask.execute(executing_price, matched_quantity);
-    // Send trade event messages.
     outgoing_messages.send(ExecutedOrder{bid});
     outgoing_messages.send(ExecutedOrder{ask});
-    // Update last traded price.
     previous_last_traded_price = last_traded_price;
     last_traded_price = executing_price;
 }
@@ -571,8 +526,11 @@ void MapOrderBook::checkInvariants() const
         assert(level.getSide() == LevelSide::Ask && "Level with bid side cannot be on the ask side of the book!");
         const auto &level_orders = level.getOrders();
         for (const auto &order : level_orders)
+        {
             assert(order.getType() == OrderType::TrailingStop ||
                    order.getType() == OrderType::TrailingStopLimit && "Incorrect order type in level!");
+            assert(last_traded_price - order.getTrailAmount() == order.getStopPrice());
+        }
     }
 
     for (const auto &[price, level] : trailing_stop_bid_levels)
@@ -582,8 +540,11 @@ void MapOrderBook::checkInvariants() const
         assert(level.getSide() == LevelSide::Bid && "Level with bid side cannot be on the ask side of the book!");
         const auto &level_orders = level.getOrders();
         for (const auto &order : level_orders)
+        {
             assert(order.getType() == OrderType::TrailingStop ||
                    order.getType() == OrderType::TrailingStopLimit && "Incorrect order type in level!");
+            assert(last_traded_price + order.getTrailAmount() == order.getStopPrice());
+        }
     }
 }
 

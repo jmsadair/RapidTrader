@@ -5,41 +5,21 @@
  */
 TEST_F(MarketTest, CancelOrderShouldWork1)
 {
-    // Order to add.
     OrderTimeInForce tof1 = OrderTimeInForce::GTC;
     uint64_t quantity1 = 200;
     uint64_t price1 = 350;
     uint64_t id1 = 1;
     Order order1 = Order::limitAskOrder(id1, symbol_id, price1, quantity1, tof1);
-
-    // Add the order.
     market.addOrder(order1);
 
-    // Quantity to cancel.
     uint64_t cancel_quantity = 100;
 
-    // Execute the order.
     market.cancelOrder(symbol_id, id1, cancel_quantity);
 
     event_handler.stop();
 
-    // Check that first order was added. Order should be identical to original
-    // order since it should not have been matched.
-    ASSERT_FALSE(event_handler.add_order_notifications.empty());
-    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
-    event_handler.add_order_notifications.pop();
-    ASSERT_EQ(add_order_notification1.order, order1);
-
-    // Check that first order was cancelled.
-    ASSERT_FALSE(event_handler.update_order_notifications.empty());
-    OrderUpdated &update_order_notification1 = event_handler.update_order_notifications.front();
-    event_handler.update_order_notifications.pop();
-    ASSERT_EQ(update_order_notification1.order.getOrderID(), id1);
-    ASSERT_EQ(update_order_notification1.order.getLastExecutedPrice(), 0);
-    ASSERT_EQ(update_order_notification1.order.getLastExecutedQuantity(), 0);
-    ASSERT_EQ(update_order_notification1.order.getQuantity(), quantity1 - cancel_quantity);
-    ASSERT_EQ(update_order_notification1.order.getOpenQuantity(), quantity1 - cancel_quantity);
-
+    checkOrderAdded(id1);
+    checkOrderUpdated(id1, 0, 0, quantity1 - cancel_quantity);
     ASSERT_TRUE(event_handler.empty());
 }
 
@@ -48,50 +28,22 @@ TEST_F(MarketTest, CancelOrderShouldWork1)
  */
 TEST_F(MarketTest, CancelOrderShouldWork2)
 {
-    // Order to add.
     OrderTimeInForce tof1 = OrderTimeInForce::GTC;
     uint64_t quantity1 = 200;
     uint64_t price1 = 350;
     uint64_t id1 = 1;
     Order order1 = Order::limitBidOrder(id1, symbol_id, price1, quantity1, tof1);
-
-    // Add the order.
     market.addOrder(order1);
 
-    // Quantity to cancel.
     uint64_t cancel_quantity = 200;
 
-    // Execute the order.
     market.cancelOrder(symbol_id, id1, cancel_quantity);
 
     event_handler.stop();
 
-    // Check that first order was added.
-    ASSERT_FALSE(event_handler.add_order_notifications.empty());
-    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
-    ASSERT_EQ(add_order_notification1.order, order1);
-    event_handler.add_order_notifications.pop();
-
-    // Check that first order was cancelled.
-    ASSERT_FALSE(event_handler.update_order_notifications.empty());
-    OrderUpdated &update_order_notification1 = event_handler.update_order_notifications.front();
-    ASSERT_EQ(update_order_notification1.order.getOrderID(), id1);
-    ASSERT_EQ(update_order_notification1.order.getLastExecutedPrice(), 0);
-    ASSERT_EQ(update_order_notification1.order.getLastExecutedQuantity(), 0);
-    ASSERT_EQ(update_order_notification1.order.getQuantity(), cancel_quantity);
-    ASSERT_EQ(update_order_notification1.order.getOpenQuantity(), 0);
-    event_handler.update_order_notifications.pop();
-
-    // Check that the first order was deleted.
-    ASSERT_FALSE(event_handler.delete_order_notifications.empty());
-    OrderDeleted &delete_order_notification1 = event_handler.delete_order_notifications.front();
-    ASSERT_EQ(delete_order_notification1.order.getOrderID(), id1);
-    ASSERT_EQ(delete_order_notification1.order.getLastExecutedPrice(), 0);
-    ASSERT_EQ(delete_order_notification1.order.getLastExecutedQuantity(), 0);
-    ASSERT_EQ(delete_order_notification1.order.getQuantity(), cancel_quantity);
-    ASSERT_EQ(delete_order_notification1.order.getOpenQuantity(), 0);
-    event_handler.delete_order_notifications.pop();
-
+    checkOrderAdded(id1);
+    checkOrderUpdated(id1, 0, 0, 0);
+    checkOrderDeleted(id1, 0, 0, 0);
     ASSERT_TRUE(event_handler.empty());
 }
 
@@ -100,17 +52,14 @@ TEST_F(MarketTest, CancelOrderShouldWork2)
  */
 TEST_F(MarketTest, CancelOrderShouldWork3)
 {
-    // Order to add.
     OrderTimeInForce tof1 = OrderTimeInForce::GTC;
     uint64_t quantity1 = 200;
     uint64_t price1 = 350;
     uint64_t id1 = 1;
     Order order1 = Order::limitAskOrder(id1, symbol_id, price1, quantity1, tof1);
-
-    // Add the order.
     market.addOrder(order1);
 
-    // Invalid execution data.
+    // Invalid cancellation data.
     uint64_t invalid_cancel_quantity = 0;
     uint64_t invalid_cancel_id = 0;
     uint64_t invalid_symbol_id = 0;
@@ -134,18 +83,7 @@ TEST_F(MarketTest, CancelOrderShouldWork3)
 
     event_handler.stop();
 
-    // Check that first order was added.
-    ASSERT_FALSE(event_handler.add_order_notifications.empty());
-    OrderAdded &add_order_notification1 = event_handler.add_order_notifications.front();
-    event_handler.add_order_notifications.pop();
-    ASSERT_EQ(add_order_notification1.order, order1);
-
-    // Check that symbol was added.
-    ASSERT_TRUE(market.hasSymbol(new_symbol_id));
-    ASSERT_FALSE(event_handler.add_symbol_notifications.empty());
-    ASSERT_EQ(event_handler.add_symbol_notifications.front().symbol_id, new_symbol_id);
-    ASSERT_EQ(event_handler.add_symbol_notifications.front().name, new_symbol_name);
-    event_handler.add_symbol_notifications.pop();
-
+    checkOrderAdded(id1);
+    checkSymbolAdded(new_symbol_id, new_symbol_name);
     ASSERT_TRUE(event_handler.empty());
 }

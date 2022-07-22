@@ -192,8 +192,9 @@ private:
      * Removes the provided order from the orderbook, converts it into a market
      * or limit order, and submits it for matching.
      *
-     * @param order the order to activate, require that order is has a restart or
-     *              restart limit type and is in the orderbook.
+     * @param order the order to activate, require that order is has a stop, stop limit,
+     *              trailing stop, or trailing stop limit order that is presently in the
+     *              orderbook.
      */
     void activateStopOrder(Order order);
 
@@ -226,7 +227,8 @@ private:
     void executeOrders(Order &ask, Order &bid, uint64_t executing_price);
 
     /**
-     * @returns the last traded price if any trades have been made and zero otherwise.
+     * @returns the last traded price if any trades have been made and the max
+     *          64-bit unsigned integer value if otherwise.
      */
     [[nodiscard]] inline uint64_t lastTradedPriceAsk() const
     {
@@ -234,7 +236,7 @@ private:
     }
 
     /**
-     * @returns the last traded price if any trades have been made otherwise the maximum 64-bit integer value.
+     * @returns the last traded price if any trades have been made and zero otherwise.
      */
     [[nodiscard]] inline uint64_t lastTradedPriceBid() const
     {
@@ -244,15 +246,7 @@ private:
     /**
      * @returns the previous last traded price if more than one trade has been made and zero otherwise.
      */
-    [[nodiscard]] inline uint64_t previousLastTradedPriceAsk() const
-    {
-        return previous_last_traded_price == 0 ? last_traded_price : previous_last_traded_price;
-    }
-
-    /**
-     * @returns the previous last traded price if more than one trade has been made and the maximum 64-bit integer value otherwise.
-     */
-    [[nodiscard]] inline uint64_t previousLastTradedPriceBid() const
+    [[nodiscard]] inline uint64_t previousLastTradedPrice() const
     {
         return previous_last_traded_price == 0 ? last_traded_price : previous_last_traded_price;
     }
@@ -273,10 +267,10 @@ private:
     // Maps prices to limit levels.
     std::map<uint64_t, Level> ask_levels;
     std::map<uint64_t, Level> bid_levels;
-    // Maps prices to restart levels.
+    // Maps prices to stop levels.
     std::map<uint64_t, Level> stop_ask_levels;
     std::map<uint64_t, Level> stop_bid_levels;
-    // Maps prices to trailing restart levels.
+    // Maps prices to trailing stop levels.
     std::map<uint64_t, Level> trailing_stop_ask_levels;
     std::map<uint64_t, Level> trailing_stop_bid_levels;
     // Sends updates to the event handler.

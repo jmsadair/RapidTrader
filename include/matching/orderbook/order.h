@@ -11,10 +11,10 @@
 #    define ORDER_CHECK_INVARIANTS
 #endif
 
+using namespace boost::intrusive;
 class MapOrderBook;
 class Level;
 
-// Represents the different actions of orders.
 enum class OrderType
 {
     Limit = 0,
@@ -24,33 +24,21 @@ enum class OrderType
     TrailingStop = 4,
     TrailingStopLimit = 5
 };
-static constexpr std::array order_type_to_string{"LIMIT", "MARKET", "STOP", "STOP LIMIT", "TRAILING STOP", "TRAILING STOP LIMIT"};
-
-// Represents the different types of orders.
-//  Good 'Till Cancelled: A good-til-canceled order will remain active until
-//                       you decide to cancel it.
-//  Fill Or Kill: A fill-or-kill order will be executed immediately in its entirety;
-//                otherwise, it will be cancelled.
-//  Immediate or Cancel: A immediate-or-cancel order will be executed immediately
-//                       as fully as possible. Non-executed parts of the order are deleted
-//                       without entry in the order book.
 enum class OrderTimeInForce
 {
     GTC = 0,
     FOK = 1,
     IOC = 2,
 };
-static constexpr std::array order_tof_to_string{"GTC", "FOK", "IOC"};
-
-// Represents the side of the order.
 enum class OrderSide
 {
     Bid = 0,
     Ask = 1
 };
-static constexpr std::array order_side_to_string{"BID", "ASK"};
 
-using namespace boost::intrusive;
+static constexpr std::array order_type_to_string{"LIMIT", "MARKET", "STOP", "STOP LIMIT", "TRAILING STOP", "TRAILING STOP LIMIT"};
+static constexpr std::array order_tof_to_string{"GTC", "FOK", "IOC"};
+static constexpr std::array order_side_to_string{"BID", "ASK"};
 
 struct Order : public list_base_hook<>
 {
@@ -159,34 +147,31 @@ public:
     static Order stopLimitBidOrder(
         uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force);
 
-
     /**
      * Create a new trailing stop order on the ask side.
      *
      * @param order_id the ID of the order, require that ID is positive.
      * @param symbol_id the symbol ID of the order, require that the symbol ID is positive.
-     * @param stop_price the initial stop price of the order, require that the stop price is positive.
      * @param trail_amount the trail amount, require that trail amount is positive.
      * @param quantity the quantity of the order, require that quantity is positive.
      * @param time_in_force the time in force of the order, require that time in force is IOC or FOK.
      * @return a new trailing stop order.
      */
-    static Order trailingStopAskOrder(uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t trail_amount, uint64_t quantity,
-        OrderTimeInForce time_in_force);
+    static Order trailingStopAskOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force);
 
     /**
      * Create a new trailing stop order on the bid side.
      *
      * @param order_id the ID of the order, require that ID is positive.
      * @param symbol_id the symbol ID of the order, require that the symbol ID is positive.
-     * @param stop_price the initial stop price of the order, require that the stop price is positive.
      * @param trail_amount the trail amount, require that trail amount is positive.
      * @param quantity the quantity of the order, require that quantity is positive.
      * @param time_in_force the time in force of the order, require that time in force is IOC or FOK.
      * @return a new trailing stop order.
      */
-    static Order trailingStopBidOrder(uint64_t order_id, uint32_t symbol_id, uint64_t stop_price, uint64_t trail_amount, uint64_t quantity,
-        OrderTimeInForce time_in_force);
+    static Order trailingStopBidOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force);
 
     /**
      * Create a new trailing stop limit order on the ask side.
@@ -194,14 +179,13 @@ public:
      * @param order_id the ID of the order, require that ID is positive.
      * @param symbol_id the symbol ID of the order, require that the symbol ID is positive.
      * @param price the price of the order, require that price is positive.
-     * @param stop_price the initial stop price of the order, require that the stop price is positive.
      * @param trail_amount the trail amount, require that trail amount is positive.
      * @param quantity the quantity of the order, require that quantity is positive.
      * @param time_in_force the time in force of the order, require that time in force is IOC or FOK.
      * @return a new trailing stop limit order.
      */
-    static Order trailingStopLimitAskOrder(uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price,
-        uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force);
+    static Order trailingStopLimitAskOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force);
 
     /**
      * Create a new trailing stop limit order on the bid side.
@@ -209,14 +193,13 @@ public:
      * @param order_id the ID of the order, require that ID is positive.
      * @param symbol_id the symbol ID of the order, require that the symbol ID is positive.
      * @param price the price of the order, require that price is positive.
-     * @param stop_price the initial stop price of the order, require that the stop price is positive.
      * @param trail_amount the trail amount, require that trail amount is positive.
      * @param quantity the quantity of the order, require that quantity is positive.
      * @param time_in_force the time in force of the order, require that time in force is IOC or FOK.
      * @return a new trailing stop limit order.
      */
-    static inline Order trailingStopLimitBidOrder(uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price,
-        uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force);
+    static inline Order trailingStopLimitBidOrder(
+        uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force);
 
     /**
      * @return the quantity of the order.
