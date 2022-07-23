@@ -150,6 +150,11 @@ public:
      */
     void reduceVolume(uint64_t amount);
 
+    /**
+     * @return the string representation of the level.
+     */
+    std::string toString() const;
+
     friend std::ostream &operator<<(std::ostream &os, const Level &level);
 
 private:

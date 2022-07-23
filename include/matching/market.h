@@ -1,12 +1,15 @@
 #ifndef RAPID_TRADER_MARKET_H
 #define RAPID_TRADER_MARKET_H
 #include <iostream>
+#include <fstream>
 #include <robin_hood.h>
 #include <memory>
 #include "order.h"
 #include "orderbook.h"
 #include "event_handler/event_handler.h"
 #include "concurrent/thread_pool/thread_pool.h"
+
+//#define CONCURRENT
 
 enum class ErrorStatus
 {
@@ -167,6 +170,21 @@ public:
      * @return ErrorStatus indicating whether the order was successfully executed.
      */
     ErrorStatus executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity);
+
+    /**
+     * @return the string representation of the market.
+     */
+    [[nodiscard]] std::string toString() const;
+
+    /**
+     * Writes the string representation of the the market to
+     * a file at the provided path. Creates a new file.
+     *
+     * @param path the path to the file that will be written to.
+     */
+    void dumpMarket(const std::string &path) const;
+
+    friend std::ostream &operator<<(std::ostream &os, const Market &book);
 
 private:
     // Maps symbol to orderbook.

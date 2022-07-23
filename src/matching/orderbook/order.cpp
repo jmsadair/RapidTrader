@@ -146,15 +146,74 @@ Order Order::trailingStopLimitBidOrder(
 }
 
 // LCOV_EXCL_START
+static std::string typeToString(OrderType type)
+{
+    switch(type)
+    {
+    case OrderType::Limit:
+        return "LIMIT";
+    case OrderType::Market:
+        return "MARKET";
+    case OrderType::Stop:
+        return "STOP";
+    case OrderType::StopLimit:
+        return "STOP LIMIT";
+    case OrderType::TrailingStop:
+        return "TRAILING STOP";
+    case OrderType::TrailingStopLimit:
+        return "TRAILING STOP LIMIT";
+    default:
+        assert(false && "Invalid order type!");
+    }
+    return "";
+}
+
+static std::string sideToString(OrderSide side)
+{
+    switch(side)
+    {
+    case OrderSide::Ask:
+        return "ASK";
+    case OrderSide::Bid:
+        return "BID";
+    default:
+        assert(false && "Invalid order side!");
+    }
+    return "";
+}
+
+static std::string timeInForceToString(OrderTimeInForce tof)
+{
+    switch(tof)
+    {
+    case OrderTimeInForce::GTC:
+        return "GTC";
+    case OrderTimeInForce::FOK:
+        return "FOK";
+    case OrderTimeInForce::IOC:
+        return "IOC";
+    default:
+        assert(false && "Invalid order time in force!");
+    }
+    return "";
+}
+
+std::string Order::toString() const
+{
+    std::string order_string;
+    order_string += "Symbol ID: " + std::to_string(symbol_id) + "\n";
+    order_string += "Order ID: " + std::to_string(id) + "\n";
+    order_string += "Type: " + typeToString(type) + "\n";
+    order_string += "Side: " + sideToString(side) + "\n";
+    order_string += "TOF: " + timeInForceToString(time_in_force) + "\n";
+    order_string += "Price: " + std::to_string(price) + "\n";
+    order_string += "Quantity: " + std::to_string(quantity) + "\n";
+    return order_string;
+}
+
 std::ostream &operator<<(std::ostream &os, const Order &order)
 {
-    os << "Symbol ID: " << order.symbol_id << "\n";
-    os << "Order ID: " << order.id << "\n";
-    os << "Type: " << order_type_to_string[static_cast<std::underlying_type<OrderType>::type>(order.type)] << "\n";
-    os << "Side: " << order_side_to_string[static_cast<std::underlying_type<OrderSide>::type>(order.side)] << "\n";
-    os << "TOF: " << order_tof_to_string[static_cast<std::underlying_type<OrderType>::type>(order.time_in_force)] << "\n";
-    os << "Price: " << order.price << "\n";
-    os << "Quantity: " << order.quantity << "\n";
+    os << order.toString();
     return os;
 }
 

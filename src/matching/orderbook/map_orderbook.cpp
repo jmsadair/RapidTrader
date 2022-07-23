@@ -1,3 +1,5 @@
+#include <iostream>
+#include <fstream>
 #include "map_orderbook.h"
 #include "event_handler/event.h"
 #include "log.h"
@@ -8,10 +10,10 @@
 MapOrderBook::MapOrderBook(uint32_t symbol_id_, Concurrent::Messaging::Sender &outgoing_messages_)
     : symbol_id(symbol_id_)
     , outgoing_messages(outgoing_messages_)
-{
-    last_traded_price = 0;
-    previous_last_traded_price = 0;
-}
+    , last_traded_price(0)
+    , trailing_bid_price(0)
+    , trailing_ask_price(std::numeric_limits<uint64_t>::max())
+{}
 
 void MapOrderBook::addOrder(Order order)
 {
@@ -43,7 +45,6 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint64_t p
     Order &executing_order = orders_it->second.order;
     uint64_t executing_quantity = std::min(quantity, executing_order.getOpenQuantity());
     executing_order.execute(price, executing_quantity);
-    previous_last_traded_price = last_traded_price;
     last_traded_price = price;
     outgoing_messages.send(ExecutedOrder{executing_order});
     executing_level.reduceVolume(executing_order.getLastExecutedQuantity());
@@ -61,7 +62,6 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
     uint64_t executing_quantity = std::min(quantity, executing_order.getOpenQuantity());
     uint64_t executing_price = executing_order.getPrice();
     executing_order.execute(executing_price, executing_quantity);
-    previous_last_traded_price = last_traded_price;
     last_traded_price = executing_price;
     outgoing_messages.send(ExecutedOrder{executing_order});
     executing_level.reduceVolume(executing_order.getLastExecutedQuantity());
@@ -82,12 +82,14 @@ void MapOrderBook::cancelOrder(uint64_t order_id, uint64_t quantity)
     cancelling_level.reduceVolume(pre_cancellation_quantity - cancelling_order.getOpenQuantity());
     if (cancelling_order.isFilled())
         deleteOrder(order_id, true);
+    activateStopOrders();
     BOOK_CHECK_INVARIANTS;
 }
 
 void MapOrderBook::deleteOrder(uint64_t order_id)
 {
     deleteOrder(order_id, true);
+    activateStopOrders();
     BOOK_CHECK_INVARIANTS;
 }
 
@@ -129,10 +131,13 @@ void MapOrderBook::replaceOrder(uint64_t order_id, uint64_t new_order_id, uint64
     new_order.setPrice(new_price);
     deleteOrder(order_id);
     addOrder(new_order);
+    activateStopOrders();
+    BOOK_CHECK_INVARIANTS;
 }
 
 void MapOrderBook::addLimitOrder(Order &order)
 {
+
     match(order);
     if (!order.isFilled() && !order.isIoc() && !order.isFok())
         insertLimitOrder(order);
@@ -259,14 +264,15 @@ uint64_t MapOrderBook::calculateStopPrice(Order &order)
 
 void MapOrderBook::activateStopOrders()
 {
-    bool stop = true;
+    bool activate = true;
     // Activating stop orders may result in trades which may result in more stop orders being activated.
     // Continue activating restart orders until there are none left or none can be activated.
-    while (stop)
+    while (activate)
     {
-        stop = activateBidStopOrders();
+        activate = false;
+        activate = activateBidStopOrders();
         updateAskStopOrders();
-        stop = activateAskStopOrders() || stop;
+        activate = activateAskStopOrders() || activate;
         updateBidStopOrders();
     }
 }
@@ -341,8 +347,11 @@ void MapOrderBook::activateStopOrder(Order order)
 
 void MapOrderBook::updateBidStopOrders()
 {
-    if (previousLastTradedPrice() <= lastTradedPriceAsk())
+    if (trailing_ask_price <= lastTradedPriceAsk() || trailing_stop_bid_levels.empty())
+    {
+        trailing_ask_price = last_traded_price;
         return;
+    }
     std::map<uint64_t, Level> new_trailing_levels;
     auto trailing_levels_it = trailing_stop_bid_levels.begin();
     while (trailing_levels_it != trailing_stop_bid_levels.end())
@@ -361,13 +370,16 @@ void MapOrderBook::updateBidStopOrders()
         ++trailing_levels_it;
     }
     std::swap(trailing_stop_bid_levels, new_trailing_levels);
-    previous_last_traded_price = last_traded_price;
+    trailing_ask_price = last_traded_price;
 }
 
 void MapOrderBook::updateAskStopOrders()
 {
-    if (previousLastTradedPrice() >= lastTradedPriceBid() || trailing_stop_ask_levels.empty())
+    if (trailing_bid_price >= lastTradedPriceBid() || trailing_stop_ask_levels.empty())
+    {
+        trailing_bid_price = last_traded_price;
         return;
+    }
     std::map<uint64_t, Level> new_trailing_levels;
     auto trailing_levels_it = trailing_stop_ask_levels.begin();
     while (trailing_levels_it != trailing_stop_ask_levels.end())
@@ -386,7 +398,7 @@ void MapOrderBook::updateAskStopOrders()
         ++trailing_levels_it;
     }
     std::swap(trailing_stop_ask_levels, new_trailing_levels);
-    previous_last_traded_price = last_traded_price;
+    trailing_bid_price = last_traded_price;
 }
 
 void MapOrderBook::match(Order &order)
@@ -436,7 +448,6 @@ void MapOrderBook::executeOrders(Order &ask, Order &bid, uint64_t executing_pric
     ask.execute(executing_price, matched_quantity);
     outgoing_messages.send(ExecutedOrder{bid});
     outgoing_messages.send(ExecutedOrder{ask});
-    previous_last_traded_price = last_traded_price;
     last_traded_price = executing_price;
 }
 
@@ -473,6 +484,45 @@ bool MapOrderBook::canMatchOrder(const Order &order) const
 }
 
 // LCOV_EXCL_START
+std::string MapOrderBook::toString() const
+{
+    std::string book_string;
+    book_string += "SYMBOL ID : " + std::to_string(symbol_id) + "\n";
+    book_string += "LAST TRADED PRICE: " + std::to_string(last_traded_price) + "\n";
+    book_string += "BID ORDERS\n";
+    for (const auto &[price, level] : bid_levels)
+        book_string += level.toString();
+    book_string += "ASK ORDERS\n";
+    for (const auto &[price, level] : ask_levels)
+        book_string += level.toString();
+    book_string += "BID STOP ORDERS\n";
+    for (const auto &[price, level] : stop_bid_levels)
+        book_string += level.toString();
+    book_string += "ASK STOP ORDERS\n";
+    for (const auto &[price, level] : stop_ask_levels)
+        book_string += level.toString();
+    book_string += "BID TRAILING STOP ORDERS\n";
+    for (const auto &[price, level] : trailing_stop_bid_levels)
+        book_string += level.toString();
+    book_string += "ASK TRAILING STOP ORDERS\n";
+    for (const auto &[price, level] : trailing_stop_ask_levels)
+        book_string += level.toString();
+    return book_string;
+}
+
+void MapOrderBook::dumpBook(const std::string &path) const
+{
+    std::ofstream file(path);
+    file << toString();
+    file.close();
+}
+
+std::ostream &operator<<(std::ostream &os, const MapOrderBook &book)
+{
+    os << book.toString();
+    return os;
+}
+
 void MapOrderBook::checkInvariants() const
 {
     uint64_t current_best_ask = ask_levels.empty() ? std::numeric_limits<uint64_t>::max() : ask_levels.begin()->first;
@@ -529,7 +579,7 @@ void MapOrderBook::checkInvariants() const
         {
             assert(order.getType() == OrderType::TrailingStop ||
                    order.getType() == OrderType::TrailingStopLimit && "Incorrect order type in level!");
-            assert(last_traded_price - order.getTrailAmount() == order.getStopPrice());
+            assert(order.getStopPrice() < last_traded_price);
         }
     }
 
@@ -543,9 +593,8 @@ void MapOrderBook::checkInvariants() const
         {
             assert(order.getType() == OrderType::TrailingStop ||
                    order.getType() == OrderType::TrailingStopLimit && "Incorrect order type in level!");
-            assert(last_traded_price + order.getTrailAmount() == order.getStopPrice());
+            assert(order.getStopPrice() > last_traded_price);
         }
     }
 }
-
 // LCOV_EXCL_END

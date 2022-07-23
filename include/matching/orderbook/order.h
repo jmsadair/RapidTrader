@@ -36,10 +36,6 @@ enum class OrderSide
     Ask = 1
 };
 
-static constexpr std::array order_type_to_string{"LIMIT", "MARKET", "STOP", "STOP LIMIT", "TRAILING STOP", "TRAILING STOP LIMIT"};
-static constexpr std::array order_tof_to_string{"GTC", "FOK", "IOC"};
-static constexpr std::array order_side_to_string{"BID", "ASK"};
-
 struct Order : public list_base_hook<>
 {
 public:
@@ -429,6 +425,11 @@ public:
     {
         return !(*this == other);
     }
+
+    /**
+     * @return the string representation of the order.
+     */
+    [[nodiscard]] std::string toString() const;
 
     friend std::ostream &operator<<(std::ostream &os, const Order &order);
     friend class MapOrderBook;

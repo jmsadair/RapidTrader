@@ -79,6 +79,11 @@ public:
      */
     [[nodiscard]] virtual bool empty() const = 0;
 
+    /**
+     * @return a string representation of the book.
+     */
+    [[nodiscard]] virtual std::string toString() const = 0;
+
     virtual ~OrderBook() = default;
 };
 #endif // RAPID_TRADER_ORDERBOOK_H

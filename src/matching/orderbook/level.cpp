@@ -73,14 +73,19 @@ Order &Level::back()
 }
 
 // LCOV_EXCL_START
+std::string Level::toString() const
+{
+    std::string level_string;
+    level_string += std::to_string(price) + " X " + std::to_string(volume) + "\n";
+    return level_string;
+}
+
 std::ostream &operator<<(std::ostream &os, const Level &level)
 {
-    os << "Level Symbol ID: " << level.symbol_id;
-    os << "\nLevel Side: " << (level.isAsk() ? "ASK" : "BID");
-    os << "\nLevel Price: " << level.price;
-    os << "\nLevel Volume: " << level.volume << "\n";
+    os << level.toString();
     return os;
 }
+
 void Level::checkInvariants() const
 {
     uint64_t actual_volume = 0;
@@ -94,12 +99,7 @@ void Level::checkInvariants() const
             assert(order.getPrice() == price && "Order price does not match price of the level!");
         actual_volume += order.getOpenQuantity();
     }
-
-    if (actual_volume != volume)
-    {
-        std::cout << actual_volume << std::endl;
-        std::cout << *this << std::endl;
-    }
     assert(actual_volume == volume && "Level has incorrect volume!");
 }
+
 // LCOV_EXCL_STOP

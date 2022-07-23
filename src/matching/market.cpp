@@ -204,4 +204,34 @@ ErrorStatus Market::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t
 #endif
     return ErrorStatus::Ok;
 }
+
+// LCOV_EXCL_START
+std::string Market::toString() const
+{
+    std::string market_string;
+    for (const auto& book_ptr : symbol_to_book)
+    {
+        if (book_ptr)
+            market_string += book_ptr->toString() + "\n";
+    }
+    return market_string;
+}
+
+std::ostream &operator<<(std::ostream &os, const Market &market)
+{
+    for (const auto& book_ptr : market.symbol_to_book)
+    {
+        if (book_ptr)
+            os << book_ptr->toString() << "\n";
+    }
+    return os;
+}
+
+void Market::dumpMarket(const std::string &path) const
+{
+    std::ofstream file(path);
+    file << *this;
+    file.close();
+}
+// LCOV_EXCL_END
 } // namespace RapidTrader::Matching

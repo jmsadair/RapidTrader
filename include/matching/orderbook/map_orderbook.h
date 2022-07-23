@@ -91,6 +91,20 @@ public:
         return orders.empty();
     }
 
+    /**
+     * @inheritdoc
+     */
+    [[nodiscard]] std::string toString() const override;
+
+    /**
+     * Writes the string representation of the the orderbook to
+     * a file at the provided path. Creates a new file.
+     *
+     * @param path the path to the file that will be written to.
+     */
+    void dumpBook(const std::string &path) const;
+
+    friend std::ostream &operator<<(std::ostream &os, const MapOrderBook &book);
 private:
     /**
      * Deletes an order from the book. Does not match orders.
@@ -222,15 +236,15 @@ private:
      * @param ask an ask order to execute.
      * @param bid a bid order to execute.
      * @param executing_price price at which orders are executed, require that
-     *                        ask price <= executing_price <= bid price .
+     *                        ask price <= executing_price <= bid price.
      */
     void executeOrders(Order &ask, Order &bid, uint64_t executing_price);
 
     /**
      * @returns the last traded price if any trades have been made and the max
-     *          64-bit unsigned integer value if otherwise.
+     *          64-bit unsigned integer value otherwise.
      */
-    [[nodiscard]] inline uint64_t lastTradedPriceAsk() const
+    [[nodiscard]]  uint64_t lastTradedPriceAsk() const
     {
         return last_traded_price == 0 ? std::numeric_limits<uint64_t>::max() : last_traded_price;
     }
@@ -238,20 +252,12 @@ private:
     /**
      * @returns the last traded price if any trades have been made and zero otherwise.
      */
-    [[nodiscard]] inline uint64_t lastTradedPriceBid() const
+    [[nodiscard]] uint64_t lastTradedPriceBid() const
     {
         return last_traded_price;
     }
 
-    /**
-     * @returns the previous last traded price if more than one trade has been made and zero otherwise.
-     */
-    [[nodiscard]] inline uint64_t previousLastTradedPrice() const
-    {
-        return previous_last_traded_price == 0 ? last_traded_price : previous_last_traded_price;
-    }
-
-    /**
+    /*
      * Enforces the representation invariants of the orderbook.
      */
     void checkInvariants() const;
@@ -278,8 +284,9 @@ private:
     // The current price of the symbol - based off the price that the
     // symbol was last traded at. Initially zero.
     uint64_t last_traded_price;
-    // The previous price of the symbol. Initially zero.
-    uint64_t previous_last_traded_price;
+    // Tracks increases and decreases in market price.
+    uint64_t trailing_bid_price;
+    uint64_t trailing_ask_price;
     // The symbol ID associated with the book.
     uint32_t symbol_id;
 };

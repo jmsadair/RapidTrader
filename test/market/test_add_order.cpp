@@ -671,8 +671,6 @@ TEST_F(MarketTest, AddIocTrailingStopOrder2)
     // Stop price of trailing stops should be adjusted.
     // First trailing stop order should have stop price = last traded price + trail amount = 171.
     // Second trailing stop order should have stop price = last traded price + trail amount = 170.
-    uint64_t expected_stop_price1 = 170;
-    uint64_t expected_stop_price2 = 171;
     OrderTimeInForce tof6 = OrderTimeInForce::GTC;
     uint64_t quantity6 = 100;
     uint64_t price6 = 170;
