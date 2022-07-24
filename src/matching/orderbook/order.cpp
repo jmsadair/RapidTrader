@@ -18,7 +18,7 @@ Order::Order(OrderType type_, OrderSide side_, OrderTimeInForce time_in_force_, 
     open_quantity = quantity;
     last_executed_price = 0;
     last_executed_quantity = 0;
-    ORDER_CHECK_INVARIANTS;
+    VALIDATE_ORDER;
 }
 
 Order Order::marketAskOrder(uint64_t order_id, uint32_t symbol_id, uint64_t quantity, OrderTimeInForce time_in_force)
@@ -78,14 +78,14 @@ Order Order::stopBidOrder(uint64_t order_id, uint32_t symbol_id, uint64_t stop_p
 }
 
 Order Order::stopLimitAskOrder(
-    uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price_, uint64_t quantity, OrderTimeInForce time_in_force)
+    uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t stop_price, uint64_t quantity, OrderTimeInForce time_in_force)
 {
     assert(order_id > 0 && "Order ID must be positive!");
     assert(symbol_id > 0 && "Symbol ID must be positive!");
     assert(price > 0 && "Price must be positive!");
-    assert(stop_price_ > 0 && "Stop Price must be positive!");
+    assert(stop_price > 0 && "Stop Price must be positive!");
     assert(quantity > 0 && "Quantity must be positive!");
-    return Order{OrderType::StopLimit, OrderSide::Ask, time_in_force, symbol_id, price, stop_price_, 0, quantity, order_id};
+    return Order{OrderType::StopLimit, OrderSide::Ask, time_in_force, symbol_id, price, stop_price, 0, quantity, order_id};
 }
 
 Order Order::stopLimitBidOrder(
@@ -148,7 +148,7 @@ Order Order::trailingStopLimitBidOrder(
 // LCOV_EXCL_START
 static std::string typeToString(OrderType type)
 {
-    switch(type)
+    switch (type)
     {
     case OrderType::Limit:
         return "LIMIT";
@@ -170,7 +170,7 @@ static std::string typeToString(OrderType type)
 
 static std::string sideToString(OrderSide side)
 {
-    switch(side)
+    switch (side)
     {
     case OrderSide::Ask:
         return "ASK";
@@ -184,7 +184,7 @@ static std::string sideToString(OrderSide side)
 
 static std::string timeInForceToString(OrderTimeInForce tof)
 {
-    switch(tof)
+    switch (tof)
     {
     case OrderTimeInForce::GTC:
         return "GTC";
@@ -217,20 +217,20 @@ std::ostream &operator<<(std::ostream &os, const Order &order)
     return os;
 }
 
-void Order::checkInvariants() const
+void Order::validateOrder() const
 {
-    // Price should always be positive for limit and stop limit orders.
+    // Price should always be positive for limit, stop limit, and trailing stop limit orders.
     if (type == OrderType::Limit || type == OrderType::StopLimit || type == OrderType::TrailingStopLimit)
         assert(price > 0 && "Limit, stop limit, and trailing stop limit orders must have a positive price!");
-    // Market orders and stop  orders can only have time in force FOK or IOC.
+    // Market orders, stop orders, and trailing stop orders can only have time in force FOK or IOC.
     if (type == OrderType::Market || type == OrderType::Stop || type == OrderType::TrailingStop)
         assert(time_in_force != OrderTimeInForce::GTC && "Market and stop orders cannot have GTC time in force!");
-    // Quantity should always be positive
+    // All orders must have positive quantity.
     assert(quantity > 0 && "Orders must have a positive quantity!");
     // Last executed quantity and executed quantity should never exceed the quantity of the order.
     assert(last_executed_quantity <= quantity && "Last executed quantity of the order should never exceed the quantity of the order!");
     assert(executed_quantity <= quantity && "Executed quantity of the order should never exceed the quantity of the order!");
-    // Order ID should never be 0.
+    // All orders must have a positive ID.
     assert(id > 0 && "Order ID must be positive!");
 }
 // LCOV_EXCL_STOP

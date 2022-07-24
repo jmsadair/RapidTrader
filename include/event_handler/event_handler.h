@@ -45,71 +45,71 @@ public:
 protected:
     // LCOV_EXCL_START
     /**
-     * Handles a notification that an order was added.
+     * Handles a event that an order was added.
      *
-     * @param notification a notification that an order was added.
+     * @param event a event that an order was added.
      */
-    virtual void handleOrderAdded(const OrderAdded &notification) {}
+    virtual void handleOrderAdded(const OrderAdded &event) {}
 
     /**
-     * Handles a notification that an order was deleted.
+     * Handles a event that an order was deleted.
      *
-     * @param notification a notification that an order was deleted.
+     * @param event a event that an order was deleted.
      */
-    virtual void handleOrderDeleted(const OrderDeleted &notification) {}
+    virtual void handleOrderDeleted(const OrderDeleted &event) {}
 
     /**
-     * Handles a notification that an order was updated.
+     * Handles a event that an order was updated.
      *
-     * @param notification a notification that an order was updated.
+     * @param event a event that an order was updated.
      */
-    virtual void handleOrderUpdated(const OrderUpdated &notification) {}
+    virtual void handleOrderUpdated(const OrderUpdated &event) {}
 
     /**
-     * Handles a notification that an order was executed.
+     * Handles a event that an order was executed.
      *
-     * @param notification a notification that an order was executed.
+     * @param event a event that an order was executed.
      */
-    virtual void handleOrderExecuted(const ExecutedOrder &notification) {}
+    virtual void handleOrderExecuted(const ExecutedOrder &event) {}
 
     /**
-     * Handles a notification that a symbol was added.
+     * Handles a event that a symbol was added.
      *
-     * @param notification a notification that a symbol was added.
+     * @param event a event that a symbol was added.
      */
-    virtual void handleSymbolAdded(const SymbolAdded &notification) {}
+    virtual void handleSymbolAdded(const SymbolAdded &event) {}
 
     /**
-     * Handles a notification that a symbol was deleted.
+     * Handles a event that a symbol was deleted.
      *
-     * @param notification a notification that a symbol was deleted.
+     * @param event a event that a symbol was deleted.
      */
-    virtual void handleSymbolDeleted(const SymbolDeleted &notification) {}
+    virtual void handleSymbolDeleted(const SymbolDeleted &event) {}
 
     /**
-     * Handles a notification that an orderbook was added.
+     * Handles a event that an orderbook was added.
      *
-     * @param notification a notification that an orderbook was added.
+     * @param event a event that an orderbook was added.
      */
-    virtual void handleOrderBookAdded(const OrderBookAdded &notification) {}
+    virtual void handleOrderBookAdded(const OrderBookAdded &event) {}
 
     /**
-     * Handles a notification that an orderbook was deleted.
+     * Handles a event that an orderbook was deleted.
      *
-     * @param notification a notification that an orderbook was deleted.
+     * @param event a event that an orderbook was deleted.
      */
-    virtual void handleOrderBookDeleted(const OrderBookDeleted &notification) {}
+    virtual void handleOrderBookDeleted(const OrderBookDeleted &event) {}
     // LCOV_EXCL_STOP
 
 private:
     /**
-     * Processes incoming notifications.
+     * Processes incoming events.
      */
     void handleEvents();
 
     // Receives incoming messages.
     Concurrent::Messaging::Receiver message_receiver;
-    // The thread that the notifications are processed on.
+    // The thread that the events are processed on.
     std::thread handling_thread;
     // Indicates whether a thread is currently handling events.
     bool is_running;

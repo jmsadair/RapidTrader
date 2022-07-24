@@ -18,7 +18,6 @@ public:
     }
 
 private:
-    // The Receiver class owns the message queue.
     MessageQueue msg_queue;
 };
 } // namespace Concurrent::Messaging

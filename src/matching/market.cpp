@@ -209,7 +209,7 @@ ErrorStatus Market::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t
 std::string Market::toString() const
 {
     std::string market_string;
-    for (const auto& book_ptr : symbol_to_book)
+    for (const auto &book_ptr : symbol_to_book)
     {
         if (book_ptr)
             market_string += book_ptr->toString() + "\n";
@@ -219,7 +219,7 @@ std::string Market::toString() const
 
 std::ostream &operator<<(std::ostream &os, const Market &market)
 {
-    for (const auto& book_ptr : market.symbol_to_book)
+    for (const auto &book_ptr : market.symbol_to_book)
     {
         if (book_ptr)
             os << book_ptr->toString() << "\n";

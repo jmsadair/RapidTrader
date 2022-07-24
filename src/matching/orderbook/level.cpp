@@ -25,7 +25,7 @@ void Level::addOrder(Order &order)
     assert(order.getSymbolID() == symbol_id && "Order does not have the same symbol ID as the level!");
     volume += order.getOpenQuantity();
     orders.push_back(order);
-    LEVEL_CHECK_INVARIANTS;
+    VALIDATE_LEVEL;
 }
 
 void Level::popFront()
@@ -34,7 +34,7 @@ void Level::popFront()
     Order &order_to_remove = orders.front();
     volume -= order_to_remove.getOpenQuantity();
     orders.pop_front();
-    LEVEL_CHECK_INVARIANTS;
+    VALIDATE_LEVEL;
 };
 
 void Level::popBack()
@@ -43,21 +43,21 @@ void Level::popBack()
     Order &order_to_remove = orders.back();
     volume -= order_to_remove.getOpenQuantity();
     orders.pop_back();
-    LEVEL_CHECK_INVARIANTS;
+    VALIDATE_LEVEL;
 }
 
 void Level::deleteOrder(const Order &order)
 {
     volume -= order.getOpenQuantity();
     orders.remove(order);
-    LEVEL_CHECK_INVARIANTS;
+    VALIDATE_LEVEL;
 }
 
 void Level::reduceVolume(uint64_t amount)
 {
     assert(volume >= amount && "Cannot reduce level volume by amount greater than its current volume!");
     volume -= amount;
-    LEVEL_CHECK_INVARIANTS;
+    VALIDATE_LEVEL;
 }
 
 Order &Level::front()
@@ -86,20 +86,19 @@ std::ostream &operator<<(std::ostream &os, const Level &level)
     return os;
 }
 
-void Level::checkInvariants() const
+void Level::validateLevel() const
 {
     uint64_t actual_volume = 0;
     for (const auto &order : orders)
     {
-        order.checkInvariants();
         assert(side == LevelSide::Ask ? order.isAsk() : order.isBid() && "Order side does not match level side!");
         if (order.isStop() || order.isStopLimit() || order.isTrailingStop() || order.isTrailingStopLimit())
-            assert(order.getStopPrice() == price && "Order price does not match price of the level!");
+            assert(order.getStopPrice() == price && "Order stop price does not match price of the level!");
         else
             assert(order.getPrice() == price && "Order price does not match price of the level!");
+        assert(!order.isMarket() && "Level should never contain market orders!");
         actual_volume += order.getOpenQuantity();
     }
     assert(actual_volume == volume && "Level has incorrect volume!");
 }
-
 // LCOV_EXCL_STOP

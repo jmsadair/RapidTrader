@@ -4,9 +4,6 @@
 #include "event_handler/event.h"
 #include "log.h"
 
-// TODO: Refactor order documentation when trailing stop debug complete.
-// TODO: Refactor invariant checks to account for trailing stops correctly.
-
 MapOrderBook::MapOrderBook(uint32_t symbol_id_, Concurrent::Messaging::Sender &outgoing_messages_)
     : symbol_id(symbol_id_)
     , outgoing_messages(outgoing_messages_)
@@ -17,7 +14,6 @@ MapOrderBook::MapOrderBook(uint32_t symbol_id_, Concurrent::Messaging::Sender &o
 
 void MapOrderBook::addOrder(Order order)
 {
-    assert(order.getSymbolID() == symbol_id && "Order symbol ID does not match the orderbook symbol ID!");
     outgoing_messages.send(OrderAdded{order});
     switch (order.getType())
     {
@@ -35,7 +31,7 @@ void MapOrderBook::addOrder(Order order)
         break;
     }
     activateStopOrders();
-    BOOK_CHECK_INVARIANTS;
+    VALIDATE_ORDERBOOK;
 }
 
 void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint64_t price)
@@ -51,7 +47,7 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint64_t p
     if (executing_order.isFilled())
         deleteOrder(order_id, true);
     activateStopOrders();
-    BOOK_CHECK_INVARIANTS;
+    VALIDATE_ORDERBOOK;
 }
 
 void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
@@ -68,7 +64,7 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
     if (executing_order.isFilled())
         deleteOrder(order_id, true);
     activateStopOrders();
-    BOOK_CHECK_INVARIANTS;
+    VALIDATE_ORDERBOOK;
 }
 
 void MapOrderBook::cancelOrder(uint64_t order_id, uint64_t quantity)
@@ -83,14 +79,14 @@ void MapOrderBook::cancelOrder(uint64_t order_id, uint64_t quantity)
     if (cancelling_order.isFilled())
         deleteOrder(order_id, true);
     activateStopOrders();
-    BOOK_CHECK_INVARIANTS;
+    VALIDATE_ORDERBOOK;
 }
 
 void MapOrderBook::deleteOrder(uint64_t order_id)
 {
     deleteOrder(order_id, true);
     activateStopOrders();
-    BOOK_CHECK_INVARIANTS;
+    VALIDATE_ORDERBOOK;
 }
 
 void MapOrderBook::deleteOrder(uint64_t order_id, bool notification)
@@ -132,7 +128,7 @@ void MapOrderBook::replaceOrder(uint64_t order_id, uint64_t new_order_id, uint64
     deleteOrder(order_id);
     addOrder(new_order);
     activateStopOrders();
-    BOOK_CHECK_INVARIANTS;
+    VALIDATE_ORDERBOOK;
 }
 
 void MapOrderBook::addLimitOrder(Order &order)
@@ -184,6 +180,8 @@ void MapOrderBook::addStopOrder(Order &order)
     if (match)
     {
         order.setType((order.isStop() || order.isTrailingStop()) ? OrderType::Market : OrderType::Limit);
+        order.setStopPrice(0);
+        order.setTrailAmount(0);
         outgoing_messages.send(OrderUpdated{order});
         order.isMarket() ? addMarketOrder(order) : addLimitOrder(order);
         return;
@@ -523,7 +521,13 @@ std::ostream &operator<<(std::ostream &os, const MapOrderBook &book)
     return os;
 }
 
-void MapOrderBook::checkInvariants() const
+void MapOrderBook::validateOrderBook() const
+{
+    validateLimitOrders();
+    validateStopOrders();
+    validateTrailingStopOrders();
+}
+void MapOrderBook::validateLimitOrders() const
 {
     uint64_t current_best_ask = ask_levels.empty() ? std::numeric_limits<uint64_t>::max() : ask_levels.begin()->first;
     uint64_t current_best_bid = bid_levels.empty() ? 0 : bid_levels.rbegin()->first;
@@ -531,69 +535,93 @@ void MapOrderBook::checkInvariants() const
 
     for (const auto &[price, level] : ask_levels)
     {
-        assert(!level.empty() && "Empty levels should never be in the orderbook!");
-        assert(level.getPrice() == price && "Level price should have same value as map key!");
-        assert(level.getSide() == LevelSide::Ask && "Level with bid side cannot be on the ask side of the book!");
+        assert(!level.empty() && "Empty limit levels should never be in the orderbook!");
+        assert(level.getPrice() == price && "Limit level price should have same value as map key!");
+        assert(level.getSide() == LevelSide::Ask && "Limit level with bid side cannot be on the ask side of the book!");
         const auto &level_orders = level.getOrders();
         for (const auto &order : level_orders)
-            assert(order.getType() == OrderType::Limit && "Incorrect order type in level!");
+        {
+            assert(!order.isFilled() && "Limit level should not contain any filled orders!");
+            assert(order.getType() == OrderType::Limit && "Limit level contains order that is not a limit order!");
+        }
     }
 
     for (const auto &[price, level] : bid_levels)
     {
-        assert(!level.empty() && "Empty levels should never be in the orderbook!");
-        assert(level.getPrice() == price && "Level price should have same value as map key!");
-        assert(level.getSide() == LevelSide::Bid && "Level with ask side cannot be on the bid side of the book!");
+        assert(!level.empty() && "Empty limit levels should never be in the orderbook!");
+        assert(level.getPrice() == price && "Limit level price should have same value as map key!");
+        assert(level.getSide() == LevelSide::Bid && "Limit level with ask side cannot be on the bid side of the book!");
         const auto &level_orders = level.getOrders();
         for (const auto &order : level_orders)
-            assert(order.getType() == OrderType::Limit && "Incorrect order type in level!");
+        {
+            assert(!order.isFilled() && "Limit level should not contain any filled orders!");
+            assert(order.getType() == OrderType::Limit && "Limit level contains order that is not a limit order!");
+        }
     }
-
+}
+void MapOrderBook::validateStopOrders() const
+{
     for (const auto &[price, level] : stop_ask_levels)
     {
-        assert(!level.empty() && "Empty levels should never be in the orderbook!");
-        assert(level.getPrice() == price && "Level price should have same value as map key!");
-        assert(level.getSide() == LevelSide::Ask && "Level with bid side cannot be on the ask side of the book!");
+        assert(!level.empty() && "Empty stop levels should never be in the orderbook!");
+        assert(price < last_traded_price && "Stop level has ask price that meets or exceeds last traded price!");
+        assert(level.getPrice() == price && "Stop Level price should have same value as map key!");
+        assert(level.getSide() == LevelSide::Ask && "Stop Level on the ask side cannot be on the bid side of the book!");
         const auto &level_orders = level.getOrders();
         for (const auto &order : level_orders)
-            assert(order.getType() == OrderType::Stop || order.getType() == OrderType::StopLimit && "Incorrect order type in level!");
+        {
+            assert(!order.isFilled() && "Stop level should not contain any filled orders!");
+            assert(order.getType() == OrderType::Stop ||
+                   order.getType() == OrderType::StopLimit && "Stop level contains order that is not a stop order!");
+        }
     }
 
     for (const auto &[price, level] : stop_bid_levels)
     {
-        assert(!level.empty() && "Empty levels should never be in the orderbook!");
+        assert(!level.empty() && "Empty stop levels should never be in the orderbook!");
+        assert(price > last_traded_price && "Stop level has bid price that meets or is below last traded price!");
         assert(level.getPrice() == price && "Level price should have same value as map key!");
-        assert(level.getSide() == LevelSide::Bid && "Level with bid side cannot be on the ask side of the book!");
-        const auto &level_orders = level.getOrders();
-        for (const auto &order : level_orders)
-            assert(order.getType() == OrderType::Stop || order.getType() == OrderType::StopLimit && "Incorrect order type in level!");
-    }
-
-    for (const auto &[price, level] : trailing_stop_ask_levels)
-    {
-        assert(!level.empty() && "Empty levels should never be in the orderbook!");
-        assert(level.getPrice() == price && "Level price should have same value as map key!");
-        assert(level.getSide() == LevelSide::Ask && "Level with bid side cannot be on the ask side of the book!");
+        assert(level.getSide() == LevelSide::Bid && "Stop Level on the bid side cannot be on the ask side of the book!");
         const auto &level_orders = level.getOrders();
         for (const auto &order : level_orders)
         {
+            assert(!order.isFilled() && "Stop level should not contain any filled orders!");
+            assert(order.getType() == OrderType::Stop ||
+                   order.getType() == OrderType::StopLimit && "Stop level contains order that is not a stop order!");
+        }
+    }
+}
+void MapOrderBook::validateTrailingStopOrders() const
+{
+    for (const auto &[price, level] : trailing_stop_ask_levels)
+    {
+        assert(!level.empty() && "Empty trailing stop levels should never be in the orderbook!");
+        assert(price < last_traded_price && "Trailing Stop level has ask price that meets or exceeds last traded price!");
+        assert(level.getPrice() == price && "Trailing stop Level price should have same value as map key!");
+        assert(level.getSide() == LevelSide::Ask && "Trailing stop Level on the ask side cannot be on the bid side of the book!");
+        const auto &level_orders = level.getOrders();
+        for (const auto &order : level_orders)
+        {
+            assert(!order.isFilled() && "Trailing stop level should not contain any filled orders!");
             assert(order.getType() == OrderType::TrailingStop ||
-                   order.getType() == OrderType::TrailingStopLimit && "Incorrect order type in level!");
-            assert(order.getStopPrice() < last_traded_price);
+                   order.getType() == OrderType::TrailingStopLimit &&
+                       "Trailing stop level contains an order that is not a trailing stop order!");
         }
     }
 
     for (const auto &[price, level] : trailing_stop_bid_levels)
     {
-        assert(!level.empty() && "Empty levels should never be in the orderbook!");
+        assert(!level.empty() && "Empty trailing stop levels should never be in the orderbook!");
+        assert(price > last_traded_price && "Trailing stop level has bid price that meets or is below last traded price!");
         assert(level.getPrice() == price && "Level price should have same value as map key!");
-        assert(level.getSide() == LevelSide::Bid && "Level with bid side cannot be on the ask side of the book!");
+        assert(level.getSide() == LevelSide::Bid && "Trailing stop Level on the bid side cannot be on the ask side of the book!");
         const auto &level_orders = level.getOrders();
         for (const auto &order : level_orders)
         {
+            assert(!order.isFilled() && "Trailing stop level should not contain any filled orders!");
             assert(order.getType() == OrderType::TrailingStop ||
-                   order.getType() == OrderType::TrailingStopLimit && "Incorrect order type in level!");
-            assert(order.getStopPrice() > last_traded_price);
+                   order.getType() == OrderType::TrailingStopLimit &&
+                       "Trailing stop level contains an order that is not a trailing stop order!");
         }
     }
 }

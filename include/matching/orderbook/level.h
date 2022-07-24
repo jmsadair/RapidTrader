@@ -2,11 +2,11 @@
 #define RAPID_TRADER_LEVEL_H
 #include "order.h"
 
-// Only check the order level invariants in debug mode.
+// Only validate level in debug mode.
 #ifndef NDEBUG
-#    define LEVEL_CHECK_INVARIANTS checkInvariants()
+#    define VALIDATE_LEVEL validateLevel()
 #else
-#    define LEVEL_CHECK_INVARIANTS
+#    define VALIDATE_LEVEL
 #endif
 
 enum class LevelSide
@@ -17,6 +17,9 @@ enum class LevelSide
 
 using namespace boost::intrusive;
 
+/**
+ * Represents a price level in an orderbook.
+ */
 class Level
 {
 public:
@@ -42,7 +45,7 @@ public:
     /**
      * @return the price associated with the level.
      */
-    [[nodiscard]] inline uint64_t getPrice() const
+    [[nodiscard]] uint64_t getPrice() const
     {
         return price;
     }
@@ -50,7 +53,7 @@ public:
     /**
      * @return the total volume of the level.
      */
-    [[nodiscard]] inline uint64_t getVolume() const
+    [[nodiscard]] uint64_t getVolume() const
     {
         return volume;
     }
@@ -58,7 +61,7 @@ public:
     /**
      * @return the side of the level - bid or ask.
      */
-    [[nodiscard]] inline LevelSide getSide() const
+    [[nodiscard]] LevelSide getSide() const
     {
         return side;
     }
@@ -66,7 +69,7 @@ public:
     /**
      * @return the symbol ID associated with the level.
      */
-    [[nodiscard]] inline uint32_t getSymbolID() const
+    [[nodiscard]] uint32_t getSymbolID() const
     {
         return symbol_id;
     }
@@ -74,7 +77,7 @@ public:
     /**
      * @return true if the level is on the ask side and false otherwise.
      */
-    [[nodiscard]] inline bool isAsk() const
+    [[nodiscard]] bool isAsk() const
     {
         return side == LevelSide::Ask;
     }
@@ -82,7 +85,7 @@ public:
     /**
      * @return true if the order is on the bid side and false otherwise.
      */
-    [[nodiscard]] inline bool isBid() const
+    [[nodiscard]] bool isBid() const
     {
         return side == LevelSide::Bid;
     }
@@ -90,7 +93,7 @@ public:
     /**
      * @return the number of orders in the level.
      */
-    [[nodiscard]] inline size_t size() const
+    [[nodiscard]] size_t size() const
     {
         return orders.size();
     }
@@ -98,7 +101,7 @@ public:
     /**
      * @return true if level is empty and false otherwise.
      */
-    [[nodiscard]] inline bool empty() const
+    [[nodiscard]] bool empty() const
     {
         return orders.empty();
     }
@@ -153,21 +156,23 @@ public:
     /**
      * @return the string representation of the level.
      */
-    std::string toString() const;
+    [[nodiscard]] std::string toString() const;
 
     friend std::ostream &operator<<(std::ostream &os, const Level &level);
 
 private:
     /**
-     * Enforces the representation invariants of the level.
+     * Validates the state of the level.
      *
-     * @throws Error if any order in the level has a price that does not
-     *                match the price of the level, if any order in the level
-     *                is on a different side than the level, or if the sum of the
-     *                open quantities of the orders in the level do not match the
-     *                volume of the level.
+     * @throws Error if any of the following are true: an order
+     *               is on a different side than the level, the sum
+     *               of the open quantities of the orders in the level
+     *               does not equal the volume of the level, the level
+     *               contains an order that is a market order,
+     *               or the price / stop price of an order does not equal
+     *               the price of the level.
      */
-    void checkInvariants() const;
+    void validateLevel() const;
 
     list<Order> orders;
     LevelSide side;

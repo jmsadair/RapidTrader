@@ -10,7 +10,7 @@ public:
     TemplateDispatcher(TemplateDispatcher const &) = delete;
     TemplateDispatcher &operator=(TemplateDispatcher const &) = delete;
 
-    inline TemplateDispatcher(TemplateDispatcher &&other) noexcept
+    TemplateDispatcher(TemplateDispatcher &&other) noexcept
         : msg_queue_ptr(other.msg_queue_ptr)
         , prev_dispatcher_ptr(other.prev_dispatcher_ptr)
         , func(std::move(other.func))
@@ -19,7 +19,7 @@ public:
         other.chained = true;
     }
 
-    inline TemplateDispatcher(MessageQueue *msg_queue_ptr_, PreviousDispatcher *prev_dispatcher_ptr_, Func &&func_)
+    TemplateDispatcher(MessageQueue *msg_queue_ptr_, PreviousDispatcher *prev_dispatcher_ptr_, Func &&func_)
         : msg_queue_ptr(msg_queue_ptr_)
         , prev_dispatcher_ptr(prev_dispatcher_ptr_)
         , func(std::forward<Func>(func_))
@@ -29,7 +29,7 @@ public:
     }
 
     template<typename OtherMsg, typename OtherFunc>
-    inline TemplateDispatcher<TemplateDispatcher, OtherMsg, OtherFunc> handle(OtherFunc &&other_func)
+    TemplateDispatcher<TemplateDispatcher, OtherMsg, OtherFunc> handle(OtherFunc &&other_func)
     {
         return TemplateDispatcher<TemplateDispatcher, OtherMsg, OtherFunc>(msg_queue_ptr, this, std::forward<OtherFunc>(other_func));
     }
@@ -48,7 +48,7 @@ private:
     template<typename Dispatcher, typename OtherMsg, typename OtherFunc>
     friend class TemplateDispatcher;
 
-    inline void waitAndDispatch()
+    void waitAndDispatch()
     {
         while (true)
         {
@@ -58,7 +58,7 @@ private:
         }
     }
 
-    inline bool dispatch(std::unique_ptr<BaseMessage> msg)
+    bool dispatch(std::unique_ptr<BaseMessage> msg)
     {
         auto *wrapped = dynamic_cast<WrappedMessage<Msg> *>(msg.get());
         if (wrapped)

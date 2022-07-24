@@ -574,7 +574,6 @@ TEST_F(MarketTest, AddIocTrailingStopOrder1)
     // Inserted into the book with stop price last traded price + trail amount = 169.
     OrderTimeInForce tof3 = OrderTimeInForce::IOC;
     uint64_t quantity3 = 50;
-    uint64_t price3 = 165;
     uint64_t trail_amount = 1;
     uint64_t id3 = 3;
     Order order3 = Order::trailingStopAskOrder(id3, symbol_id, trail_amount, quantity3, tof3);

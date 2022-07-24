@@ -14,20 +14,20 @@ public:
     Dispatcher(const Dispatcher &) = delete;
     Dispatcher &operator=(const Dispatcher &) = delete;
 
-    inline Dispatcher(Dispatcher &&other) noexcept
+    Dispatcher(Dispatcher &&other) noexcept
         : msg_queue_ptr(other.msg_queue_ptr)
         , chained(other.chained)
     {
         other.chained = true;
     }
 
-    inline explicit Dispatcher(MessageQueue *msg_queue_ptr_)
+    explicit Dispatcher(MessageQueue *msg_queue_ptr_)
         : msg_queue_ptr(msg_queue_ptr_)
         , chained(false)
     {}
 
     template<typename Message, typename Func>
-    inline TemplateDispatcher<Dispatcher, Message, Func> handle(Func &&func)
+    TemplateDispatcher<Dispatcher, Message, Func> handle(Func &&func)
     {
         return TemplateDispatcher<Dispatcher, Message, Func>(msg_queue_ptr, this, std::forward<Func>(func));
     }
@@ -44,7 +44,7 @@ private:
     template<typename Dispatcher, typename Msg, typename Func>
     friend class TemplateDispatcher;
 
-    [[noreturn]] inline void waitAndDispatch()
+    [[noreturn]] void waitAndDispatch()
     {
         while (true)
         {
@@ -53,7 +53,7 @@ private:
         }
     }
 
-    static inline bool dispatch(std::unique_ptr<BaseMessage> msg)
+    static bool dispatch(std::unique_ptr<BaseMessage> msg)
     {
         if (dynamic_cast<WrappedMessage<CloseQueue> *>(msg.get()))
         {

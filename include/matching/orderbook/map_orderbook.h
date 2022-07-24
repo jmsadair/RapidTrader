@@ -8,11 +8,11 @@
 #include "order.h"
 #include "event_handler/event_handler.h"
 
-// Only check the orderbook invariants in debug mode.
+// Only validate orderbook in debug mode.
 #ifndef NDEBUG
-#    define BOOK_CHECK_INVARIANTS checkInvariants()
+#    define VALIDATE_ORDERBOOK validateOrderBook()
 #else
-#    define BOOK_CHECK_INVARIANTS
+#    define VALIDATE_ORDERBOOK
 #endif
 
 struct OrderWrapper
@@ -70,7 +70,7 @@ public:
     /**
      * @inheritdoc
      */
-    [[nodiscard]] inline bool hasOrder(uint64_t order_id) const override
+    [[nodiscard]] bool hasOrder(uint64_t order_id) const override
     {
         return orders.find(order_id) != orders.end();
     }
@@ -78,7 +78,7 @@ public:
     /**
      * @inheritdoc
      */
-    [[nodiscard]] inline const Order &getOrder(uint64_t order_id) const override
+    [[nodiscard]] const Order &getOrder(uint64_t order_id) const override
     {
         return orders.find(order_id)->second.order;
     }
@@ -86,7 +86,7 @@ public:
     /**
      * @inheritdoc
      */
-    [[nodiscard]] inline bool empty() const override
+    [[nodiscard]] bool empty() const override
     {
         return orders.empty();
     }
@@ -105,6 +105,7 @@ public:
     void dumpBook(const std::string &path) const;
 
     friend std::ostream &operator<<(std::ostream &os, const MapOrderBook &book);
+
 private:
     /**
      * Deletes an order from the book. Does not match orders.
@@ -244,7 +245,7 @@ private:
      * @returns the last traded price if any trades have been made and the max
      *          64-bit unsigned integer value otherwise.
      */
-    [[nodiscard]]  uint64_t lastTradedPriceAsk() const
+    [[nodiscard]] uint64_t lastTradedPriceAsk() const
     {
         return last_traded_price == 0 ? std::numeric_limits<uint64_t>::max() : last_traded_price;
     }
@@ -258,9 +259,52 @@ private:
     }
 
     /*
-     * Enforces the representation invariants of the orderbook.
+     * Validates the orderbook.
+     *
+     * @throws Error if orderbook is in invalid state.
      */
-    void checkInvariants() const;
+    void validateOrderBook() const;
+
+    /**
+     * Validates the limit orders in the order book.
+     *
+     * @throws Error if any of the following are true: the best bid price
+     *               meets or exceeds the best ask price, there is a limit
+     *               level that contains an order that is not a limit order,
+     *               there is an empty limit level, there is a limit level
+     *               on the ask side that contains bid orders (or vice versa),
+     *               or there is a limit level that has a price that does
+     *               not match the key associated with it in the map.
+     */
+    void validateLimitOrders() const;
+
+    /**
+     * Validates the stop orders in the order book.
+     *
+     * @throws Error if any of the following are true: there is a stop level
+     *               on the ask side with a price that meets or exceeds the
+     *               last traded price, there is a stop level that contains
+     *               an order that is not a stop order, there is an empty stop
+     *               level, there is a stop level on the ask side that contains
+     *               bid orders (or vide versa), or there is a stop level that
+     *               has a price that does not match the key associated with it
+     *               in the map.
+     */
+    void validateStopOrders() const;
+
+    /**
+     * Validates the trailing stop orders in the order book.
+     *
+     * @throws Error if any of the following are true: there is a trailing
+     *               stop level on the ask side with a price that meets or
+     *               exceeds the last traded price, there is a trailing stop
+     *               level that contains an order that is not a trailing stop order,
+     *               there is an empty trailing stop level, there is a trailing stop
+     *               level on the ask side that contains bid orders (or vide versa),
+     *               or there is a trailing stop level that has a price that does
+     *               not match the key associated with it in the map.
+     */
+    void validateTrailingStopOrders() const;
 
     // IMPORTANT: Note that the declaration of orders MUST be
     // declared before the declaration of the price level vectors.
