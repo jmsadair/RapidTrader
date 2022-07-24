@@ -1,8 +1,6 @@
 #ifndef RAPID_TRADER_ORDER_H
 #define RAPID_TRADER_ORDER_H
 #include <boost/intrusive/list.hpp>
-#include <limits>
-#include <array>
 
 // Only validate order in debug mode.
 #ifndef NDEBUG
