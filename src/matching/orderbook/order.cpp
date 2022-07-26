@@ -124,7 +124,6 @@ Order Order::trailingStopBidOrder(
 Order Order::trailingStopLimitAskOrder(
     uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force)
 {
-    assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
     assert(order_id > 0 && "Order ID must be positive!");
     assert(symbol_id > 0 && "Symbol ID must be positive!");
     assert(price > 0 && "Price must be positive!");
@@ -136,7 +135,6 @@ Order Order::trailingStopLimitAskOrder(
 Order Order::trailingStopLimitBidOrder(
     uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force)
 {
-    assert(time_in_force != OrderTimeInForce::GTC && "Stop orders cannot gave GTC time in force!");
     assert(order_id > 0 && "Order ID must be positive!");
     assert(symbol_id > 0 && "Symbol ID must be positive!");
     assert(price > 0 && "Price must be positive!");

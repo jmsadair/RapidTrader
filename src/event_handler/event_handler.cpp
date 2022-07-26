@@ -9,7 +9,7 @@ EventHandler::~EventHandler()
 {
     if (handling_thread.joinable())
     {
-        static_cast<Concurrent::Messaging::Sender>(message_receiver).send(Concurrent::Messaging::CloseQueue());
+        Concurrent::Messaging::Sender(message_receiver).send(Concurrent::Messaging::CloseQueue());
         handling_thread.join();
         is_running = false;
     }
@@ -23,11 +23,13 @@ void EventHandler::start()
         handling_thread = std::thread(&EventHandler::handleEvents, this);
         is_running = true;
     }
+    //LCOV_EXCL_START
     catch (...)
     {
         is_running = false;
         throw;
     }
+    //LCOV_EXCL_END
 }
 
 void EventHandler::stop()
@@ -36,7 +38,7 @@ void EventHandler::stop()
     if (handling_thread.joinable())
     {
         is_running = false;
-        static_cast<Concurrent::Messaging::Sender>(message_receiver).send(Concurrent::Messaging::CloseQueue());
+        Concurrent::Messaging::Sender(message_receiver).send(Concurrent::Messaging::CloseQueue());
         handling_thread.join();
     }
 }

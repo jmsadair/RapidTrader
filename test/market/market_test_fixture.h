@@ -31,7 +31,7 @@ protected:
         event_handler.start();
     }
 
-    static void checkOrder(Order &order, uint64_t expected_order_id, uint64_t expected_last_execution_price,
+    static void checkOrder(const Order &order, uint64_t expected_order_id, uint64_t expected_last_execution_price,
         uint64_t expected_last_execution_quantity, uint64_t expected_open_quantity)
     {
         ASSERT_EQ(order.getOrderID(), expected_order_id);
@@ -63,6 +63,8 @@ protected:
     {
         ASSERT_FALSE(event_handler.delete_order_events.empty());
         Order &order_deleted = event_handler.delete_order_events.front().order;
+        const OrderBook& book = market.getOrderbook(order_deleted.getSymbolID());
+        ASSERT_FALSE(book.hasOrder(order_deleted.getOrderID()));
         checkOrder(
             order_deleted, expected_order_id, expected_last_execution_price, expected_last_execution_quantity, expected_open_quantity);
         event_handler.delete_order_events.pop();

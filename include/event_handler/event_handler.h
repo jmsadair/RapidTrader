@@ -31,8 +31,8 @@ public:
     void start();
 
     /**
-     * Joins the thread handling events, require that there is
-     * a thread handling events.
+     * Joins the thread handling events, require that the event handler
+     * is already running.
      */
     void stop();
 

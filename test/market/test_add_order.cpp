@@ -355,7 +355,7 @@ TEST_F(MarketTest, AddIocStopOrder1)
 }
 
 /**
- * Tests adding restart IOC order that is activated after new limit order is added to the book.
+ * Tests adding stop IOC order that is activated after new limit order is added to the book.
  */
 TEST_F(MarketTest, AddIocStopOrder2)
 {
@@ -420,7 +420,7 @@ TEST_F(MarketTest, AddIocStopOrder2)
 }
 
 /**
- * Tests adding multiple restart IOC orders that are activated after new limit order is added to the book.
+ * Tests adding multiple stop IOC orders that are activated after new limit order is added to the book.
  */
 TEST_F(MarketTest, AddIocStopOrder3)
 {
@@ -546,6 +546,56 @@ TEST_F(MarketTest, AddGtcStopLimitOrder1)
     checkExecutedOrder(id2, price1, quantity1, quantity2 - quantity1);
     checkExecutedOrder(id1, price1, quantity1, 0);
     checkOrderDeleted(id1, price1, quantity1, 0);
+    ASSERT_TRUE(event_handler.empty());
+}
+
+/**
+ * Tests adding stop limit GTC order that is activated after a trade.
+ */
+TEST_F(MarketTest, AddGtcStopLimitOrder2)
+{
+    OrderTimeInForce tof1 = OrderTimeInForce::GTC;
+    uint64_t quantity1 = 200;
+    uint64_t price1 = 350;
+    uint64_t id1 = 1;
+    Order order1 = Order::limitAskOrder(id1, symbol_id, price1, quantity1, tof1);
+    market.addOrder(order1);
+
+    OrderTimeInForce tof2 = OrderTimeInForce::GTC;
+    uint64_t quantity2 = 350;
+    uint64_t price2 = 400;
+    uint64_t id2 = 2;
+    Order order2 = Order::limitBidOrder(id2, symbol_id, price2, quantity2, tof2);
+    market.addOrder(order2);
+
+    OrderTimeInForce tof3 = OrderTimeInForce::GTC;
+    uint64_t quantity3 = 500;
+    uint64_t stop_price = 375;
+    uint64_t price3 = 500;
+    uint64_t id3 = 3;
+    Order order3 = Order::stopLimitAskOrder(id3, symbol_id, price3, stop_price, quantity3, tof3);
+    market.addOrder(order3);
+
+    OrderTimeInForce tof4 = OrderTimeInForce::GTC;
+    uint64_t quantity4 = 50;
+    uint64_t price4 = 380;
+    uint64_t id4 = 1;
+    Order order4 = Order::limitAskOrder(id4, symbol_id, price4, quantity4, tof4);
+    market.addOrder(order4);
+
+    event_handler.stop();
+
+    checkOrderAdded(id1);
+    checkOrderAdded(id2);
+    checkOrderAdded(id3);
+    checkOrderAdded(id4);
+    checkOrderUpdated(id3, 0, 0, quantity3);
+    checkExecutedOrder(id2, price1, quantity1, quantity2 - quantity1);
+    checkExecutedOrder(id1, price1, quantity1, 0);
+    checkExecutedOrder(id2, price2, quantity4, quantity2 - quantity1 - quantity4);
+    checkExecutedOrder(id4, price2, quantity4, 0);
+    checkOrderDeleted(id1, price1, quantity1, 0);
+    checkOrderDeleted(id4, price2, quantity4, 0);
     ASSERT_TRUE(event_handler.empty());
 }
 
@@ -735,5 +785,118 @@ TEST_F(MarketTest, AddIocTrailingStopOrder2)
     checkOrderDeleted(id9, price8, quantity9, 0);
     checkOrderDeleted(id4, price7, quantity4, 0);
     checkOrderDeleted(id3, price7, quantity3, 0);
+    ASSERT_TRUE(event_handler.empty());
+}
+
+/**
+ * Tests adding trailing stop limit GTC order that is activated after a trade.
+ */
+TEST_F(MarketTest, AddGtcTrailingStopLimitOrder1)
+{
+    OrderTimeInForce tof1 = OrderTimeInForce::GTC;
+    uint64_t quantity1 = 200;
+    uint64_t price1 = 170;
+    uint64_t id1 = 1;
+    Order order1 = Order::limitBidOrder(id1, symbol_id, price1, quantity1, tof1);
+    market.addOrder(order1);
+
+    // Matches with last order - last traded price is now 170.
+    OrderTimeInForce tof2 = OrderTimeInForce::GTC;
+    uint64_t quantity2 = 200;
+    uint64_t price2 = 170;
+    uint64_t id2 = 2;
+    Order order2 = Order::limitAskOrder(id2, symbol_id, price2, quantity2, tof2);
+    market.addOrder(order2);
+
+    // Last traded price is 170.
+    // Trail amount is 2.
+    // Inserted into book with stop price = last traded price + trail amount = 172.
+    OrderTimeInForce tof3 = OrderTimeInForce::GTC;
+    uint64_t quantity3 = 50;
+    uint64_t price3 = 140;
+    uint64_t trail_amount1 = 2;
+    uint64_t id3 = 3;
+    Order order3 = Order::trailingStopLimitBidOrder(id3, symbol_id, price3, trail_amount1, quantity3, tof3);
+    market.addOrder(order3);
+
+    // Last traded price is 170.
+    // Trail amount is 2.
+    // Inserted into book with stop price = last traded price + trail amount = 172.
+    OrderTimeInForce tof4 = OrderTimeInForce::GTC;
+    uint64_t quantity4 = 100;
+    uint64_t price4 = 145;
+    uint64_t trail_amount2 = 2;
+    uint64_t id4 = 4;
+    Order order4 = Order::trailingStopLimitBidOrder(id4, symbol_id, price4, trail_amount2, quantity4, tof4);
+    market.addOrder(order4);
+
+    OrderTimeInForce tof5 = OrderTimeInForce::GTC;
+    uint64_t quantity5 = 100;
+    uint64_t price5 = 168;
+    uint64_t id5 = 5;
+    Order order5 = Order::limitAskOrder(id5, symbol_id, price5, quantity5, tof5);
+    market.addOrder(order5);
+
+    // Matches with last order - traded price is now 168.
+    // Stop price of trailing stops should be adjusted.
+    // First trailing stop order should have stop price = last traded price + trail amount = 170.
+    // Second trailing stop order should have stop price = last traded price + trail amount = 170.
+    OrderTimeInForce tof6 = OrderTimeInForce::GTC;
+    uint64_t quantity6 = 100;
+    uint64_t price6 = 170;
+    uint64_t id6 = 6;
+    Order order6 = Order::limitBidOrder(id6, symbol_id, price6, quantity6, tof6);
+    market.addOrder(order6);
+
+    OrderTimeInForce tof7 = OrderTimeInForce::GTC;
+    uint64_t quantity7 = 700;
+    uint64_t price7 = 172;
+    uint64_t id7 = 7;
+    Order order7 = Order::limitAskOrder(id7, symbol_id, price7, quantity7, tof7);
+    market.addOrder(order7);
+
+    OrderTimeInForce tof8 = OrderTimeInForce::GTC;
+    uint64_t quantity8 = 200;
+    uint64_t price8 = 170;
+    uint64_t id8 = 8;
+    Order order8 = Order::limitAskOrder(id8, symbol_id, price8, quantity8, tof8);
+    market.addOrder(order8);
+
+    // Matches with last order - last traded price is now 170.
+    // This should activate both stop orders.
+    OrderTimeInForce tof9 = OrderTimeInForce::GTC;
+    uint64_t quantity9 = 200;
+    uint64_t price9 = 170;
+    uint64_t id9 = 9;
+    Order order9 = Order::limitBidOrder(id9, symbol_id, price9, quantity9, tof9);
+    market.addOrder(order9);
+
+    event_handler.stop();
+
+    checkOrderAdded(id1);
+    checkOrderAdded(id2);
+    checkOrderAdded(id3);
+    checkOrderAdded(id4);
+    checkOrderAdded(id5);
+    checkOrderAdded(id6);
+    checkOrderAdded(id7);
+    checkOrderAdded(id8);
+    checkOrderAdded(id9);
+    checkOrderUpdated(id3, 0, 0, quantity3);
+    checkOrderUpdated(id4, 0, 0, quantity4);
+    checkOrderUpdated(id3, 0, 0, quantity3);
+    checkOrderUpdated(id4, 0, 0, quantity4);
+    checkExecutedOrder(id1, price1, quantity1, 0);
+    checkExecutedOrder(id2, price1, quantity2, 0);
+    checkExecutedOrder(id6, price5, quantity6, 0);
+    checkExecutedOrder(id5, price5, quantity5, 0);
+    checkExecutedOrder(id9, price8, quantity9, 0);
+    checkExecutedOrder(id8, price8, quantity8, 0);
+    checkOrderDeleted(id1, price1, quantity1, 0);
+    checkOrderDeleted(id2, price1, quantity2, 0);
+    checkOrderDeleted(id5, price5, quantity5, 0);
+    checkOrderDeleted(id6, price5, quantity6, 0);
+    checkOrderDeleted(id8, price8, quantity8, 0);
+    checkOrderDeleted(id9, price8, quantity9, 0);
     ASSERT_TRUE(event_handler.empty());
 }

@@ -239,7 +239,7 @@ public:
      * @param time_in_force the time in force of the order, require that time in force is IOC or FOK.
      * @return a new trailing stop limit order.
      */
-    static inline Order trailingStopLimitBidOrder(
+    static Order trailingStopLimitBidOrder(
         uint64_t order_id, uint32_t symbol_id, uint64_t price, uint64_t trail_amount, uint64_t quantity, OrderTimeInForce time_in_force);
 
     /**

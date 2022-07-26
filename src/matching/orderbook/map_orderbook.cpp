@@ -125,7 +125,7 @@ void MapOrderBook::replaceOrder(uint64_t order_id, uint64_t new_order_id, uint64
     Order new_order = orders_it->second.order;
     new_order.setOrderID(new_order_id);
     new_order.setPrice(new_price);
-    deleteOrder(order_id);
+    deleteOrder(order_id, true);
     addOrder(new_order);
     activateStopOrders();
     VALIDATE_ORDERBOOK;
