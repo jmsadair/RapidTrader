@@ -1,13 +1,12 @@
-name: CMake
+name: Ubuntu
 
 on:
   push:
-    branches: [ dev ]
+    branches: [dev, main]
   pull_request:
-    branches: [ dev ]
-
+    branches: [dev, main]
+    
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Debug
 
 jobs:
@@ -19,12 +18,6 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install --fix-missing
-        sudo apt-get install ninja-build cmake
-        ninja --version
-        cmake --version
-        gcc --version
         sudo apt-get install libboost-all-dev
         sudo apt-get install lcov
     - name: Configure CMake

@@ -63,7 +63,7 @@ protected:
     {
         ASSERT_FALSE(event_handler.delete_order_events.empty());
         Order &order_deleted = event_handler.delete_order_events.front().order;
-        const OrderBook& book = market.getOrderbook(order_deleted.getSymbolID());
+        const OrderBook &book = market.getOrderbook(order_deleted.getSymbolID());
         ASSERT_FALSE(book.hasOrder(order_deleted.getOrderID()));
         checkOrder(
             order_deleted, expected_order_id, expected_last_execution_price, expected_last_execution_quantity, expected_open_quantity);
