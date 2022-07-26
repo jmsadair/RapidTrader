@@ -23,13 +23,13 @@ void EventHandler::start()
         handling_thread = std::thread(&EventHandler::handleEvents, this);
         is_running = true;
     }
-    //LCOV_EXCL_START
+    // LCOV_EXCL_START
     catch (...)
     {
         is_running = false;
         throw;
     }
-    //LCOV_EXCL_END
+    // LCOV_EXCL_END
 }
 
 void EventHandler::stop()
