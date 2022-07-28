@@ -53,6 +53,7 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint64_t p
 void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
 {
     auto orders_it = orders.find(order_id);
+    uint8_t reject = (orders_it == orders.end()) + (quantity == 0);
     Level &executing_level = orders_it->second.level_it->second;
     Order &executing_order = orders_it->second.order;
     uint64_t executing_quantity = std::min(quantity, executing_order.getOpenQuantity());

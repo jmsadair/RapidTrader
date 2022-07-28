@@ -15,17 +15,13 @@ protected:
     {
         // Add the symbol.
         market.addSymbol(symbol_id, symbol_name);
-        // Add the orderbook for the symbol.
-        market.addOrderbook(symbol_id);
         // Make sure the market has the symbol and orderbook.
         assert(market.hasSymbol(symbol_id) && "Symbol was not added to market!");
         assert(market.hasOrderbook(symbol_id) && "Orderbook was not added to market!");
         // Join the event handling thread and make sure that add symbol and add orderbook events were received.
         event_handler.stop();
         assert(!event_handler.add_symbol_events.empty() && "There should have been a symbol added event!");
-        assert(!event_handler.add_book_events.empty() && "There should have been a orderbook added event!");
         event_handler.add_symbol_events.pop();
-        event_handler.add_book_events.pop();
         assert(event_handler.empty() && "There should not be any notifications!");
         // Restart the event handling thread.
         event_handler.start();
@@ -86,32 +82,8 @@ protected:
         SymbolAdded &symbol_added_event = event_handler.add_symbol_events.front();
         ASSERT_EQ(symbol_added_event.symbol_id, expected_symbol_id);
         ASSERT_EQ(symbol_added_event.name, expected_symbol_name);
+        ASSERT_TRUE(market.hasSymbol(symbol_id));
         event_handler.add_symbol_events.pop();
-    }
-
-    void checkSymbolDeleted(uint64_t expected_symbol_id, const std::string &expected_symbol_name)
-    {
-        ASSERT_FALSE(event_handler.delete_symbol_events.empty());
-        SymbolDeleted &symbol_deleted_event = event_handler.delete_symbol_events.front();
-        ASSERT_EQ(symbol_deleted_event.symbol_id, expected_symbol_id);
-        ASSERT_EQ(symbol_deleted_event.name, expected_symbol_name);
-        event_handler.delete_symbol_events.pop();
-    }
-
-    void checkBookAdded(uint64_t expected_symbol_id)
-    {
-        ASSERT_FALSE(event_handler.add_book_events.empty());
-        OrderBookAdded &book_added_event = event_handler.add_book_events.front();
-        ASSERT_EQ(book_added_event.symbol_id, expected_symbol_id);
-        event_handler.add_book_events.pop();
-    }
-
-    void checkBookDeleted(uint64_t expected_symbol_id)
-    {
-        ASSERT_FALSE(event_handler.delete_book_events.empty());
-        OrderBookDeleted &book_deleted_event = event_handler.delete_book_events.front();
-        ASSERT_EQ(book_deleted_event.symbol_id, expected_symbol_id);
-        event_handler.delete_book_events.pop();
     }
 
     DebugEventHandler event_handler;

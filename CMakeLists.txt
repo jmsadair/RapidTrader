@@ -149,9 +149,9 @@ target_link_libraries(rapid_trader spdlog)
 # ------------------------------------------------------------------------------
 # Rapid Trader Benchmark
 # ------------------------------------------------------------------------------
-#add_executable(rapid_trader_benchmark benchmark/bench_market.cpp)
-#target_link_libraries(rapid_trader_benchmark benchmark::benchmark rapid_trader)
-#install(TARGETS rapid_trader_benchmark DESTINATION ${TRADER_INSTALL_BIN_DIR}/benchmarks)
+add_executable(rapid_trader_benchmark benchmark/bench_market.cpp)
+target_link_libraries(rapid_trader_benchmark benchmark::benchmark rapid_trader)
+install(TARGETS rapid_trader_benchmark DESTINATION ${TRADER_INSTALL_BIN_DIR}/benchmarks)
 
 # ------------------------------------------------------------------------------
 # Rapid Trader Tests

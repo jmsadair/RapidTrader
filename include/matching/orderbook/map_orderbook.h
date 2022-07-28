@@ -83,6 +83,11 @@ public:
         return orders.find(order_id)->second.order;
     }
 
+    [[nodiscard]] uint32_t getSymbolID() const
+    {
+        return symbol_id;
+    }
+
     /**
      * @inheritdoc
      */

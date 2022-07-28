@@ -49,7 +49,7 @@ void Level::popBack()
 void Level::deleteOrder(const Order &order)
 {
     volume -= order.getOpenQuantity();
-    orders.remove(order);
+    orders.erase(boost::intrusive::list<Order>::s_iterator_to(order));
     VALIDATE_LEVEL;
 }
 

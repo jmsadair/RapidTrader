@@ -7,21 +7,6 @@ std::ostream &operator<<(std::ostream &os, const SymbolAdded &notification)
     os << "ADDED SYMBOL: " << notification.name << " " << notification.symbol_id << "\n";
     return os;
 }
-std::ostream &operator<<(std::ostream &os, const SymbolDeleted &notification)
-{
-    os << "DELETED SYMBOL: " << notification.name << " " << notification.symbol_id << "\n";
-    return os;
-}
-std::ostream &operator<<(std::ostream &os, const OrderBookAdded &notification)
-{
-    os << "ADDED ORDERBOOK: " << notification.symbol_id << "\n";
-    return os;
-}
-std::ostream &operator<<(std::ostream &os, const OrderBookDeleted &notification)
-{
-    os << "DELETED ORDERBOOK: " << notification.symbol_id << "\n";
-    return os;
-}
 std::ostream &operator<<(std::ostream &os, const OrderAdded &notification)
 {
     os << "ADDED ORDER: " << notification.order.getOrderID() << "\n";

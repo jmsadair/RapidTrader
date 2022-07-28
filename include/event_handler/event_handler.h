@@ -78,27 +78,6 @@ protected:
      * @param event a event that a symbol was added.
      */
     virtual void handleSymbolAdded(const SymbolAdded &event) {}
-
-    /**
-     * Handles a event that a symbol was deleted.
-     *
-     * @param event a event that a symbol was deleted.
-     */
-    virtual void handleSymbolDeleted(const SymbolDeleted &event) {}
-
-    /**
-     * Handles a event that an orderbook was added.
-     *
-     * @param event a event that an orderbook was added.
-     */
-    virtual void handleOrderBookAdded(const OrderBookAdded &event) {}
-
-    /**
-     * Handles a event that an orderbook was deleted.
-     *
-     * @param event a event that an orderbook was deleted.
-     */
-    virtual void handleOrderBookDeleted(const OrderBookDeleted &event) {}
     // LCOV_EXCL_STOP
 
 private:

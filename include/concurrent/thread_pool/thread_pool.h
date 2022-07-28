@@ -44,12 +44,12 @@ public:
      * Submit a new task to the thread pool.
      *
      * @tparam F the type of the function that is being submitted.
+     * @param f the task being submitted.
      * @param queue_id the id of the queue that the task will be submitted to,
      *                 require that 0 <= queue_id < num_threads.
-     * @param f the task being submitted.
      */
     template<typename F>
-    void submitTask(uint8_t queue_id, F f)
+    void submitTask(F f, uint8_t queue_id)
     {
         thread_queues[queue_id]->push(std::function<void()>(f));
     }

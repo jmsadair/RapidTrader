@@ -2,9 +2,29 @@
 #define RAPID_TRADER_EVENT_H
 #include "order.h"
 
+enum class Error
+{
+    DuplicateOrder = 0,
+    SymbolDoesNotExist = 1,
+    OrderDoesNotExist = 2,
+    InvalidQuantity = 3,
+    InvalidPrice = 4,
+    InvalidOrderID = 6,
+    DuplicateSymbol = 7
+};
+
 struct Event
 {
     virtual ~Event() = default;
+};
+
+struct OperationRejected : public Event
+{
+    uint64_t id;
+    Error error;
+    OperationRejected(uint64_t id_, Error error_)
+        : id(id_), error(error_)
+    {}
 };
 
 struct MarketEvent : public Event
@@ -24,35 +44,6 @@ struct SymbolAdded : public MarketEvent
     {}
 
     friend std::ostream &operator<<(std::ostream &os, const SymbolAdded &notification);
-};
-
-struct SymbolDeleted : public MarketEvent
-{
-    std::string name;
-    SymbolDeleted(uint32_t symbol_id_, std::string name_)
-        : MarketEvent(symbol_id_)
-        , name(std::move(name_))
-    {}
-
-    friend std::ostream &operator<<(std::ostream &os, const SymbolDeleted &notification);
-};
-
-struct OrderBookAdded : public MarketEvent
-{
-    explicit OrderBookAdded(uint32_t symbol_id_)
-        : MarketEvent(symbol_id_)
-    {}
-
-    friend std::ostream &operator<<(std::ostream &os, const OrderBookAdded &notification);
-};
-
-struct OrderBookDeleted : public MarketEvent
-{
-    explicit OrderBookDeleted(uint32_t symbol_id_)
-        : MarketEvent(symbol_id_)
-    {}
-
-    friend std::ostream &operator<<(std::ostream &os, const OrderBookDeleted &notification);
 };
 
 struct OrderEvent : public Event

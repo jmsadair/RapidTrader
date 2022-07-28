@@ -1,58 +1,6 @@
 #include "market_test_fixture.h"
 
 /**
- * Tests adding order with invalid parameters.
- */
-TEST_F(MarketTest, AddInvalidOrder1)
-{
-    // Order to add.
-    OrderTimeInForce tof1 = OrderTimeInForce::GTC;
-    uint64_t quantity1 = 200;
-    uint64_t price1 = 100;
-    uint64_t id1 = 1;
-    uint32_t symbol_id1 = 10;
-    Order order1 = Order::limitBidOrder(id1, symbol_id1, price1, quantity1, tof1);
-
-    // Add the order.
-    ASSERT_EQ(market.addOrder(order1), ErrorStatus::SymbolDoesNotExist);
-
-    event_handler.stop();
-
-    ASSERT_TRUE(event_handler.empty());
-}
-
-/**
- * Tests adding order with invalid orderbook - symbol exists but orderbook does not.
- */
-TEST_F(MarketTest, AddInvalidOrder2)
-{
-    // Symbol added.
-    std::string symbol_name = "GOOG";
-    uint32_t symbol_id = 2;
-
-    // Add the symbol;
-    market.addSymbol(symbol_id, symbol_name);
-
-    // Order to add.
-    OrderTimeInForce tof1 = OrderTimeInForce::GTC;
-    uint64_t quantity1 = 200;
-    uint64_t price1 = 100;
-    uint64_t id1 = 1;
-    Order order1 = Order::limitBidOrder(id1, symbol_id, price1, quantity1, tof1);
-
-    // Add the order.
-    ASSERT_EQ(market.addOrder(order1), ErrorStatus::OrderBookDoesNotExist);
-
-    event_handler.stop();
-
-    // Check that the symbol was added.
-    ASSERT_FALSE(event_handler.add_symbol_events.empty());
-    event_handler.add_symbol_events.pop();
-
-    ASSERT_TRUE(event_handler.empty());
-}
-
-/**
  * Tests adding GTC limit order to empty orderbook.
  */
 TEST_F(MarketTest, AddGtcLimitOrder1)

@@ -21,18 +21,3 @@ TEST(MarketTestSymbol, AddSymbolShouldWork1)
     event_handler.add_symbol_events.pop();
     ASSERT_TRUE(event_handler.empty());
 }
-
-TEST(MarketTestSymbol, AddSymbolShouldWork2)
-{
-    DebugEventHandler event_handler;
-    RapidTrader::Matching::Market market(event_handler.getSender());
-
-    uint32_t symbol_id = 1;
-    std::string symbol_name = "GOOG";
-    market.addSymbol(symbol_id, symbol_name);
-
-    // Try to add duplicate symbol
-    ASSERT_EQ(market.addSymbol(symbol_id, symbol_name), ErrorStatus::DuplicateSymbol);
-
-    event_handler.stop();
-}
