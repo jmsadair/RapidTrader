@@ -31,7 +31,7 @@ public:
      *                  the symbol associated with symbol ID does not already exist.
      * @param symbol_name the name of the symbol.
      */
-    void addSymbol(uint32_t symbol_id, const std::string& symbol_name);
+    void addSymbol(uint32_t symbol_id, const std::string &symbol_name);
 
     /**
      * @param symbol_id the ID of the symbol to check for the presence of.

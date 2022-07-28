@@ -27,7 +27,6 @@ public:
      */
     explicit ConcurrentMarket(Concurrent::Messaging::Sender outgoing_messages_, uint8_t num_threads = std::thread::hardware_concurrency());
 
-
     /**
      * Adds a new symbol to market.
      *
@@ -36,7 +35,7 @@ public:
      * @param symbol_name the name of the symbol.
      * @return ErrorStatus indicating if the symbol was added successfully.
      */
-    void addSymbol(uint32_t symbol_id, const std::string& symbol_name);
+    void addSymbol(uint32_t symbol_id, const std::string &symbol_name);
 
     /**
      * Submits a new order to the market.

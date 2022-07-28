@@ -23,7 +23,8 @@ struct OperationRejected : public Event
     uint64_t id;
     Error error;
     OperationRejected(uint64_t id_, Error error_)
-        : id(id_), error(error_)
+        : id(id_)
+        , error(error_)
     {}
 };
 

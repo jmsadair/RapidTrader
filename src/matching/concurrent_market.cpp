@@ -54,8 +54,7 @@ void RapidTrader::Matching::ConcurrentMarket::cancelOrder(uint32_t symbol_id, ui
         },
         queue_id);
 }
-void RapidTrader::Matching::ConcurrentMarket::replaceOrder(
-    uint32_t symbol_id, uint64_t order_id, uint64_t new_order_id, uint64_t new_price)
+void RapidTrader::Matching::ConcurrentMarket::replaceOrder(uint32_t symbol_id, uint64_t order_id, uint64_t new_order_id, uint64_t new_price)
 {
     auto it = id_to_book.find(symbol_id);
     OrderBook *book = it != id_to_book.end() ? it->second.get() : nullptr;
@@ -67,8 +66,7 @@ void RapidTrader::Matching::ConcurrentMarket::replaceOrder(
         },
         queue_id);
 }
-void RapidTrader::Matching::ConcurrentMarket::executeOrder(
-    uint32_t symbol_id, uint64_t order_id, uint64_t quantity, uint64_t price)
+void RapidTrader::Matching::ConcurrentMarket::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity, uint64_t price)
 {
     auto it = id_to_book.find(symbol_id);
     OrderBook *book = it != id_to_book.end() ? it->second.get() : nullptr;
