@@ -528,6 +528,7 @@ void MapOrderBook::validateOrderBook() const
     validateStopOrders();
     validateTrailingStopOrders();
 }
+
 void MapOrderBook::validateLimitOrders() const
 {
     uint64_t current_best_ask = ask_levels.empty() ? std::numeric_limits<uint64_t>::max() : ask_levels.begin()->first;
@@ -560,6 +561,7 @@ void MapOrderBook::validateLimitOrders() const
         }
     }
 }
+
 void MapOrderBook::validateStopOrders() const
 {
     for (const auto &[price, level] : stop_ask_levels)
@@ -592,6 +594,7 @@ void MapOrderBook::validateStopOrders() const
         }
     }
 }
+
 void MapOrderBook::validateTrailingStopOrders() const
 {
     for (const auto &[price, level] : trailing_stop_ask_levels)

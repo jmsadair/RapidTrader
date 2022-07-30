@@ -3,6 +3,7 @@
 #include <thread>
 #include <vector>
 #include <atomic>
+#include <cassert>
 #include "concurrent/thread_pool/thread_joiner.h"
 #include "concurrent/thread_pool/queue.h"
 
@@ -16,7 +17,7 @@ public:
      * @param num_threads_ the number of worker threads that will be spawned by
      *                     the thread pool, require that num_threads_ is positive.
      */
-    explicit ThreadPool(uint8_t num_threads_ = std::thread::hardware_concurrency())
+    explicit ThreadPool(uint32_t num_threads_ = std::thread::hardware_concurrency())
         : num_threads(num_threads_)
         , running(true)
         , thread_joiner(threads)
@@ -27,7 +28,7 @@ public:
         // Try to spawn the threads.
         try
         {
-            for (uint8_t i = 0; i < num_threads; ++i)
+            for (uint32_t i = 0; i < num_threads; ++i)
             {
                 thread_queues.push_back(std::make_unique<Queue<std::function<void()>>>());
                 threads.emplace_back(&ThreadPool::workerThread, this, i);
@@ -49,7 +50,7 @@ public:
      *                 require that 0 <= queue_id < num_threads.
      */
     template<typename F>
-    void submitTask(F f, uint8_t queue_id)
+    void submitTask(F f, uint32_t queue_id)
     {
         thread_queues[queue_id]->push(std::function<void()>(f));
     }
@@ -57,7 +58,7 @@ public:
     /**
      * @return number of worker threads the thread pool is using.
      */
-    [[nodiscard]] uint8_t numberOfThreads() const
+    [[nodiscard]] uint32_t numberOfThreads() const
     {
         return num_threads;
     }
@@ -77,7 +78,7 @@ private:
      * @param queue_id the queue ID that the worker thread should
      *                 draw tasks from, require that 0 <= queue < num_threads.
      */
-    void workerThread(uint8_t queue_id)
+    void workerThread(uint32_t queue_id)
     {
         assert(queue_id < thread_queues.size() && "Invalid queue ID!");
         while (running)
@@ -97,7 +98,7 @@ private:
     // Indicates whether the working threads are running.
     std::atomic_bool running;
     // The number of worker threads in the thread pool - must be at least 1.
-    uint8_t num_threads;
+    uint32_t num_threads;
     // Thread-safe queue for each worker thread.
     std::vector<std::unique_ptr<Queue<std::function<void()>>>> thread_queues;
     // The worker threads and their corresponding queues - each thread gets its own queue.

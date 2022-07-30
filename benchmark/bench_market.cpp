@@ -38,12 +38,10 @@ static void BM_Market(benchmark::State &state)
     for (auto _ : state)
     {
         state.PauseTiming();
-        DebugEventHandler handler;
-        RapidTrader::Matching::ConcurrentMarket market{handler.getSender(), 1};
+        DebugEventHandler event_handler;
+        RapidTrader::Matching::ConcurrentMarket market{event_handler.getSender()};
         for (int i = 1; i <= num_symbols; ++i)
-        {
             market.addSymbol(i, "MARKET BENCH");
-        }
         state.ResumeTiming();
         for (const auto &order : orders)
             market.addOrder(order);

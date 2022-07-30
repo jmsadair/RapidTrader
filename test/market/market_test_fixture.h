@@ -13,17 +13,12 @@ protected:
 
     void SetUp() override
     {
-        // Add the symbol.
         market.addSymbol(symbol_id, symbol_name);
-        // Make sure the market has the symbol and orderbook.
         assert(market.hasSymbol(symbol_id) && "Symbol was not added to market!");
-        assert(market.hasOrderbook(symbol_id) && "Orderbook was not added to market!");
-        // Join the event handling thread and make sure that add symbol and add orderbook events were received.
         event_handler.stop();
         assert(!event_handler.add_symbol_events.empty() && "There should have been a symbol added event!");
         event_handler.add_symbol_events.pop();
         assert(event_handler.empty() && "There should not be any notifications!");
-        // Restart the event handling thread.
         event_handler.start();
     }
 
@@ -59,8 +54,6 @@ protected:
     {
         ASSERT_FALSE(event_handler.delete_order_events.empty());
         Order &order_deleted = event_handler.delete_order_events.front().order;
-        const OrderBook &book = market.getOrderbook(order_deleted.getSymbolID());
-        ASSERT_FALSE(book.hasOrder(order_deleted.getOrderID()));
         checkOrder(
             order_deleted, expected_order_id, expected_last_execution_price, expected_last_execution_quantity, expected_open_quantity);
         event_handler.delete_order_events.pop();

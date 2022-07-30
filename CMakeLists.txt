@@ -63,18 +63,18 @@ FetchContent_MakeAvailable(spdlog)
 # ------------------------------------------------------------------------------
 # Clang Tidy
 # ------------------------------------------------------------------------------
-if(ENABLE_CLANG_TIDY)
+if (ENABLE_CLANG_TIDY)
 
     find_program(CLANG_TIDY_BIN clang-tidy-4.0)
     find_program(RUN_CLANG_TIDY_BIN run-clang-tidy-4.0.py)
 
-    if(CLANG_TIDY_BIN STREQUAL "CLANG_TIDY_BIN-NOTFOUND")
+    if (CLANG_TIDY_BIN STREQUAL "CLANG_TIDY_BIN-NOTFOUND")
         message(FATAL_ERROR "unable to locate clang-tidy-4.0")
-    endif()
+    endif ()
 
-    if(RUN_CLANG_TIDY_BIN STREQUAL "RUN_CLANG_TIDY_BIN-NOTFOUND")
+    if (RUN_CLANG_TIDY_BIN STREQUAL "RUN_CLANG_TIDY_BIN-NOTFOUND")
         message(FATAL_ERROR "unable to locate run-clang-tidy-4.0.py")
-    endif()
+    endif ()
 
     list(APPEND RUN_CLANG_TIDY_BIN_ARGS
             -clang-tidy-binary ${CLANG_TIDY_BIN}
@@ -86,42 +86,42 @@ if(ENABLE_CLANG_TIDY)
             tidy
             COMMAND ${RUN_CLANG_TIDY_BIN} ${RUN_CLANG_TIDY_BIN_ARGS}
             COMMENT "running clang tidy"
-   )
+    )
 
-endif()
+endif ()
 
 # ------------------------------------------------------------------------------
 # Coverage
 # ------------------------------------------------------------------------------
-if(ENABLE_COVERAGE)
+if (ENABLE_COVERAGE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftest-coverage")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
-endif()
+endif ()
 
 # ------------------------------------------------------------------------------
 # Google Sanitizers
 # ------------------------------------------------------------------------------
-if(ENABLE_ASAN)
+if (ENABLE_ASAN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fuse-ld=gold")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=leak")
-endif()
+endif ()
 
-if(ENABLE_USAN)
+if (ENABLE_USAN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fuse-ld=gold")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
-endif()
+endif ()
 
-if(ENABLE_TSAN)
+if (ENABLE_TSAN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fuse-ld=gold")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
-endif()
+endif ()
 
 # ------------------------------------------------------------------------------
 # Valgrind

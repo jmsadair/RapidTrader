@@ -3,4 +3,5 @@
 [![codecov](https://codecov.io/gh/jmsadair/RapidTrader/branch/dev/graph/badge.svg?token=4QQI0QDVYM)](https://codecov.io/gh/jmsadair/RapidTrader)
 
 # RapidTrader
+
 TODO.

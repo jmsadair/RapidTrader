@@ -6,8 +6,7 @@
 #include <memory>
 #include "order.h"
 #include "orderbook.h"
-#include "event_handler/event_handler.h"
-#include "concurrent/thread_pool/thread_pool.h"
+#include "orderbook_handler.h"
 #include "symbol.h"
 
 namespace RapidTrader::Matching {
@@ -31,30 +30,13 @@ public:
      *                  the symbol associated with symbol ID does not already exist.
      * @param symbol_name the name of the symbol.
      */
-    void addSymbol(uint32_t symbol_id, const std::string& symbol_name);
+    void addSymbol(uint32_t symbol_id, const std::string &symbol_name);
 
     /**
      * @param symbol_id the ID of the symbol to check for the presence of.
      * @return true if the market has the symbol and false otherwise.
      */
     [[nodiscard]] bool hasSymbol(uint32_t symbol_id) const;
-
-    /**
-     * Retrieves an orderbook from the market.
-     *
-     * @param symbol_id a symbol ID that that the orderbook is associated with, require that
-     *                  there exists an orderbook associated with the ID.
-     * @return the orderbook.
-     */
-    [[nodiscard]] const OrderBook &getOrderbook(uint32_t symbol_id) const;
-
-    /**
-     * Indicates whether an orderbook is present in the market.
-     *
-     * @param symbol_id the symbol ID associated with the orderbook (that may not exist).
-     * @return true if the orderbook exists and false otherwise.
-     */
-    [[nodiscard]] bool hasOrderbook(uint32_t symbol_id) const;
 
     /**
      * Submits a new order to the market.
@@ -125,9 +107,9 @@ public:
     friend std::ostream &operator<<(std::ostream &os, const Market &book);
 
 private:
-    // Maps symbol to orderbook.
-    robin_hood::unordered_map<uint32_t, std::unique_ptr<OrderBook>> id_to_book;
-    // Symbol IDs to symbol names.
+    // Submits order operations to their respective orderbook.
+    std::unique_ptr<OrderBookHandler> orderbook_handler;
+    // Symbol IDs to symbols.
     robin_hood::unordered_map<uint32_t, std::unique_ptr<Symbol>> id_to_symbol;
     // Sends updates from market to event handler.
     Concurrent::Messaging::Sender outgoing_messages;
