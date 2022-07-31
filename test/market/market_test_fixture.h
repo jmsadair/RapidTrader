@@ -2,7 +2,7 @@
 #define RAPID_TRADER_MARKET_TEST_FIXTURE_H
 #include <gtest/gtest.h>
 #include "debug_event_handler.h"
-#include "market.h"
+#include "market/market.h"
 
 class MarketTest : public ::testing::Test
 {

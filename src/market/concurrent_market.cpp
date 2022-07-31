@@ -1,6 +1,5 @@
-#include "concurrent_market.h"
+#include "market/concurrent_market.h"
 #include "map_orderbook.h"
-#include "orderbook_handler.h"
 
 namespace RapidTrader::Matching {
 ConcurrentMarket::ConcurrentMarket(Concurrent::Messaging::Sender outgoing_messenger_, uint8_t num_threads)
@@ -26,6 +25,18 @@ void ConcurrentMarket::addSymbol(uint32_t symbol_id, const std::string &symbol_n
     }
 }
 
+void ConcurrentMarket::deleteSymbol(uint32_t symbol_id)
+{
+    if (id_to_symbol.find(symbol_id) != id_to_symbol.end())
+    {
+        uint32_t submission_index = getSubmissionIndex(symbol_id);
+        id_to_symbol.erase(symbol_id);
+        id_to_submission_index.erase(symbol_id);
+        OrderBookHandler *orderbook_handler = orderbook_handlers[symbol_submission_index].get();
+        thread_pool.submitTask([=] { orderbook_handler->deleteOrderBook(symbol_id); }, symbol_submission_index);
+    }
+}
+
 void ConcurrentMarket::addOrder(const Order &order)
 {
     uint32_t submission_index = getSubmissionIndex(order.getSymbolID());
@@ -35,35 +46,35 @@ void ConcurrentMarket::addOrder(const Order &order)
 
 void ConcurrentMarket::deleteOrder(uint32_t symbol_id, uint64_t order_id)
 {
-    uint32_t submission_index = getSubmissionIndex(order_id);
+    uint32_t submission_index = getSubmissionIndex(symbol_id);
     OrderBookHandler *orderbook_handler = orderbook_handlers[submission_index].get();
     thread_pool.submitTask([=] { orderbook_handler->deleteOrder(symbol_id, order_id); }, submission_index);
 }
 
 void ConcurrentMarket::cancelOrder(uint32_t symbol_id, uint64_t order_id, uint64_t cancelled_quantity)
 {
-    uint32_t submission_index = getSubmissionIndex(order_id);
+    uint32_t submission_index = getSubmissionIndex(symbol_id);
     OrderBookHandler *orderbook_handler = orderbook_handlers[submission_index].get();
     thread_pool.submitTask([=] { orderbook_handler->cancelOrder(symbol_id, order_id, cancelled_quantity); }, submission_index);
 }
 
 void ConcurrentMarket::replaceOrder(uint32_t symbol_id, uint64_t order_id, uint64_t new_order_id, uint64_t new_price)
 {
-    uint32_t submission_index = getSubmissionIndex(order_id);
+    uint32_t submission_index = getSubmissionIndex(symbol_id);
     OrderBookHandler *orderbook_handler = orderbook_handlers[submission_index].get();
     thread_pool.submitTask([=] { orderbook_handler->replaceOrder(symbol_id, order_id, new_order_id, new_price); }, submission_index);
 }
 
 void ConcurrentMarket::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity, uint64_t price)
 {
-    uint32_t submission_index = getSubmissionIndex(order_id);
+    uint32_t submission_index = getSubmissionIndex(symbol_id);
     OrderBookHandler *orderbook_handler = orderbook_handlers[submission_index].get();
     thread_pool.submitTask([=] { orderbook_handler->executeOrder(symbol_id, order_id, quantity, price); }, submission_index);
 }
 
 void ConcurrentMarket::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity)
 {
-    uint32_t submission_index = getSubmissionIndex(order_id);
+    uint32_t submission_index = getSubmissionIndex(symbol_id);
     OrderBookHandler *orderbook_handler = orderbook_handlers[submission_index].get();
     thread_pool.submitTask([=] { orderbook_handler->executeOrder(symbol_id, order_id, quantity); }, submission_index);
 }

@@ -2,12 +2,43 @@
 #define RAPID_TRADER_MARKET_H
 #include <iostream>
 #include <fstream>
-#include <robin_hood.h>
+#include "utils/robin_hood.h"
 #include <memory>
 #include "order.h"
 #include "orderbook.h"
-#include "orderbook_handler.h"
 #include "symbol.h"
+#include "sender.h"
+
+// An object for the shared logic between market and concurrent market.
+// Necessary to prevent race condition in concurrent market.
+struct OrderBookHandler
+{
+    explicit OrderBookHandler(Concurrent::Messaging::Sender outgoing_messages_);
+
+    void addOrderBook(uint32_t symbol_id);
+
+    void deleteOrderBook(uint32_t symbol_id);
+
+    void addOrder(const Order &order);
+
+    void deleteOrder(uint32_t symbol_id, uint64_t order_id);
+
+    void cancelOrder(uint32_t symbol_id, uint64_t order_id, uint64_t cancelled_quantity);
+
+    void replaceOrder(uint32_t symbol_id, uint64_t order_id, uint64_t new_order_id, uint64_t new_price);
+
+    void executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity, uint64_t price);
+
+    void executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity);
+
+    std::string toString();
+
+private:
+    // Maps symbol IDs to order books.
+    robin_hood::unordered_map<uint32_t, std::unique_ptr<OrderBook>> id_to_book;
+    // Sends updates from market to event handler.
+    Concurrent::Messaging::Sender outgoing_messages;
+};
 
 namespace RapidTrader::Matching {
 class Market
@@ -31,6 +62,15 @@ public:
      * @param symbol_name the name of the symbol.
      */
     void addSymbol(uint32_t symbol_id, const std::string &symbol_name);
+
+    /**
+     * Removes the symbol from the market.
+     *
+     * @param symbol_id the ID that the symbol is identified by, require that
+     *                  the symbol associated with symbol ID exists.
+     */
+    void deleteSymbol(uint32_t symbol_id);
+
 
     /**
      * @param symbol_id the ID of the symbol to check for the presence of.
@@ -114,5 +154,6 @@ private:
     // Sends updates from market to event handler.
     Concurrent::Messaging::Sender outgoing_messages;
 };
+
 } // namespace RapidTrader::Matching
 #endif // RAPID_TRADER_MARKET_H

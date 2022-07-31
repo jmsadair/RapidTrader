@@ -2,13 +2,13 @@
 #define RAPID_TRADER_CONCURRENT_MARKET_H
 #include <iostream>
 #include <fstream>
-#include <robin_hood.h>
+#include "utils/robin_hood.h"
 #include <memory>
 #include "concurrent/thread_pool/thread_pool.h"
 #include "order.h"
 #include "orderbook.h"
-#include "orderbook_handler.h"
 #include "symbol.h"
+#include "market.h"
 
 namespace RapidTrader::Matching {
 class ConcurrentMarket
@@ -18,9 +18,9 @@ public:
     ConcurrentMarket &operator=(ConcurrentMarket &&other) = delete;
 
     /**
-     * A constructor for the Market.
+     * A constructor for the concurrent market.
      *
-     * @param outgoing_messenger_ a message sender.
+     * @param outgoing_messenger_ a message sender for market events.
      * @param num_threads the number of worker threads that will be used, require that
      *                    num_threads is positive.
      */
@@ -34,6 +34,14 @@ public:
      * @param symbol_name the name of the symbol.
      */
     void addSymbol(uint32_t symbol_id, const std::string &symbol_name);
+
+    /**
+     * Removes the symbol from the market asynchronously.
+     *
+     * @param symbol_id the ID that the symbol is identified by, require that
+     *                  the symbol associated with symbol ID exists.
+     */
+    void deleteSymbol(uint32_t symbol_id);
 
     /**
      * Submits a new order to the market asynchronously.

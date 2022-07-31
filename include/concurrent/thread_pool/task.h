@@ -1,9 +1,35 @@
-#ifndef RAPIDCOMPRESSION_TASK_H
-#define RAPIDCOMPRESSION_TASK_H
+#ifndef RAPID_TRADER_TASK_H
+#define RAPID_TRADER_TASK_H
 #include <memory>
 namespace Concurrent {
 class Task
 {
+public:
+    Task(const Task &) = delete;
+    Task(Task &) = delete;
+    Task &operator=(const Task &) = delete;
+    Task() = default;
+
+    template<typename F>
+    Task(F &&f_)
+        : callable(new CallableType<F>(std::forward<F>(f_)))
+    {}
+
+    Task(Task &&other) noexcept
+        : callable(std::move(other.callable))
+    {}
+
+    Task &operator=(Task &&other) noexcept
+    {
+        callable = std::move(other.callable);
+        return *this;
+    }
+
+    void operator()()
+    {
+        callable->call();
+    }
+
 private:
     struct Callable
     {
@@ -24,32 +50,6 @@ private:
             f();
         }
     };
-
-public:
-    Task(Task &&other) noexcept
-        : callable(std::move(other.callable))
-    {}
-
-    template<typename F>
-    Task(F &&f_)
-        : callable(new CallableType<F>(std::forward<F>(f_)))
-    {}
-
-    Task &operator=(Task &&other) noexcept
-    {
-        callable = std::move(other.callable);
-        return *this;
-    }
-
-    void operator()()
-    {
-        callable->call();
-    }
-
-    Task() = default;
-    Task(const Task &) = delete;
-    Task(Task &) = delete;
-    Task &operator=(const Task &) = delete;
 };
 } // namespace Concurrent
-#endif // RAPIDCOMPRESSION_TASK_H
+#endif // RAPID_TRADER_TASK_H
