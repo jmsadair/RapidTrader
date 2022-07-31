@@ -71,7 +71,6 @@ public:
      */
     void deleteSymbol(uint32_t symbol_id);
 
-
     /**
      * @param symbol_id the ID of the symbol to check for the presence of.
      * @return true if the market has the symbol and false otherwise.
