@@ -12,10 +12,8 @@ TEST_F(MarketTest, AddGtcLimitOrder1)
     Order order1 = Order::limitBidOrder(id1, symbol_id, price1, quantity1, tof1);
     market.addOrder(order1);
 
-    event_handler.stop();
-
     checkOrderAdded(id1);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -37,14 +35,14 @@ TEST_F(MarketTest, AddGtcLimitOrder2)
     Order order2 = Order::limitAskOrder(id2, symbol_id, price2, quantity2, tof2);
     market.addOrder(order2);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
     checkExecutedOrder(id1, price1, quantity1, 0);
     checkExecutedOrder(id2, price1, quantity1, quantity2 - quantity1);
     checkOrderDeleted(id1, price1, quantity1, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -73,7 +71,7 @@ TEST_F(MarketTest, AddIocLimitOrder1)
     Order order3 = Order::limitBidOrder(id3, symbol_id, price3, quantity3, tof3);
     market.addOrder(order3);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -85,7 +83,7 @@ TEST_F(MarketTest, AddIocLimitOrder1)
     checkOrderDeleted(id1, price1, quantity1, 0);
     checkOrderDeleted(id2, price2, quantity2, 0);
     checkOrderDeleted(id3, price2, quantity2, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -107,7 +105,7 @@ TEST_F(MarketTest, AddIocLimitOrder2)
     Order order2 = Order::limitAskOrder(id2, symbol_id, price2, quantity2, tof2);
     market.addOrder(order2);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -115,7 +113,7 @@ TEST_F(MarketTest, AddIocLimitOrder2)
     checkExecutedOrder(id2, price1, quantity1, quantity2 - quantity1);
     checkOrderDeleted(id1, price1, quantity1, 0);
     checkOrderDeleted(id2, price1, quantity1, quantity2 - quantity1);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -144,7 +142,7 @@ TEST_F(MarketTest, AddFokLimitOrder1)
     Order order3 = Order::limitBidOrder(id3, symbol_id, price3, quantity3, tof3);
     market.addOrder(order3);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -155,7 +153,7 @@ TEST_F(MarketTest, AddFokLimitOrder1)
     checkExecutedOrder(id2, price2, quantity3 - quantity1, quantity2 - (quantity3 - quantity1));
     checkOrderDeleted(id1, price1, quantity1, 0);
     checkOrderDeleted(id3, price2, quantity3 - quantity1, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -184,13 +182,13 @@ TEST_F(MarketTest, AddFokLimitOrder2)
     Order order3 = Order::limitAskOrder(id3, symbol_id, price3, quantity3, tof3);
     market.addOrder(order3);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
     checkOrderAdded(id3);
     checkOrderDeleted(id3, 0, 0, quantity3);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -218,7 +216,7 @@ TEST_F(MarketTest, AddIocMarketOrder1)
     Order order3 = Order::marketAskOrder(id3, symbol_id, quantity3, tof3);
     market.addOrder(order3);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -230,7 +228,7 @@ TEST_F(MarketTest, AddIocMarketOrder1)
     checkOrderDeleted(id1, price1, quantity1, 0);
     checkOrderDeleted(id2, price2, quantity2, 0);
     checkOrderDeleted(id3, price2, quantity2, quantity3 - quantity2 - quantity1);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -251,14 +249,14 @@ TEST_F(MarketTest, AddIocMarketOrder2)
     Order order2 = Order::marketBidOrder(id2, symbol_id, quantity2, tof2);
     market.addOrder(order2);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
     checkExecutedOrder(id2, price1, quantity2, 0);
     checkExecutedOrder(id1, price1, quantity2, quantity1 - quantity2);
     checkOrderDeleted(id2, price1, quantity2, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -287,7 +285,7 @@ TEST_F(MarketTest, AddIocStopOrder1)
     Order order3 = Order::stopBidOrder(id3, symbol_id, price3, quantity3, tof3);
     market.addOrder(order3);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -299,7 +297,7 @@ TEST_F(MarketTest, AddIocStopOrder1)
     checkExecutedOrder(id2, price2, quantity3, quantity2 - quantity1 - quantity3);
     checkOrderDeleted(id1, price1, quantity1, 0);
     checkOrderDeleted(id3, price2, quantity3, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -346,7 +344,7 @@ TEST_F(MarketTest, AddIocStopOrder2)
     Order order5 = Order::limitAskOrder(id5, symbol_id, price5, quantity5, tof5);
     market.addOrder(order5);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -364,7 +362,7 @@ TEST_F(MarketTest, AddIocStopOrder2)
     checkOrderDeleted(id2, price1, quantity2, 0);
     checkOrderDeleted(id5, price4, quantity5, 0);
     checkOrderDeleted(id3, price4, quantity3, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -427,7 +425,7 @@ TEST_F(MarketTest, AddIocStopOrder3)
     Order order7 = Order::limitAskOrder(id7, symbol_id, price7, quantity7, tof7);
     market.addOrder(order7);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -455,7 +453,7 @@ TEST_F(MarketTest, AddIocStopOrder3)
     checkOrderDeleted(id3, price7, quantity3, 0);
     checkOrderDeleted(id4, price7, quantity4, 0);
     checkOrderDeleted(id5, price7, quantity5, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -485,7 +483,7 @@ TEST_F(MarketTest, AddGtcStopLimitOrder1)
     Order order3 = Order::stopLimitBidOrder(id3, symbol_id, price3, stop_price, quantity3, tof3);
     market.addOrder(order3);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -494,7 +492,7 @@ TEST_F(MarketTest, AddGtcStopLimitOrder1)
     checkExecutedOrder(id2, price1, quantity1, quantity2 - quantity1);
     checkExecutedOrder(id1, price1, quantity1, 0);
     checkOrderDeleted(id1, price1, quantity1, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -531,7 +529,7 @@ TEST_F(MarketTest, AddGtcStopLimitOrder2)
     Order order4 = Order::limitAskOrder(id4, symbol_id, price4, quantity4, tof4);
     market.addOrder(order4);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -544,7 +542,7 @@ TEST_F(MarketTest, AddGtcStopLimitOrder2)
     checkExecutedOrder(id4, price2, quantity4, 0);
     checkOrderDeleted(id1, price1, quantity1, 0);
     checkOrderDeleted(id4, price2, quantity4, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -593,7 +591,7 @@ TEST_F(MarketTest, AddIocTrailingStopOrder1)
     Order order5 = Order::limitBidOrder(id5, symbol_id, price5, quantity5, tof5);
     market.addOrder(order5);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -611,7 +609,7 @@ TEST_F(MarketTest, AddIocTrailingStopOrder1)
     checkOrderDeleted(id2, price1, quantity2, 0);
     checkOrderDeleted(id4, price4, quantity4, 0);
     checkOrderDeleted(id3, price5, quantity3, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -700,7 +698,7 @@ TEST_F(MarketTest, AddIocTrailingStopOrder2)
     Order order9 = Order::limitBidOrder(id9, symbol_id, price9, quantity9, tof9);
     market.addOrder(order9);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -733,7 +731,7 @@ TEST_F(MarketTest, AddIocTrailingStopOrder2)
     checkOrderDeleted(id9, price8, quantity9, 0);
     checkOrderDeleted(id4, price7, quantity4, 0);
     checkOrderDeleted(id3, price7, quantity3, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -819,7 +817,7 @@ TEST_F(MarketTest, AddGtcTrailingStopLimitOrder1)
     Order order9 = Order::limitBidOrder(id9, symbol_id, price9, quantity9, tof9);
     market.addOrder(order9);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -846,5 +844,5 @@ TEST_F(MarketTest, AddGtcTrailingStopLimitOrder1)
     checkOrderDeleted(id6, price5, quantity6, 0);
     checkOrderDeleted(id8, price8, quantity8, 0);
     checkOrderDeleted(id9, price8, quantity9, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }

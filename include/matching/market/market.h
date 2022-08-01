@@ -2,20 +2,22 @@
 #define RAPID_TRADER_MARKET_H
 #include <iostream>
 #include <fstream>
-#include "utils/robin_hood.h"
 #include <memory>
+#include "utils/robin_hood.h"
 #include "order.h"
 #include "orderbook.h"
 #include "symbol.h"
 #include "sender.h"
 
+class EventHandler;
+
 // An object for the shared logic between market and concurrent market.
 // Necessary to prevent race condition in concurrent market.
 struct OrderBookHandler
 {
-    explicit OrderBookHandler(Concurrent::Messaging::Sender outgoing_messages_);
+    explicit OrderBookHandler(std::unique_ptr<EventHandler> event_handler);
 
-    void addOrderBook(uint32_t symbol_id);
+    void addOrderBook(uint32_t symbol_id, std::string symbol_name);
 
     void deleteOrderBook(uint32_t symbol_id);
 
@@ -36,8 +38,8 @@ struct OrderBookHandler
 private:
     // Maps symbol IDs to order books.
     robin_hood::unordered_map<uint32_t, std::unique_ptr<OrderBook>> id_to_book;
-    // Sends updates from market to event handler.
-    Concurrent::Messaging::Sender outgoing_messages;
+    // Handles orderbook events.
+    std::unique_ptr<EventHandler> event_handler;
 };
 
 namespace RapidTrader::Matching {
@@ -50,9 +52,9 @@ public:
     /**
      * A constructor for the Market.
      *
-     * @param outgoing_messages_ sends updates from the market.
+     * @param outgoing_messages_ the event handler that will be used by the market.
      */
-    explicit Market(Concurrent::Messaging::Sender outgoing_messages_);
+    explicit Market(std::unique_ptr<EventHandler> event_handler);
 
     /**
      * Adds a new symbol to market.
@@ -150,8 +152,6 @@ private:
     std::unique_ptr<OrderBookHandler> orderbook_handler;
     // Symbol IDs to symbols.
     robin_hood::unordered_map<uint32_t, std::unique_ptr<Symbol>> id_to_symbol;
-    // Sends updates from market to event handler.
-    Concurrent::Messaging::Sender outgoing_messages;
 };
 
 } // namespace RapidTrader::Matching

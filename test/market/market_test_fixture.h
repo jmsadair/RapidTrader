@@ -6,20 +6,16 @@
 
 class MarketTest : public ::testing::Test
 {
+
 protected:
-    MarketTest()
-        : market(event_handler.getSender())
-    {}
 
     void SetUp() override
     {
         market.addSymbol(symbol_id, symbol_name);
         assert(market.hasSymbol(symbol_id) && "Symbol was not added to market!");
-        event_handler.stop();
-        assert(!event_handler.add_symbol_events.empty() && "There should have been a symbol added event!");
-        event_handler.add_symbol_events.pop();
-        assert(event_handler.empty() && "There should not be any notifications!");
-        event_handler.start();
+        assert(!market_debugger.add_symbol_events.empty() && "There should have been a symbol added event!");
+        market_debugger.add_symbol_events.pop();
+        assert(market_debugger.empty() && "There should not be any notifications!");
     }
 
     static void checkOrder(const Order &order, uint64_t expected_order_id, uint64_t expected_last_execution_price,
@@ -33,54 +29,54 @@ protected:
 
     void checkOrderAdded(uint64_t expected_order_id)
     {
-        ASSERT_FALSE(event_handler.add_order_events.empty());
-        Order &order_added = event_handler.add_order_events.front().order;
+        ASSERT_FALSE(market_debugger.add_order_events.empty());
+        Order &order_added = market_debugger.add_order_events.front().order;
         ASSERT_EQ(order_added.getOrderID(), expected_order_id);
-        event_handler.add_order_events.pop();
+        market_debugger.add_order_events.pop();
     }
 
     void checkExecutedOrder(uint64_t expected_order_id, uint64_t expected_last_execution_price, uint64_t expected_last_execution_quantity,
         uint64_t expected_open_quantity)
     {
-        ASSERT_FALSE(event_handler.execute_order_events.empty());
-        Order &order_executed = event_handler.execute_order_events.front().order;
+        ASSERT_FALSE(market_debugger.execute_order_events.empty());
+        Order &order_executed = market_debugger.execute_order_events.front().order;
         checkOrder(
             order_executed, expected_order_id, expected_last_execution_price, expected_last_execution_quantity, expected_open_quantity);
-        event_handler.execute_order_events.pop();
+        market_debugger.execute_order_events.pop();
     }
 
     void checkOrderDeleted(uint64_t expected_order_id, uint64_t expected_last_execution_price, uint64_t expected_last_execution_quantity,
         uint64_t expected_open_quantity)
     {
-        ASSERT_FALSE(event_handler.delete_order_events.empty());
-        Order &order_deleted = event_handler.delete_order_events.front().order;
+        ASSERT_FALSE(market_debugger.delete_order_events.empty());
+        Order &order_deleted = market_debugger.delete_order_events.front().order;
         checkOrder(
             order_deleted, expected_order_id, expected_last_execution_price, expected_last_execution_quantity, expected_open_quantity);
-        event_handler.delete_order_events.pop();
+        market_debugger.delete_order_events.pop();
     }
 
     void checkOrderUpdated(uint64_t expected_order_id, uint64_t expected_last_execution_price, uint64_t expected_last_execution_quantity,
         uint64_t expected_open_quantity)
     {
-        ASSERT_FALSE(event_handler.update_order_events.empty());
-        Order &order_updated = event_handler.update_order_events.front().order;
+        ASSERT_FALSE(market_debugger.update_order_events.empty());
+        Order &order_updated = market_debugger.update_order_events.front().order;
         checkOrder(
             order_updated, expected_order_id, expected_last_execution_price, expected_last_execution_quantity, expected_open_quantity);
-        event_handler.update_order_events.pop();
+        market_debugger.update_order_events.pop();
     }
 
     void checkSymbolAdded(uint64_t expected_symbol_id, const std::string &expected_symbol_name)
     {
-        ASSERT_FALSE(event_handler.add_symbol_events.empty());
-        SymbolAdded &symbol_added_event = event_handler.add_symbol_events.front();
+        ASSERT_FALSE(market_debugger.add_symbol_events.empty());
+        SymbolAdded &symbol_added_event = market_debugger.add_symbol_events.front();
         ASSERT_EQ(symbol_added_event.symbol_id, expected_symbol_id);
         ASSERT_EQ(symbol_added_event.name, expected_symbol_name);
         ASSERT_TRUE(market.hasSymbol(symbol_id));
-        event_handler.add_symbol_events.pop();
+        market_debugger.add_symbol_events.pop();
     }
 
-    DebugEventHandler event_handler;
-    RapidTrader::Matching::Market market;
+    MarketEventDebugger market_debugger;
+    RapidTrader::Matching::Market market{std::make_unique<DebugEventHandler>(market_debugger)};
     uint32_t symbol_id = 1;
     std::string symbol_name = "GOOG";
 };

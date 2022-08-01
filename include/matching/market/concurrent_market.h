@@ -2,13 +2,15 @@
 #define RAPID_TRADER_CONCURRENT_MARKET_H
 #include <iostream>
 #include <fstream>
-#include "utils/robin_hood.h"
 #include <memory>
+#include "utils/robin_hood.h"
 #include "concurrent/thread_pool/thread_pool.h"
 #include "order.h"
 #include "orderbook.h"
 #include "symbol.h"
-#include "market.h"
+
+class EventHandler;
+class OrderBookHandler;
 
 namespace RapidTrader::Matching {
 class ConcurrentMarket
@@ -20,11 +22,12 @@ public:
     /**
      * A constructor for the concurrent market.
      *
-     * @param outgoing_messenger_ a message sender for market events.
+     * @param event_handlers a vector of event handlers, require that the size of the
+     *                       vector is equal to the number of threads that will be used.
      * @param num_threads the number of worker threads that will be used, require that
      *                    num_threads is positive.
      */
-    explicit ConcurrentMarket(Concurrent::Messaging::Sender outgoing_messenger_, uint8_t num_threads = 1);
+    explicit ConcurrentMarket(std::vector<std::unique_ptr<EventHandler>> &event_handlers, uint8_t num_threads = 1);
 
     /**
      * Adds a new symbol to market asynchronously.
@@ -116,8 +119,6 @@ private:
 
     // The number of orderbook handlers is equivalent to the number of worker threads in the thread pool.
     std::vector<std::unique_ptr<OrderBookHandler>> orderbook_handlers;
-    // Sends messages to the event handler.
-    Concurrent::Messaging::Sender outgoing_messenger;
     // Maps symbol IDs to symbols.
     robin_hood::unordered_map<uint32_t, std::unique_ptr<Symbol>> id_to_symbol;
     // Maps symbol IDs to the submission indices. A submission index

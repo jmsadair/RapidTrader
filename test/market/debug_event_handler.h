@@ -2,9 +2,8 @@
 #define RAPID_TRADER_DEBUG_EVENT_HANDLER_H
 #include "event_handler/event_handler.h"
 
-class DebugEventHandler : public EventHandler
+struct MarketEventDebugger
 {
-public:
     std::queue<OrderAdded> add_order_events;
     std::queue<OrderDeleted> delete_order_events;
     std::queue<ExecutedOrder> execute_order_events;
@@ -16,27 +15,38 @@ public:
         return add_order_events.empty() && delete_order_events.empty() && execute_order_events.empty() && update_order_events.empty() &&
                add_symbol_events.empty();
     }
+};
+
+class DebugEventHandler : public EventHandler
+{
+
+public:
+    explicit DebugEventHandler(MarketEventDebugger &market_debugger_)
+            : market_debugger(market_debugger_)
+    {}
 
 protected:
     void handleOrderAdded(const OrderAdded &notification) override
     {
-        add_order_events.push(notification);
+        market_debugger.add_order_events.push(notification);
     }
     void handleOrderDeleted(const OrderDeleted &notification) override
     {
-        delete_order_events.push(notification);
+        market_debugger.delete_order_events.push(notification);
     }
     void handleOrderUpdated(const OrderUpdated &notification) override
     {
-        update_order_events.push(notification);
+        market_debugger.update_order_events.push(notification);
     }
     void handleOrderExecuted(const ExecutedOrder &notification) override
     {
-        execute_order_events.push(notification);
+        market_debugger.execute_order_events.push(notification);
     }
     void handleSymbolAdded(const SymbolAdded &notification) override
     {
-        add_symbol_events.push(notification);
+        market_debugger.add_symbol_events.push(notification);
     }
+private:
+    MarketEventDebugger &market_debugger;
 };
 #endif // RAPID_TRADER_DEBUG_EVENT_HANDLER_H

@@ -16,11 +16,11 @@ TEST_F(MarketTest, CancelOrderShouldWork1)
 
     market.cancelOrder(symbol_id, id1, cancel_quantity);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderUpdated(id1, 0, 0, quantity1 - cancel_quantity);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -39,10 +39,10 @@ TEST_F(MarketTest, CancelOrderShouldWork2)
 
     market.cancelOrder(symbol_id, id1, cancel_quantity);
 
-    event_handler.stop();
+    
 
     checkOrderAdded(id1);
     checkOrderUpdated(id1, 0, 0, 0);
     checkOrderDeleted(id1, 0, 0, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }

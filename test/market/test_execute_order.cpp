@@ -14,11 +14,11 @@ TEST_F(MarketTest, ExecuteOrderShouldWork1)
     uint64_t executed_quantity = 100;
     market.executeOrder(symbol_id, id1, executed_quantity);
 
-    event_handler.stop();
+   
 
     checkOrderAdded(id1);
     checkExecutedOrder(id1, price1, executed_quantity, quantity1 - executed_quantity);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -37,11 +37,11 @@ TEST_F(MarketTest, ExecuteOrderShouldWork2)
     uint32_t executed_price = 400;
     market.executeOrder(symbol_id, id1, executed_quantity, executed_price);
 
-    event_handler.stop();
+   
 
     checkOrderAdded(id1);
     checkExecutedOrder(id1, executed_price, executed_quantity, quantity1 - executed_quantity);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -59,12 +59,12 @@ TEST_F(MarketTest, ExecuteOrderShouldWork3)
     uint64_t executed_quantity = 200;
     market.executeOrder(symbol_id, id1, executed_quantity);
 
-    event_handler.stop();
+   
 
     checkOrderAdded(id1);
     checkExecutedOrder(id1, price1, executed_quantity, 0);
     checkOrderDeleted(id1, price1, executed_quantity, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -83,10 +83,10 @@ TEST_F(MarketTest, ExecuteOrderShouldWork4)
     uint64_t executed_price = 300;
     market.executeOrder(symbol_id, id1, executed_quantity, executed_price);
 
-    event_handler.stop();
+   
 
     checkOrderAdded(id1);
     checkExecutedOrder(id1, executed_price, executed_quantity, 0);
     checkOrderDeleted(id1, executed_price, executed_quantity, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }

@@ -30,16 +30,17 @@ void generateOrders(std::vector<Order> &orders, uint32_t num_orders, uint32_t nu
 
 static void BM_Market(benchmark::State &state)
 {
-    const uint64_t num_orders = 3000000;
+    const uint64_t num_orders = 1000000;
     const uint64_t num_symbols = 2500;
+    const uint64_t  num_threads = 1;
     std::vector<Order> orders;
     orders.reserve(num_orders);
     generateOrders(orders, num_orders, num_symbols);
     for (auto _ : state)
     {
         state.PauseTiming();
-        DebugEventHandler event_handler;
-        RapidTrader::Matching::ConcurrentMarket market{event_handler.getSender()};
+        auto event_handler = std::unique_ptr<EventHandler>(new DebugEventHandler());
+        RapidTrader::Matching::Market market{std::move(event_handler)};
         for (int i = 1; i <= num_symbols; ++i)
             market.addSymbol(i, "MARKET BENCH");
         state.ResumeTiming();

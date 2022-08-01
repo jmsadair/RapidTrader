@@ -1,7 +1,7 @@
 #ifndef RAPID_TRADER_EVENT_HANDLER_H
 #define RAPID_TRADER_EVENT_HANDLER_H
-#include <thread>
-#include "concurrent/messaging/receiver.h"
+#include "market/market.h"
+#include "market/concurrent_market.h"
 #include "event_handler/event.h"
 
 class EventHandler
@@ -11,38 +11,9 @@ public:
     EventHandler(EventHandler &&) = delete;
     EventHandler &operator=(const EventHandler &) = delete;
     EventHandler &operator=(EventHandler &&) = delete;
+    EventHandler() = default;
+    virtual ~EventHandler() = default;
 
-    /**
-     * A constructor for the event handler. Spawns a thread to start
-     * handling events.
-     */
-    EventHandler();
-
-    /**
-     * A destructor for the event handler. Joins the event handling
-     * thread if it is joinable.
-     */
-    virtual ~EventHandler();
-
-    /**
-     * Spawns a thread to handle events, require that the event
-     * handler is not already running.
-     */
-    void start();
-
-    /**
-     * Joins the thread handling events, require that the event handler
-     * is already running.
-     */
-    void stop();
-
-    /**
-     * @return a sender that can send messages to thread
-     *         handling events.
-     */
-    Concurrent::Messaging::Sender getSender();
-
-protected:
     // LCOV_EXCL_START
     /**
      * Handles a event that an order was added.
@@ -79,18 +50,5 @@ protected:
      */
     virtual void handleSymbolAdded(const SymbolAdded &event) {}
     // LCOV_EXCL_STOP
-
-private:
-    /**
-     * Processes incoming events.
-     */
-    void handleEvents();
-
-    // Receives incoming messages.
-    Concurrent::Messaging::Receiver message_receiver;
-    // The thread that the events are processed on.
-    std::thread handling_thread;
-    // Indicates whether a thread is currently handling events.
-    bool is_running;
 };
 #endif // RAPID_TRADER_EVENT_HANDLER_H

@@ -16,12 +16,10 @@ TEST_F(MarketTest, ReplaceOrderShouldWork1)
     uint64_t new_order_price = 1200;
     market.replaceOrder(symbol_id, id1, new_order_id, new_order_price);
 
-    event_handler.stop();
-
     checkOrderAdded(id1);
     checkOrderAdded(new_order_id);
     checkOrderDeleted(id1, 0, 0, quantity1);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }
 
 /**
@@ -54,8 +52,6 @@ TEST_F(MarketTest, ReplaceOrderShouldWork2)
     uint64_t new_order_price = 900;
     market.replaceOrder(symbol_id, id3, new_order_id, new_order_price);
 
-    event_handler.stop();
-
     checkOrderAdded(id1);
     checkOrderAdded(id2);
     checkOrderAdded(id3);
@@ -67,5 +63,5 @@ TEST_F(MarketTest, ReplaceOrderShouldWork2)
     checkOrderDeleted(id3, 0, 0, quantity3);
     checkOrderDeleted(id1, price1, quantity1, 0);
     checkOrderDeleted(new_order_id, price2, quantity3 - quantity1, 0);
-    ASSERT_TRUE(event_handler.empty());
+    ASSERT_TRUE(market_debugger.empty());
 }

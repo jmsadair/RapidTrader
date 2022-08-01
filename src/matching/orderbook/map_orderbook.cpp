@@ -4,9 +4,9 @@
 #include "event_handler/event.h"
 #include "log.h"
 
-MapOrderBook::MapOrderBook(uint32_t symbol_id_, Concurrent::Messaging::Sender &outgoing_messages_)
+MapOrderBook::MapOrderBook(uint32_t symbol_id_, EventHandler &event_handler_)
     : symbol_id(symbol_id_)
-    , outgoing_messages(outgoing_messages_)
+    , event_handler(event_handler_)
     , last_traded_price(0)
     , trailing_bid_price(0)
     , trailing_ask_price(std::numeric_limits<uint64_t>::max())
@@ -14,7 +14,7 @@ MapOrderBook::MapOrderBook(uint32_t symbol_id_, Concurrent::Messaging::Sender &o
 
 void MapOrderBook::addOrder(Order order)
 {
-    outgoing_messages.send(OrderAdded{order});
+    event_handler.handleOrderAdded(OrderAdded{order});
     switch (order.getType())
     {
     case OrderType::Limit:
@@ -42,7 +42,7 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity, uint64_t p
     uint64_t executing_quantity = std::min(quantity, executing_order.getOpenQuantity());
     executing_order.execute(price, executing_quantity);
     last_traded_price = price;
-    outgoing_messages.send(ExecutedOrder{executing_order});
+    event_handler.handleOrderExecuted(ExecutedOrder{executing_order});
     executing_level.reduceVolume(executing_order.getLastExecutedQuantity());
     if (executing_order.isFilled())
         deleteOrder(order_id, true);
@@ -60,7 +60,7 @@ void MapOrderBook::executeOrder(uint64_t order_id, uint64_t quantity)
     uint64_t executing_price = executing_order.getPrice();
     executing_order.execute(executing_price, executing_quantity);
     last_traded_price = executing_price;
-    outgoing_messages.send(ExecutedOrder{executing_order});
+    event_handler.handleOrderExecuted(ExecutedOrder{executing_order});
     executing_level.reduceVolume(executing_order.getLastExecutedQuantity());
     if (executing_order.isFilled())
         deleteOrder(order_id, true);
@@ -75,7 +75,7 @@ void MapOrderBook::cancelOrder(uint64_t order_id, uint64_t quantity)
     Order &cancelling_order = orders_it->second.order;
     uint64_t pre_cancellation_quantity = cancelling_order.getOpenQuantity();
     cancelling_order.setQuantity(quantity);
-    outgoing_messages.send(OrderUpdated{cancelling_order});
+    event_handler.handleOrderUpdated(OrderUpdated{cancelling_order});
     cancelling_level.reduceVolume(pre_cancellation_quantity - cancelling_order.getOpenQuantity());
     if (cancelling_order.isFilled())
         deleteOrder(order_id, true);
@@ -96,7 +96,7 @@ void MapOrderBook::deleteOrder(uint64_t order_id, bool notification)
     auto &levels_it = orders_it->second.level_it;
     Order &deleting_order = orders_it->second.order;
     if (notification)
-        outgoing_messages.send(OrderDeleted{orders_it->second.order});
+        event_handler.handleOrderDeleted(OrderDeleted{orders_it->second.order});
     levels_it->second.deleteOrder(deleting_order);
     if (levels_it->second.empty())
     {
@@ -139,7 +139,7 @@ void MapOrderBook::addLimitOrder(Order &order)
     if (!order.isFilled() && !order.isIoc() && !order.isFok())
         insertLimitOrder(order);
     else
-        outgoing_messages.send(OrderDeleted{order});
+        event_handler.handleOrderDeleted(OrderDeleted{order});
 }
 
 void MapOrderBook::insertLimitOrder(const Order &order)
@@ -147,18 +147,16 @@ void MapOrderBook::insertLimitOrder(const Order &order)
     if (order.isAsk())
     {
         auto level_it = ask_levels
-                            .emplace(std::piecewise_construct, std::make_tuple(order.getPrice()),
-                                std::make_tuple(order.getPrice(), LevelSide::Ask, symbol_id))
-                            .first;
+                            .emplace_hint(ask_levels.begin(), std::piecewise_construct, std::make_tuple(order.getPrice()),
+                                std::make_tuple(order.getPrice(), LevelSide::Ask, symbol_id));
         auto [orders_it, success] = orders.emplace(order.getOrderID(), OrderWrapper{order, level_it});
         level_it->second.addOrder(orders_it->second.order);
     }
     else
     {
         auto level_it = bid_levels
-                            .emplace(std::piecewise_construct, std::make_tuple(order.getPrice()),
-                                std::make_tuple(order.getPrice(), LevelSide::Bid, symbol_id))
-                            .first;
+                            .emplace_hint(bid_levels.end(), std::piecewise_construct, std::make_tuple(order.getPrice()),
+                                std::make_tuple(order.getPrice(), LevelSide::Bid, symbol_id));
         auto [orders_it, success] = orders.emplace(order.getOrderID(), OrderWrapper{order, level_it});
         level_it->second.addOrder(orders_it->second.order);
     }
@@ -168,7 +166,7 @@ void MapOrderBook::addMarketOrder(Order &order)
 {
     order.setPrice(order.isAsk() ? 0 : std::numeric_limits<uint64_t>::max());
     match(order);
-    outgoing_messages.send(OrderDeleted{order});
+    event_handler.handleOrderDeleted(OrderDeleted{order});
 }
 
 void MapOrderBook::addStopOrder(Order &order)
@@ -183,7 +181,7 @@ void MapOrderBook::addStopOrder(Order &order)
         order.setType((order.isStop() || order.isTrailingStop()) ? OrderType::Market : OrderType::Limit);
         order.setStopPrice(0);
         order.setTrailAmount(0);
-        outgoing_messages.send(OrderUpdated{order});
+        event_handler.handleOrderUpdated(OrderUpdated{order});
         order.isMarket() ? addMarketOrder(order) : addLimitOrder(order);
         return;
     }
@@ -333,13 +331,13 @@ void MapOrderBook::activateStopOrder(Order order)
     if (order.isStop() || order.isTrailingStop())
     {
         order.setType(OrderType::Market);
-        outgoing_messages.send(OrderUpdated{order});
+        event_handler.handleOrderUpdated(OrderUpdated{order});
         addMarketOrder(order);
     }
     else
     {
         order.setType(OrderType::Limit);
-        outgoing_messages.send(OrderUpdated{order});
+        event_handler.handleOrderUpdated(OrderUpdated{order});
         addLimitOrder(order);
     }
 }
@@ -364,7 +362,7 @@ void MapOrderBook::updateBidStopOrders()
             orders.find(stop_order.getOrderID())->second.level_it = new_trailing_levels_it;
             trailing_levels_it->second.popFront();
             new_trailing_levels_it->second.addOrder(stop_order);
-            outgoing_messages.send(OrderUpdated{stop_order});
+            event_handler.handleOrderUpdated(OrderUpdated{stop_order});
         }
         ++trailing_levels_it;
     }
@@ -392,7 +390,7 @@ void MapOrderBook::updateAskStopOrders()
             orders.find(stop_order.getOrderID())->second.level_it = new_trailing_levels_it;
             trailing_levels_it->second.popFront();
             new_trailing_levels_it->second.addOrder(stop_order);
-            outgoing_messages.send(OrderUpdated{stop_order});
+            event_handler.handleOrderUpdated(OrderUpdated{stop_order});
         }
         ++trailing_levels_it;
     }
@@ -445,8 +443,8 @@ void MapOrderBook::executeOrders(Order &ask, Order &bid, uint64_t executing_pric
     uint64_t matched_quantity = std::min(ask.getOpenQuantity(), bid.getOpenQuantity());
     bid.execute(executing_price, matched_quantity);
     ask.execute(executing_price, matched_quantity);
-    outgoing_messages.send(ExecutedOrder{bid});
-    outgoing_messages.send(ExecutedOrder{ask});
+    event_handler.handleOrderExecuted(ExecutedOrder{bid});
+    event_handler.handleOrderExecuted(ExecutedOrder{ask});
     last_traded_price = executing_price;
 }
 

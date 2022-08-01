@@ -1,14 +1,19 @@
 #include "market/market.h"
+
+#include <utility>
 #include "map_orderbook.h"
 
-OrderBookHandler::OrderBookHandler(Concurrent::Messaging::Sender outgoing_messages_)
-    : outgoing_messages(outgoing_messages_)
+OrderBookHandler::OrderBookHandler(std::unique_ptr<EventHandler> event_handler_)
+    : event_handler(std::move(event_handler_))
 {}
 
-void OrderBookHandler::addOrderBook(uint32_t symbol_id)
+void OrderBookHandler::addOrderBook(uint32_t symbol_id, std::string symbol_name)
 {
     if (id_to_book.find(symbol_id) == id_to_book.end())
-        id_to_book.insert({symbol_id, std::make_unique<MapOrderBook>(symbol_id, outgoing_messages)});
+    {
+        id_to_book.insert({symbol_id, std::make_unique<MapOrderBook>(symbol_id, *event_handler)});
+        event_handler->handleSymbolAdded(SymbolAdded{symbol_id, std::move(symbol_name)});
+    }
 }
 
 void OrderBookHandler::deleteOrderBook(uint32_t symbol_id)
@@ -82,19 +87,16 @@ std::string OrderBookHandler::toString()
 }
 
 namespace RapidTrader::Matching {
-Market::Market(Concurrent::Messaging::Sender outgoing_messages_)
-    : outgoing_messages(outgoing_messages_)
-    , orderbook_handler(std::make_unique<OrderBookHandler>(outgoing_messages_))
+Market::Market(std::unique_ptr<EventHandler> event_handler)
+    : orderbook_handler(std::make_unique<OrderBookHandler>(std::move(event_handler)))
 {}
 
 void Market::addSymbol(uint32_t symbol_id, const std::string &symbol_name)
 {
     if (id_to_symbol.find(symbol_id) == id_to_symbol.end())
     {
-        outgoing_messages.send(SymbolAdded{symbol_id, symbol_name});
         id_to_symbol.insert({symbol_id, std::make_unique<Symbol>(symbol_id, symbol_name)});
-        orderbook_handler->addOrderBook(symbol_id);
-        return;
+        orderbook_handler->addOrderBook(symbol_id, symbol_name);
     }
 }
 

@@ -35,7 +35,7 @@ public:
      * @param symbol_id_ the symbol ID that will be associated with the book.
      * @param event_handler_ handles updates from the book.
      */
-    MapOrderBook(uint32_t symbol_id_, Concurrent::Messaging::Sender &outgoing_messages_);
+    MapOrderBook(uint32_t symbol_id_, EventHandler &event_handler_);
 
     /**
      * @inheritdoc
@@ -328,8 +328,8 @@ private:
     // Maps prices to trailing stop levels.
     std::map<uint64_t, Level> trailing_stop_ask_levels;
     std::map<uint64_t, Level> trailing_stop_bid_levels;
-    // Sends updates to the event handler.
-    Concurrent::Messaging::Sender &outgoing_messages;
+    // Handles any trade events.
+    EventHandler &event_handler;
     // The current price of the symbol - based off the price that the
     // symbol was last traded at. Initially zero.
     uint64_t last_traded_price;

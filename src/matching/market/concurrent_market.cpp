@@ -2,25 +2,23 @@
 #include "map_orderbook.h"
 
 namespace RapidTrader::Matching {
-ConcurrentMarket::ConcurrentMarket(Concurrent::Messaging::Sender outgoing_messenger_, uint8_t num_threads)
-    : outgoing_messenger(outgoing_messenger_)
-    , thread_pool(num_threads)
+ConcurrentMarket::ConcurrentMarket(std::vector<std::unique_ptr<EventHandler>> &event_handlers, uint8_t num_threads)
+    : thread_pool(num_threads)
     , symbol_submission_index(0)
 {
     orderbook_handlers.reserve(num_threads);
     for (uint32_t i = 0; i < num_threads; ++i)
-        orderbook_handlers.push_back(std::make_unique<OrderBookHandler>(outgoing_messenger));
+        orderbook_handlers.push_back(std::make_unique<OrderBookHandler>(std::move(event_handlers[i])));
 }
 
 void ConcurrentMarket::addSymbol(uint32_t symbol_id, const std::string &symbol_name)
 {
     if (id_to_symbol.find(symbol_id) == id_to_symbol.end())
     {
-        outgoing_messenger.send(SymbolAdded{symbol_id, symbol_name});
         id_to_symbol.insert({symbol_id, std::make_unique<Symbol>(symbol_id, symbol_name)});
         id_to_submission_index.insert({symbol_id, symbol_submission_index});
         OrderBookHandler *orderbook_handler = orderbook_handlers[symbol_submission_index].get();
-        thread_pool.submitTask([=] { orderbook_handler->addOrderBook(symbol_id); }, symbol_submission_index);
+        thread_pool.submitTask([=] { orderbook_handler->addOrderBook(symbol_id, symbol_name); }, symbol_submission_index);
         updateSymbolSubmissionIndex();
     }
 }
