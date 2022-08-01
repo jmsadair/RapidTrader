@@ -8,7 +8,6 @@ class MarketTest : public ::testing::Test
 {
 
 protected:
-
     void SetUp() override
     {
         market.addSymbol(symbol_id, symbol_name);

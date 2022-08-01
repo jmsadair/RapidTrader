@@ -32,7 +32,7 @@ static void BM_Market(benchmark::State &state)
 {
     const uint64_t num_orders = 1000000;
     const uint64_t num_symbols = 2500;
-    const uint64_t  num_threads = 1;
+    const uint64_t num_threads = 1;
     std::vector<Order> orders;
     orders.reserve(num_orders);
     generateOrders(orders, num_orders, num_symbols);
