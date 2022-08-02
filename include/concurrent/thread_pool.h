@@ -4,8 +4,9 @@
 #include <vector>
 #include <atomic>
 #include <cassert>
-#include "concurrent/thread_pool/thread_joiner.h"
-#include "concurrent/thread_pool/queue.h"
+#include <future>
+#include "concurrent/thread_joiner.h"
+#include "concurrent/queue.h"
 
 namespace Concurrent {
 class ThreadPool
@@ -23,9 +24,11 @@ public:
         , thread_joiner(threads)
     {
         assert(num_threads > 0 && "Thread pool requires at least one thread!");
+
         thread_queues.reserve(num_threads);
         threads.reserve(num_threads);
-        // Try to spawn the threads.
+
+        // Try to spawn the threads for the pool.
         try
         {
             for (uint32_t i = 0; i < num_threads; ++i)
@@ -42,17 +45,60 @@ public:
     }
 
     /**
-     * Submit a new task to the thread pool.
+     * Submit a void returning task to the thread pool for execution with
+     * zero or more arguments.
      *
-     * @tparam F the type of the function that is being submitted.
-     * @param f the task being submitted.
-     * @param queue_id the id of the queue that the task will be submitted to,
-     *                 require that 0 <= queue_id < num_threads.
+     * @tparam F a callable type.
+     * @tparam Args the arguments to the callable type.
+     * @param queue_index the index of the queue that the task will be submitted to,
+     *                    require that 0 <= queue_index < number of workers.
+     * @param f the function that will submitted to thread pool for execution.
+     * @param args zero or more arguments for the function that will be executed.
      */
-    template<typename F>
-    void submitTask(F f, uint32_t queue_id)
+    template<typename F, typename...Args>
+    void submitTask(uint32_t queue_index, F&& f, Args&&...args)
     {
-        thread_queues[queue_id]->push(std::function<void()>(f));
+        std::function<void()> task = std::bind(f, args...);
+        thread_queues[queue_index]->push(task);
+    }
+
+    /**
+     * Submits a void or non-void returning task that can be waited on to the thread pool
+     * for execution with zero or more arguments.
+     *
+     * @tparam F a callable type
+     * @tparam Args the arguments to the callable type.
+     * @tparam R the return type of the callable type.
+     * @param queue_index the index of the queue that the task will be submitted to, require that
+     *                    0 <= queue_index < number of workers.
+     * @param f the function that will be executed.
+     * @param args zero or more arguments for the function that will be executed.
+     * @return a future containing the return value of the executed function.
+     */
+    template<typename F, typename...Args, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
+    std::future<R> submitWaitableTask(uint32_t queue_index, F&& f, Args&&...args)
+    {
+        std::function<R()> task = std::bind(f, args...);
+        auto task_promise = std::make_shared<std::promise<R>>(std::promise<R>(f));
+        thread_queues[queue_index]->push([=]{
+            try
+            {
+                if constexpr (std::is_void_v<R>)
+                {
+                    std::invoke(task);
+                    task_promise->set_value();
+                }
+                else
+                {
+                    R task_result = std::invoke(task);
+                    task_promise->set_value(task_result);
+                }
+            }
+            catch(...)
+            {
+                task_promise->set_value(std::current_exception());
+            }
+        });
     }
 
     /**
@@ -80,10 +126,13 @@ private:
      */
     void workerThread(uint32_t queue_id)
     {
-        assert(queue_id < thread_queues.size() && "Invalid queue ID!");
-        while (running)
+        assert(queue_id < thread_queues.size() && "Invalid queue index!");
+        // Keep processing tasks until the running flag is set to false and the queue is empty.
+        // Otherwise, there may be unfinished tasks left in the queue.
+        while (running || !thread_queues[queue_id]->empty())
         {
             std::function<void()> task;
+            bool empty = false;
             if (thread_queues[queue_id]->tryPop(task))
                 task();
             else

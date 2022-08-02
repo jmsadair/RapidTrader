@@ -4,7 +4,7 @@
 #include <fstream>
 #include <memory>
 #include "utils/robin_hood.h"
-#include "concurrent/thread_pool/thread_pool.h"
+#include "concurrent/thread_pool.h"
 #include "order.h"
 #include "orderbook.h"
 #include "symbol.h"

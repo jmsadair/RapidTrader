@@ -18,7 +18,7 @@ void ConcurrentMarket::addSymbol(uint32_t symbol_id, const std::string &symbol_n
         id_to_symbol.insert({symbol_id, std::make_unique<Symbol>(symbol_id, symbol_name)});
         id_to_submission_index.insert({symbol_id, symbol_submission_index});
         OrderBookHandler *orderbook_handler = orderbook_handlers[symbol_submission_index].get();
-        thread_pool.submitTask([=] { orderbook_handler->addOrderBook(symbol_id, symbol_name); }, symbol_submission_index);
+        thread_pool.submitTask(symbol_submission_index, [=]{ orderbook_handler->addOrderBook(symbol_id, symbol_name); });
         updateSymbolSubmissionIndex();
     }
 }
@@ -31,7 +31,7 @@ void ConcurrentMarket::deleteSymbol(uint32_t symbol_id)
         id_to_symbol.erase(symbol_id);
         id_to_submission_index.erase(symbol_id);
         OrderBookHandler *orderbook_handler = orderbook_handlers[symbol_submission_index].get();
-        thread_pool.submitTask([=] { orderbook_handler->deleteOrderBook(symbol_id); }, symbol_submission_index);
+        thread_pool.submitTask(submission_index, [=]{ orderbook_handler->deleteOrderBook(symbol_id); });
     }
 }
 
@@ -39,42 +39,42 @@ void ConcurrentMarket::addOrder(const Order &order)
 {
     uint32_t submission_index = getSubmissionIndex(order.getSymbolID());
     OrderBookHandler *orderbook_handler = orderbook_handlers[submission_index].get();
-    thread_pool.submitTask([=] { orderbook_handler->addOrder(order); }, submission_index);
+    thread_pool.submitTask(submission_index, [=]{ orderbook_handler->addOrder(order); });
 }
 
 void ConcurrentMarket::deleteOrder(uint32_t symbol_id, uint64_t order_id)
 {
     uint32_t submission_index = getSubmissionIndex(symbol_id);
     OrderBookHandler *orderbook_handler = orderbook_handlers[submission_index].get();
-    thread_pool.submitTask([=] { orderbook_handler->deleteOrder(symbol_id, order_id); }, submission_index);
+    thread_pool.submitTask(submission_index, [=]{ orderbook_handler->deleteOrder(symbol_id, order_id); });
 }
 
 void ConcurrentMarket::cancelOrder(uint32_t symbol_id, uint64_t order_id, uint64_t cancelled_quantity)
 {
     uint32_t submission_index = getSubmissionIndex(symbol_id);
     OrderBookHandler *orderbook_handler = orderbook_handlers[submission_index].get();
-    thread_pool.submitTask([=] { orderbook_handler->cancelOrder(symbol_id, order_id, cancelled_quantity); }, submission_index);
+    thread_pool.submitTask(submission_index, [=]{ orderbook_handler->cancelOrder(symbol_id, order_id, cancelled_quantity); });
 }
 
 void ConcurrentMarket::replaceOrder(uint32_t symbol_id, uint64_t order_id, uint64_t new_order_id, uint64_t new_price)
 {
     uint32_t submission_index = getSubmissionIndex(symbol_id);
     OrderBookHandler *orderbook_handler = orderbook_handlers[submission_index].get();
-    thread_pool.submitTask([=] { orderbook_handler->replaceOrder(symbol_id, order_id, new_order_id, new_price); }, submission_index);
+    thread_pool.submitTask(submission_index, [=]{orderbook_handler->replaceOrder(symbol_id, order_id, new_order_id, new_price); });
 }
 
 void ConcurrentMarket::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity, uint64_t price)
 {
     uint32_t submission_index = getSubmissionIndex(symbol_id);
     OrderBookHandler *orderbook_handler = orderbook_handlers[submission_index].get();
-    thread_pool.submitTask([=] { orderbook_handler->executeOrder(symbol_id, order_id, quantity, price); }, submission_index);
+    thread_pool.submitTask(submission_index, [=]{ orderbook_handler->executeOrder(symbol_id, order_id, quantity, price); });
 }
 
 void ConcurrentMarket::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity)
 {
     uint32_t submission_index = getSubmissionIndex(symbol_id);
     OrderBookHandler *orderbook_handler = orderbook_handlers[submission_index].get();
-    thread_pool.submitTask([=] { orderbook_handler->executeOrder(symbol_id, order_id, quantity); }, submission_index);
+    thread_pool.submitTask(submission_index, [=]{ orderbook_handler->executeOrder(symbol_id, order_id, quantity); });
 }
 
 uint32_t ConcurrentMarket::getSubmissionIndex(uint32_t symbol_id)

@@ -7,11 +7,10 @@
 #include "order.h"
 #include "orderbook.h"
 #include "symbol.h"
-#include "sender.h"
 
 class EventHandler;
 
-// An object for the shared logic between market and concurrent market.
+// A struct for the shared logic between market and concurrent market.
 // Necessary to prevent race condition in concurrent market.
 struct OrderBookHandler
 {
