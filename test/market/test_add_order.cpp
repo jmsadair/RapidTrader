@@ -35,8 +35,6 @@ TEST_F(MarketTest, AddGtcLimitOrder2)
     Order order2 = Order::limitAskOrder(id2, symbol_id, price2, quantity2, tof2);
     market.addOrder(order2);
 
-    
-
     checkOrderAdded(id1);
     checkOrderAdded(id2);
     checkExecutedOrder(id1, price1, quantity1, 0);
@@ -71,8 +69,6 @@ TEST_F(MarketTest, AddIocLimitOrder1)
     Order order3 = Order::limitBidOrder(id3, symbol_id, price3, quantity3, tof3);
     market.addOrder(order3);
 
-    
-
     checkOrderAdded(id1);
     checkOrderAdded(id2);
     checkOrderAdded(id3);
@@ -104,8 +100,6 @@ TEST_F(MarketTest, AddIocLimitOrder2)
     uint64_t id2 = 2;
     Order order2 = Order::limitAskOrder(id2, symbol_id, price2, quantity2, tof2);
     market.addOrder(order2);
-
-    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -141,8 +135,6 @@ TEST_F(MarketTest, AddFokLimitOrder1)
     uint64_t id3 = 3;
     Order order3 = Order::limitBidOrder(id3, symbol_id, price3, quantity3, tof3);
     market.addOrder(order3);
-
-    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -182,8 +174,6 @@ TEST_F(MarketTest, AddFokLimitOrder2)
     Order order3 = Order::limitAskOrder(id3, symbol_id, price3, quantity3, tof3);
     market.addOrder(order3);
 
-    
-
     checkOrderAdded(id1);
     checkOrderAdded(id2);
     checkOrderAdded(id3);
@@ -216,8 +206,6 @@ TEST_F(MarketTest, AddIocMarketOrder1)
     Order order3 = Order::marketAskOrder(id3, symbol_id, quantity3, tof3);
     market.addOrder(order3);
 
-    
-
     checkOrderAdded(id1);
     checkOrderAdded(id2);
     checkOrderAdded(id3);
@@ -248,8 +236,6 @@ TEST_F(MarketTest, AddIocMarketOrder2)
     uint64_t id2 = 2;
     Order order2 = Order::marketBidOrder(id2, symbol_id, quantity2, tof2);
     market.addOrder(order2);
-
-    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -284,8 +270,6 @@ TEST_F(MarketTest, AddIocStopOrder1)
     uint64_t id3 = 3;
     Order order3 = Order::stopBidOrder(id3, symbol_id, price3, quantity3, tof3);
     market.addOrder(order3);
-
-    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -343,8 +327,6 @@ TEST_F(MarketTest, AddIocStopOrder2)
     uint64_t id5 = 5;
     Order order5 = Order::limitAskOrder(id5, symbol_id, price5, quantity5, tof5);
     market.addOrder(order5);
-
-    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -425,8 +407,6 @@ TEST_F(MarketTest, AddIocStopOrder3)
     Order order7 = Order::limitAskOrder(id7, symbol_id, price7, quantity7, tof7);
     market.addOrder(order7);
 
-    
-
     checkOrderAdded(id1);
     checkOrderAdded(id2);
     checkOrderAdded(id3);
@@ -483,8 +463,6 @@ TEST_F(MarketTest, AddGtcStopLimitOrder1)
     Order order3 = Order::stopLimitBidOrder(id3, symbol_id, price3, stop_price, quantity3, tof3);
     market.addOrder(order3);
 
-    
-
     checkOrderAdded(id1);
     checkOrderAdded(id2);
     checkOrderAdded(id3);
@@ -528,8 +506,6 @@ TEST_F(MarketTest, AddGtcStopLimitOrder2)
     uint64_t id4 = 1;
     Order order4 = Order::limitAskOrder(id4, symbol_id, price4, quantity4, tof4);
     market.addOrder(order4);
-
-    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -590,8 +566,6 @@ TEST_F(MarketTest, AddIocTrailingStopOrder1)
     uint64_t id5 = 5;
     Order order5 = Order::limitBidOrder(id5, symbol_id, price5, quantity5, tof5);
     market.addOrder(order5);
-
-    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -697,8 +671,6 @@ TEST_F(MarketTest, AddIocTrailingStopOrder2)
     uint64_t id9 = 9;
     Order order9 = Order::limitBidOrder(id9, symbol_id, price9, quantity9, tof9);
     market.addOrder(order9);
-
-    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);
@@ -816,8 +788,6 @@ TEST_F(MarketTest, AddGtcTrailingStopLimitOrder1)
     uint64_t id9 = 9;
     Order order9 = Order::limitBidOrder(id9, symbol_id, price9, quantity9, tof9);
     market.addOrder(order9);
-
-    
 
     checkOrderAdded(id1);
     checkOrderAdded(id2);

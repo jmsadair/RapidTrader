@@ -14,8 +14,6 @@ TEST_F(MarketTest, DeleteOrderShouldWork1)
 
     market.deleteOrder(symbol_id, id1);
 
-    
-
     checkOrderAdded(id1);
     checkOrderDeleted(id1, 0, 0, quantity1);
     ASSERT_TRUE(market_debugger.empty());

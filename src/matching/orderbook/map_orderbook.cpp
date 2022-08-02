@@ -146,17 +146,15 @@ void MapOrderBook::insertLimitOrder(const Order &order)
 {
     if (order.isAsk())
     {
-        auto level_it = ask_levels
-                            .emplace_hint(ask_levels.begin(), std::piecewise_construct, std::make_tuple(order.getPrice()),
-                                std::make_tuple(order.getPrice(), LevelSide::Ask, symbol_id));
+        auto level_it = ask_levels.emplace_hint(ask_levels.begin(), std::piecewise_construct, std::make_tuple(order.getPrice()),
+            std::make_tuple(order.getPrice(), LevelSide::Ask, symbol_id));
         auto [orders_it, success] = orders.emplace(order.getOrderID(), OrderWrapper{order, level_it});
         level_it->second.addOrder(orders_it->second.order);
     }
     else
     {
-        auto level_it = bid_levels
-                            .emplace_hint(bid_levels.end(), std::piecewise_construct, std::make_tuple(order.getPrice()),
-                                std::make_tuple(order.getPrice(), LevelSide::Bid, symbol_id));
+        auto level_it = bid_levels.emplace_hint(bid_levels.end(), std::piecewise_construct, std::make_tuple(order.getPrice()),
+            std::make_tuple(order.getPrice(), LevelSide::Bid, symbol_id));
         auto [orders_it, success] = orders.emplace(order.getOrderID(), OrderWrapper{order, level_it});
         level_it->second.addOrder(orders_it->second.order);
     }

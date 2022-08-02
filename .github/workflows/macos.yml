@@ -1,4 +1,4 @@
-name: MacOS(clang)
+name: macOS(clang)
 
 on:
   push:

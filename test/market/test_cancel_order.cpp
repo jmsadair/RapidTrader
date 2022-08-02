@@ -16,8 +16,6 @@ TEST_F(MarketTest, CancelOrderShouldWork1)
 
     market.cancelOrder(symbol_id, id1, cancel_quantity);
 
-    
-
     checkOrderAdded(id1);
     checkOrderUpdated(id1, 0, 0, quantity1 - cancel_quantity);
     ASSERT_TRUE(market_debugger.empty());
@@ -38,8 +36,6 @@ TEST_F(MarketTest, CancelOrderShouldWork2)
     uint64_t cancel_quantity = 200;
 
     market.cancelOrder(symbol_id, id1, cancel_quantity);
-
-    
 
     checkOrderAdded(id1);
     checkOrderUpdated(id1, 0, 0, 0);

@@ -22,7 +22,7 @@ class DebugEventHandler : public EventHandler
 
 public:
     explicit DebugEventHandler(MarketEventDebugger &market_debugger_)
-            : market_debugger(market_debugger_)
+        : market_debugger(market_debugger_)
     {}
 
 protected:
@@ -46,6 +46,7 @@ protected:
     {
         market_debugger.add_symbol_events.push(notification);
     }
+
 private:
     MarketEventDebugger &market_debugger;
 };
