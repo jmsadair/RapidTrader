@@ -55,8 +55,8 @@ public:
      * @param f the function that will submitted to thread pool for execution.
      * @param args zero or more arguments for the function that will be executed.
      */
-    template<typename F, typename...Args>
-    void submitTask(uint32_t queue_index, F&& f, Args&&...args)
+    template<typename F, typename... Args>
+    void submitTask(uint32_t queue_index, F &&f, Args &&...args)
     {
         std::function<void()> task = std::bind(f, args...);
         thread_queues[queue_index]->push(task);
@@ -75,12 +75,12 @@ public:
      * @param args zero or more arguments for the function that will be executed.
      * @return a future containing the return value of the executed function.
      */
-    template<typename F, typename...Args, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
-    std::future<R> submitWaitableTask(uint32_t queue_index, F&& f, Args&&...args)
+    template<typename F, typename... Args, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
+    std::future<R> submitWaitableTask(uint32_t queue_index, F &&f, Args &&...args)
     {
         std::function<R()> task = std::bind(f, args...);
         auto task_promise = std::make_shared<std::promise<R>>(std::promise<R>(f));
-        thread_queues[queue_index]->push([=]{
+        thread_queues[queue_index]->push([=] {
             try
             {
                 if constexpr (std::is_void_v<R>)
@@ -94,7 +94,7 @@ public:
                     task_promise->set_value(task_result);
                 }
             }
-            catch(...)
+            catch (...)
             {
                 task_promise->set_value(std::current_exception());
             }
