@@ -3,7 +3,7 @@
 #include "market/market.h"
 
 /**
-* Tests deleting a symbol that exist in the market.
+ * Tests deleting a symbol that exist in the market.
  */
 TEST(DeleteSymbolTest, DeleteSymbolTest1)
 {

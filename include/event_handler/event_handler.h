@@ -16,6 +16,7 @@ public:
 
     friend class OrderBookHandler;
     friend class MapOrderBook;
+
 protected:
     // LCOV_EXCL_START
     /**
