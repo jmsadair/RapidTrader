@@ -83,11 +83,6 @@ public:
         return orders.find(order_id)->second.order;
     }
 
-    [[nodiscard]] uint32_t getSymbolID() const
-    {
-        return symbol_id;
-    }
-
     /**
      * @inheritdoc
      */
@@ -99,15 +94,44 @@ public:
     /**
      * @inheritdoc
      */
-    [[nodiscard]] std::string toString() const override;
+    [[nodiscard]] uint32_t getSymbolID() const override
+    {
+        return symbol_id;
+    }
 
     /**
-     * Writes the string representation of the the orderbook to
-     * a file at the provided path. Creates a new file.
-     *
-     * @param path the path to the file that will be written to.
+     * @inheritdoc
      */
-    void dumpBook(const std::string &path) const;
+    [[nodiscard]] uint64_t bestBid() const override
+    {
+        return bid_levels.empty() ? 0 : bid_levels.rbegin()->first;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    [[nodiscard]] uint64_t bestAsk() const override
+    {
+        return ask_levels.empty() ? std::numeric_limits<uint64_t>::max() : ask_levels.begin()->first;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    [[nodiscard]] uint64_t lastTradedPrice() const override
+    {
+        return last_traded_price;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    void dumpBook(const std::string &path) const override;
+
+    /**
+     * @inheritdoc
+     */
+    [[nodiscard]] std::string toString() const override;
 
     friend std::ostream &operator<<(std::ostream &os, const MapOrderBook &book);
 

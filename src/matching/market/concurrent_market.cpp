@@ -6,6 +6,7 @@ ConcurrentMarket::ConcurrentMarket(std::vector<std::unique_ptr<EventHandler>> &e
     : thread_pool(num_threads)
     , symbol_submission_index(0)
 {
+    assert(event_handlers.size() == num_threads && "The number of event handlers must be equal to the number of threads!");
     orderbook_handlers.reserve(num_threads);
     for (uint32_t i = 0; i < num_threads; ++i)
         orderbook_handlers.push_back(std::make_unique<OrderBookHandler>(std::move(event_handlers[i])));
@@ -25,13 +26,14 @@ void ConcurrentMarket::addSymbol(uint32_t symbol_id, const std::string &symbol_n
 
 void ConcurrentMarket::deleteSymbol(uint32_t symbol_id)
 {
-    if (id_to_symbol.find(symbol_id) != id_to_symbol.end())
+    auto it = id_to_symbol.find(symbol_id);
+    if (it != id_to_symbol.end())
     {
         uint32_t submission_index = getSubmissionIndex(symbol_id);
+        OrderBookHandler *orderbook_handler = orderbook_handlers[symbol_submission_index].get();
+        thread_pool.submitTask(submission_index, [=]{ orderbook_handler->deleteOrderBook(symbol_id, it->second->name); });
         id_to_symbol.erase(symbol_id);
         id_to_submission_index.erase(symbol_id);
-        OrderBookHandler *orderbook_handler = orderbook_handlers[symbol_submission_index].get();
-        thread_pool.submitTask(submission_index, [=]{ orderbook_handler->deleteOrderBook(symbol_id); });
     }
 }
 
@@ -87,4 +89,5 @@ void ConcurrentMarket::updateSymbolSubmissionIndex()
 {
     symbol_submission_index = (symbol_submission_index + 1) % orderbook_handlers.size();
 }
+
 } // namespace RapidTrader::Matching

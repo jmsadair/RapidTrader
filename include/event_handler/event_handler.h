@@ -14,41 +14,51 @@ public:
     EventHandler() = default;
     virtual ~EventHandler() = default;
 
+    friend class OrderBookHandler;
+    friend class MapOrderBook;
+protected:
     // LCOV_EXCL_START
     /**
-     * Handles a event that an order was added.
+     * Handles an event where an order was added.
      *
-     * @param event a event that an order was added.
+     * @param event an event where an order was added.
      */
     virtual void handleOrderAdded(const OrderAdded &event) {}
 
     /**
-     * Handles a event that an order was deleted.
+     * Handles an event where an order was deleted.
      *
-     * @param event a event that an order was deleted.
+     * @param event an event where an order was deleted.
      */
     virtual void handleOrderDeleted(const OrderDeleted &event) {}
 
     /**
-     * Handles a event that an order was updated.
+     * Handles a event where an order was updated.
      *
-     * @param event a event that an order was updated.
+     * @param event an event where an order was updated.
      */
     virtual void handleOrderUpdated(const OrderUpdated &event) {}
 
     /**
-     * Handles a event that an order was executed.
+     * Handles an event where an order was executed.
      *
-     * @param event a event that an order was executed.
+     * @param event an event where an order was executed.
      */
     virtual void handleOrderExecuted(const ExecutedOrder &event) {}
 
     /**
-     * Handles a event that a symbol was added.
+     * Handles an event where a symbol was added.
      *
-     * @param event a event that a symbol was added.
+     * @param event an event where a symbol was added.
      */
     virtual void handleSymbolAdded(const SymbolAdded &event) {}
+
+    /**
+     * Handles a event where a symbol was deleted.
+     *
+     * @param event an event where a symbol was deleted.
+     */
+    virtual void handleSymbolDeleted(const SymbolDeleted &event) {}
     // LCOV_EXCL_STOP
 };
 #endif // RAPID_TRADER_EVENT_HANDLER_H

@@ -58,7 +58,7 @@ public:
     template<typename F, typename...Args>
     void submitTask(uint32_t queue_index, F&& f, Args&&...args)
     {
-        std::function<void()> task = std::bind(f, args...);
+        std::function<void()> task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
         thread_queues[queue_index]->push(task);
     }
 
@@ -78,8 +78,8 @@ public:
     template<typename F, typename...Args, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
     std::future<R> submitWaitableTask(uint32_t queue_index, F&& f, Args&&...args)
     {
-        std::function<R()> task = std::bind(f, args...);
-        auto task_promise = std::make_shared<std::promise<R>>(std::promise<R>(f));
+        std::function<R()> task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+        auto task_promise = std::make_shared<std::promise<R>>(std::promise<R>());
         thread_queues[queue_index]->push([=]{
             try
             {
@@ -90,15 +90,51 @@ public:
                 }
                 else
                 {
-                    R task_result = std::invoke(task);
-                    task_promise->set_value(task_result);
+                    task_promise->set_value(std::invoke(task));
                 }
             }
             catch(...)
             {
-                task_promise->set_value(std::current_exception());
+                task_promise->set_exception(std::current_exception());
             }
         });
+    }
+
+    /**
+     * Starts the thread pool, require that the thread pool is not already started.
+     */
+    void start()
+    {
+        assert(!running && "Thread pool is already started!");
+        running = true;
+        // Try to spawn the threads for the pool.
+        try
+        {
+            for (uint32_t i = 0; i < num_threads; ++i)
+                threads[i] = std::thread(&ThreadPool::workerThread, this, i);
+        }
+        catch (...)
+        {
+            running = false;
+            throw;
+        }
+    }
+
+    /**
+     * Stops the thread pool, require that the thread pool has been started.
+     */
+    void stop()
+    {
+        assert(running && "Thread pool has not been started!");
+        running = false;
+    }
+
+    /**
+     * @return true if the thread pool has been started and false otherwise.
+     */
+    bool isStarted()
+    {
+        return running;
     }
 
     /**

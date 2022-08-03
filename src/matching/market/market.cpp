@@ -16,10 +16,13 @@ void OrderBookHandler::addOrderBook(uint32_t symbol_id, std::string symbol_name)
     }
 }
 
-void OrderBookHandler::deleteOrderBook(uint32_t symbol_id)
+void OrderBookHandler::deleteOrderBook(uint32_t symbol_id, std::string symbol_name)
 {
     if (id_to_book.find(symbol_id) != id_to_book.end())
+    {
         id_to_book.erase(symbol_id);
+        event_handler->handleSymbolDeleted(SymbolDeleted{symbol_id, std::move(symbol_name)});
+    }
 }
 
 void OrderBookHandler::addOrder(const Order &order)
@@ -102,10 +105,11 @@ void Market::addSymbol(uint32_t symbol_id, const std::string &symbol_name)
 
 void Market::deleteSymbol(uint32_t symbol_id)
 {
-    if (id_to_symbol.find(symbol_id) != id_to_symbol.end())
+    auto it = id_to_symbol.find(symbol_id);
+    if (it != id_to_symbol.end())
     {
+        orderbook_handler->deleteOrderBook(symbol_id, it->second->name);
         id_to_symbol.erase(symbol_id);
-        orderbook_handler->deleteOrderBook(symbol_id);
     }
 }
 

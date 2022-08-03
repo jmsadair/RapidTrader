@@ -9,11 +9,12 @@ struct MarketEventDebugger
     std::queue<ExecutedOrder> execute_order_events;
     std::queue<OrderUpdated> update_order_events;
     std::queue<SymbolAdded> add_symbol_events;
+    std::queue<SymbolDeleted> delete_symbol_events;
 
     [[nodiscard]] bool empty() const
     {
         return add_order_events.empty() && delete_order_events.empty() && execute_order_events.empty() && update_order_events.empty() &&
-               add_symbol_events.empty();
+               add_symbol_events.empty() && delete_symbol_events.empty();
     }
 };
 
@@ -45,6 +46,11 @@ protected:
     void handleSymbolAdded(const SymbolAdded &notification) override
     {
         market_debugger.add_symbol_events.push(notification);
+    }
+
+    void handleSymbolDeleted(const SymbolDeleted &notification) override
+    {
+        market_debugger.delete_symbol_events.push(notification);
     }
 
 private:

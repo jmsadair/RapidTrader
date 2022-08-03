@@ -18,7 +18,7 @@ struct OrderBookHandler
 
     void addOrderBook(uint32_t symbol_id, std::string symbol_name);
 
-    void deleteOrderBook(uint32_t symbol_id);
+    void deleteOrderBook(uint32_t symbol_id, std::string symbol_name);
 
     void addOrder(const Order &order);
 
@@ -56,7 +56,7 @@ public:
     explicit Market(std::unique_ptr<EventHandler> event_handler);
 
     /**
-     * Adds a new symbol to market.
+     * Adds a new symbol and a corresponding orderbook to market.
      *
      * @param symbol_id the ID that the symbol is identified by, require that
      *                  the symbol associated with symbol ID does not already exist.
@@ -65,7 +65,7 @@ public:
     void addSymbol(uint32_t symbol_id, const std::string &symbol_name);
 
     /**
-     * Removes the symbol from the market.
+     * Removes the symbol and the corresponding orderbook from the market.
      *
      * @param symbol_id the ID that the symbol is identified by, require that
      *                  the symbol associated with symbol ID exists.

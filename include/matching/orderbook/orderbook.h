@@ -80,6 +80,34 @@ public:
     [[nodiscard]] virtual bool empty() const = 0;
 
     /**
+     * @return the symbol ID associated with the book.
+     */
+    [[nodiscard]] virtual uint32_t getSymbolID() const = 0;
+
+    /**
+     * @return the highest bid price if there any bid orders in the book, otherwise zero.
+     */
+    [[nodiscard]] virtual uint64_t bestBid() const = 0;
+
+    /**
+     * @return the lowest ask price if there any ask orders in the book, otherwise max 64-bit integer value.
+     */
+    [[nodiscard]] virtual uint64_t bestAsk() const = 0;
+
+    /**
+     * @return the last traded price if any trades have occurred, otherwise zero.
+     */
+    [[nodiscard]] virtual uint64_t lastTradedPrice() const = 0;
+
+    /**
+     * Writes the string representation of the the orderbook to
+     * a file at the provided path. Creates a new file.
+     *
+     * @param path the path to the file that will be written to.
+     */
+    virtual void dumpBook(const std::string &path) const = 0;
+
+    /**
      * @return a string representation of the book.
      */
     [[nodiscard]] virtual std::string toString() const = 0;
