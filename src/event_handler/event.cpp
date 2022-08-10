@@ -35,4 +35,3 @@ std::ostream &operator<<(std::ostream &os, const OrderUpdated &notification)
     return os;
 }
 // LCOV_EXCL_STOP
-

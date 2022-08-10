@@ -3,8 +3,8 @@
 #include "market/market.h"
 
 /**
-* Tests adding a symbol that does not exist to the market.
-*/
+ * Tests adding a symbol that does not exist to the market.
+ */
 TEST(AddSymbolTest, AddSymbolTest1)
 {
     MarketEventDebugger event_debugger;

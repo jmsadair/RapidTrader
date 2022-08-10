@@ -37,7 +37,6 @@ struct SymbolDeleted : public MarketEvent
     friend std::ostream &operator<<(std::ostream &os, const SymbolDeleted &notification);
 };
 
-
 struct OrderEvent : public Event
 {
     Order order;
