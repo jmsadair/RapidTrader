@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include "utils/log.h"
 #include "utils/robin_hood.h"
 #include "order.h"
 #include "orderbook.h"

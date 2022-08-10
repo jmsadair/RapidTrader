@@ -142,9 +142,9 @@ target_link_libraries(rapid_trader spdlog)
 # ------------------------------------------------------------------------------
 # Rapid Trader Example
 # ------------------------------------------------------------------------------
-#add_executable(rapid_trader_example examples/market_example.cpp)
-#target_link_libraries(rapid_trader_example rapid_trader)
-#install(TARGETS rapid_trader_example DESTINATION ${TRADER_INSTALL_BIN_DIR}/examples)
+add_executable(rapid_trader_example examples/market_example.cpp)
+target_link_libraries(rapid_trader_example rapid_trader)
+install(TARGETS rapid_trader_example DESTINATION ${TRADER_INSTALL_BIN_DIR}/examples)
 
 # ------------------------------------------------------------------------------
 # Rapid Trader Benchmark

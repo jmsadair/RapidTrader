@@ -2,7 +2,6 @@
 #include <benchmark/benchmark.h>
 #include <iostream>
 #include "market/market.h"
-#include "market/concurrent_market.h"
 #include "event_handler/event_handler.h"
 
 class DebugEventHandler : public EventHandler

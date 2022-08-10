@@ -15,6 +15,7 @@ class Level;
 
 /**
  * Supported order types.
+ *
  * Limit: an order type that will only buy / sell a security
  * at a specified price or better. For a limit order
  * on the bid side, the order will only be executed
