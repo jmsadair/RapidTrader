@@ -12,4 +12,4 @@ std::ostream &operator<<(std::ostream &os, const Symbol &symbol)
     os << "Symbol Name: " << symbol.name << "Symbol ID: " << symbol.id << "\n";
     return os;
 }
-}
+} // namespace RapidTrader

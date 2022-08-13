@@ -9,7 +9,6 @@
 #include "orderbook.h"
 #include "symbol.h"
 
-
 namespace RapidTrader {
 using namespace Concurrent;
 class EventHandler;
@@ -147,5 +146,5 @@ private:
     // with a newly added symbol.
     uint32_t symbol_submission_index;
 };
-}
+} // namespace RapidTrader
 #endif // RAPID_TRADER_CONCURRENT_MARKET_H

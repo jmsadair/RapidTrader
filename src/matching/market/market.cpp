@@ -158,4 +158,4 @@ void Market::dumpMarket(const std::string &name) const
     file.close();
 }
 // LCOV_EXCL_END
-} // namespace RapidTrader::Matching
+} // namespace RapidTrader

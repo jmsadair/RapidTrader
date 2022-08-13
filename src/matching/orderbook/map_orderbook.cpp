@@ -626,5 +626,5 @@ void MapOrderBook::validateTrailingStopOrders() const
         }
     }
 }
-}
-// LCOV_EXCL_END
+} // namespace RapidTrader
+  // LCOV_EXCL_END

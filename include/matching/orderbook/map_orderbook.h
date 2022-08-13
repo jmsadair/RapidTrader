@@ -364,5 +364,5 @@ private:
     // The symbol ID associated with the book.
     uint32_t symbol_id;
 };
-}
+} // namespace RapidTrader
 #endif // RAPID_TRADER_MAP_ORDERBOOK_H

@@ -192,5 +192,5 @@ private:
     // Handles cleaning up the worker threads when the thread pool is destroyed.
     ThreadJoiner thread_joiner;
 };
-} // namespace Concurrent
+} // namespace RapidTrader::Concurrent
 #endif // RAPID_TRADER_THREAD_POOL_H

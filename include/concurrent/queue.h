@@ -69,5 +69,5 @@ private:
     std::queue<T> queue;
     std::condition_variable c;
 };
-} // namespace Concurrent
+} // namespace RapidTrader::Concurrent
 #endif // RAPID_TRADER_QUEUE_H

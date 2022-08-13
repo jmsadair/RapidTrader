@@ -42,5 +42,5 @@ std::ostream &operator<<(std::ostream &os, const OrderUpdated &notification)
     os << "UPDATED ORDER\n" << notification.order;
     return os;
 }
-}
+} // namespace RapidTrader
 // LCOV_EXCL_STOP

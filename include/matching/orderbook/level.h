@@ -181,5 +181,5 @@ private:
     uint64_t volume;
     uint64_t price;
 };
-}
+} // namespace RapidTrader
 #endif // RAPID_TRADER_LEVEL_H

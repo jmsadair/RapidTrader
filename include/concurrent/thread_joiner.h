@@ -27,5 +27,5 @@ private:
     // The threads that the joiner is responsible for joining.
     std::vector<std::thread> &threads;
 };
-}
+} // namespace RapidTrader::Concurrent
 #endif // RAPID_TRADER_THREAD_JOINER_H

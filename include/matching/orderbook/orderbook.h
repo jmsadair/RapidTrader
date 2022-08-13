@@ -115,5 +115,5 @@ public:
 
     virtual ~OrderBook() = default;
 };
-}
+} // namespace RapidTrader
 #endif // RAPID_TRADER_ORDERBOOK_H

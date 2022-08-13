@@ -102,5 +102,5 @@ void Level::validateLevel() const
     }
     assert(actual_volume == volume && "Level has incorrect volume!");
 }
-}
+} // namespace RapidTrader
 // LCOV_EXCL_STOP

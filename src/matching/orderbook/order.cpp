@@ -233,5 +233,5 @@ void Order::validateOrder() const
     // All orders must have a positive ID.
     assert(id > 0 && "Order ID must be positive!");
 }
-}
+} // namespace RapidTrader
 // LCOV_EXCL_STOP

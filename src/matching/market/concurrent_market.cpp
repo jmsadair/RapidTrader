@@ -95,7 +95,7 @@ std::string ConcurrentMarket::toString()
     for (uint32_t i = 0; i < futures.size(); ++i)
     {
         OrderBookHandler *orderbook_handler = orderbook_handlers[i].get();
-        futures[i] = thread_pool.submitWaitableTask(i, [=]{ return orderbook_handler->toString(); });
+        futures[i] = thread_pool.submitWaitableTask(i, [=] { return orderbook_handler->toString(); });
     }
     for (auto &future : futures)
         market_string += future.get();

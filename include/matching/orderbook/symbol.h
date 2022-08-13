@@ -15,5 +15,5 @@ struct Symbol
     Symbol(uint32_t id_, std::string name_);
     friend std::ostream &operator<<(std::ostream &os, const Symbol &symbol);
 };
-}
+} // namespace RapidTrader
 #endif // RAPID_TRADER_SYMBOL_H

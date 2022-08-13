@@ -63,5 +63,5 @@ protected:
     virtual void handleSymbolDeleted(const SymbolDeleted &event) {}
     // LCOV_EXCL_STOP
 };
-}
+} // namespace RapidTrader
 #endif // RAPID_TRADER_EVENT_HANDLER_H

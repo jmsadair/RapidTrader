@@ -621,5 +621,5 @@ private:
     uint64_t open_quantity;
     uint64_t last_executed_quantity;
 };
-}
+} // namespace RapidTrader
 #endif // RAPID_TRADER_ORDER_H

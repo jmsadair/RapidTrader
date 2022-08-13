@@ -81,5 +81,5 @@ struct OrderUpdated : public OrderEvent
 
     friend std::ostream &operator<<(std::ostream &os, const OrderUpdated &notification);
 };
-}
+} // namespace RapidTrader
 #endif // RAPID_TRADER_EVENT_H
