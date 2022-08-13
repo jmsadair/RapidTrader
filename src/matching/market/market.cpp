@@ -1,6 +1,7 @@
 #include "market/market.h"
 #include "map_orderbook.h"
 
+namespace RapidTrader {
 OrderBookHandler::OrderBookHandler(std::unique_ptr<EventHandler> event_handler_)
     : event_handler(std::move(event_handler_))
 {}
@@ -8,9 +9,7 @@ OrderBookHandler::OrderBookHandler(std::unique_ptr<EventHandler> event_handler_)
 void OrderBookHandler::addOrderBook(uint32_t symbol_id, std::string symbol_name)
 {
     auto it = id_to_book.find(symbol_id);
-#ifndef NDEBUG
     assert(it == id_to_book.end() && "Symbol already exists!");
-#endif
     id_to_book.insert({symbol_id, std::make_unique<MapOrderBook>(symbol_id, *event_handler)});
     event_handler->handleSymbolAdded(SymbolAdded{symbol_id, std::move(symbol_name)});
 }
@@ -18,9 +17,7 @@ void OrderBookHandler::addOrderBook(uint32_t symbol_id, std::string symbol_name)
 void OrderBookHandler::deleteOrderBook(uint32_t symbol_id, std::string symbol_name)
 {
     auto it = id_to_book.find(symbol_id);
-#ifndef NDEBUG
     assert(it != id_to_book.end() && "Symbol does not exist!");
-#endif
     id_to_book.erase(it);
     event_handler->handleSymbolDeleted(SymbolDeleted{symbol_id, std::move(symbol_name)});
 }
@@ -28,9 +25,7 @@ void OrderBookHandler::deleteOrderBook(uint32_t symbol_id, std::string symbol_na
 void OrderBookHandler::addOrder(const Order &order)
 {
     auto it = id_to_book.find(order.getSymbolID());
-#ifndef NDEBUG
     assert(it != id_to_book.end() && "Symbol does not exist!");
-#endif
     OrderBook *book = it->second.get();
     book->addOrder(order);
 }
@@ -38,9 +33,7 @@ void OrderBookHandler::addOrder(const Order &order)
 void OrderBookHandler::deleteOrder(uint32_t symbol_id, uint64_t order_id)
 {
     auto it = id_to_book.find(symbol_id);
-#ifndef NDEBUG
     assert(it != id_to_book.end() && "Symbol does not exist!");
-#endif
     OrderBook *book = it->second.get();
     book->deleteOrder(order_id);
 }
@@ -48,10 +41,8 @@ void OrderBookHandler::deleteOrder(uint32_t symbol_id, uint64_t order_id)
 void OrderBookHandler::cancelOrder(uint32_t symbol_id, uint64_t order_id, uint64_t cancelled_quantity)
 {
     auto it = id_to_book.find(symbol_id);
-#ifndef NDEBUG
     assert(it != id_to_book.end() && "Symbol does not exist!");
     assert(cancelled_quantity > 0 && "Cancelled quantity must be positive!");
-#endif
     OrderBook *book = it->second.get();
     book->cancelOrder(order_id, cancelled_quantity);
 }
@@ -59,11 +50,9 @@ void OrderBookHandler::cancelOrder(uint32_t symbol_id, uint64_t order_id, uint64
 void OrderBookHandler::replaceOrder(uint32_t symbol_id, uint64_t order_id, uint64_t new_order_id, uint64_t new_price)
 {
     auto it = id_to_book.find(symbol_id);
-#ifndef NDEBUG
     assert(it != id_to_book.end() && "Symbol does not exist!");
     assert(new_order_id > 0 && "Order ID must be positive!");
     assert(new_price > 0 && "Price must be positive!");
-#endif
     OrderBook *book = it->second.get();
     book->replaceOrder(order_id, new_order_id, new_price);
 }
@@ -71,22 +60,18 @@ void OrderBookHandler::replaceOrder(uint32_t symbol_id, uint64_t order_id, uint6
 void OrderBookHandler::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity, uint64_t price)
 {
     auto it = id_to_book.find(symbol_id);
-#ifndef NDEBUG
     assert(it != id_to_book.end() && "Symbol does not exist!");
     assert(quantity > 0 && "Quantity must be positive!");
     assert(price > 0 && "Price must be positive!");
-#endif
     OrderBook *book = it->second.get();
     book->executeOrder(order_id, quantity, price);
 }
 void OrderBookHandler::executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity)
 {
     auto it = id_to_book.find(symbol_id);
-#ifndef NDEBUG
     assert(it != id_to_book.end() && "Symbol does not exist!");
     assert(order_id > 0 && "Order ID must be positive!");
     assert(quantity > 0 && "Quantity must be positive!");
-#endif
     OrderBook *book = it->second.get();
     book->executeOrder(order_id, quantity);
 }
@@ -102,7 +87,6 @@ std::string OrderBookHandler::toString()
     return book_handler_string;
 }
 
-namespace RapidTrader::Matching {
 Market::Market(std::unique_ptr<EventHandler> event_handler)
     : orderbook_handler(std::make_unique<OrderBookHandler>(std::move(event_handler)))
 {}
@@ -167,9 +151,9 @@ std::ostream &operator<<(std::ostream &os, const Market &market)
     return os;
 }
 
-void Market::dumpMarket(const std::string &path) const
+void Market::dumpMarket(const std::string &name) const
 {
-    std::ofstream file(path);
+    std::ofstream file(name);
     file << *this;
     file.close();
 }

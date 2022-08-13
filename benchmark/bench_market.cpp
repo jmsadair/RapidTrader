@@ -4,6 +4,8 @@
 #include "market/market.h"
 #include "event_handler/event_handler.h"
 
+using namespace RapidTrader;
+
 class DebugEventHandler : public EventHandler
 {};
 
@@ -37,7 +39,7 @@ static void BM_Market(benchmark::State &state)
     for (auto _ : state)
     {
         state.PauseTiming();
-        RapidTrader::Matching::Market market{std::make_unique<EventHandler>()};
+        Market market{std::make_unique<EventHandler>()};
         for (int i = 1; i <= num_symbols; ++i)
             market.addSymbol(i, "MARKET BENCH");
         state.ResumeTiming();

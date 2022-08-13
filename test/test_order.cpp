@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include "order.h"
 
+using namespace RapidTrader;
+
 TEST(Order, OrderConstructorShouldWork)
 {
     // Create a LIMIT BID GTC order.

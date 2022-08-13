@@ -9,10 +9,12 @@
 #include "orderbook.h"
 #include "symbol.h"
 
+
+namespace RapidTrader {
+using namespace Concurrent;
 class EventHandler;
 class OrderBookHandler;
 
-namespace RapidTrader::Matching {
 class ConcurrentMarket
 {
 public:
@@ -58,7 +60,6 @@ public:
      *
      * @param symbol_id the symbol ID associated with the order.
      * @param order_id the ID associated with the order.
-     * @return ErrorStatus indicating whether the order was successfully deleted.
      */
     void deleteOrder(uint32_t symbol_id, uint64_t order_id);
 
@@ -68,7 +69,6 @@ public:
      * @param symbol_id the symbol ID associated with the order.
      * @param order_id the ID associated with the order.
      * @param cancelled_quantity the quantity of the order to cancel, require that cancelled_quantity is positive.
-     * @return ErrorStatus indicating whether the order was successfully cancelled.
      */
     void cancelOrder(uint32_t symbol_id, uint64_t order_id, uint64_t cancelled_quantity);
 
@@ -101,6 +101,21 @@ public:
      */
     void executeOrder(uint32_t symbol_id, uint64_t order_id, uint64_t quantity);
 
+    /**
+     * @return the string representation of the market.
+     */
+    [[nodiscard]] std::string toString();
+
+    /**
+     * Writes the string representation to a file with the provided
+     * name. Creates a new file.
+     *
+     * @param name the name to the file that will be written to.
+     */
+    void dumpMarket(const std::string &name);
+
+    friend std::ostream &operator<<(std::ostream &os, ConcurrentMarket &concurrent_market);
+
 private:
     /**
      * Gets the index that that corresponds to the queue in the thread pool
@@ -127,10 +142,10 @@ private:
     // handler that is associated with the symbol ID.
     robin_hood::unordered_map<uint32_t, uint32_t> id_to_submission_index;
     // The thread pool that order operations will be submitted to.
-    Concurrent::ThreadPool thread_pool;
+    ThreadPool thread_pool;
     // The index of the thread pool queue and orderbook handler that will be associated
     // with a newly added symbol.
     uint32_t symbol_submission_index;
 };
-} // namespace RapidTrader::Matching
+}
 #endif // RAPID_TRADER_CONCURRENT_MARKET_H

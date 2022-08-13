@@ -2,6 +2,7 @@
 #define RAPID_TRADER_LEVEL_H
 #include "order.h"
 
+namespace RapidTrader {
 // Only validate level in debug mode.
 #ifndef NDEBUG
 #    define VALIDATE_LEVEL validateLevel()
@@ -180,4 +181,5 @@ private:
     uint64_t volume;
     uint64_t price;
 };
+}
 #endif // RAPID_TRADER_LEVEL_H

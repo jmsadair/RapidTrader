@@ -2,6 +2,7 @@
 #define RAPID_TRADER_ORDERBOOK_H
 #include "order.h"
 
+namespace RapidTrader {
 class OrderBook
 {
 public:
@@ -114,4 +115,5 @@ public:
 
     virtual ~OrderBook() = default;
 };
+}
 #endif // RAPID_TRADER_ORDERBOOK_H

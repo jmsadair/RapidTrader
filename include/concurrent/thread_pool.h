@@ -8,7 +8,7 @@
 #include "concurrent/thread_joiner.h"
 #include "concurrent/queue.h"
 
-namespace Concurrent {
+namespace RapidTrader::Concurrent {
 class ThreadPool
 {
 public:
@@ -98,6 +98,7 @@ public:
                 task_promise->set_exception(std::current_exception());
             }
         });
+        return task_promise->get_future();
     }
 
     /**

@@ -8,7 +8,9 @@
 #include "order.h"
 #include "orderbook.h"
 #include "symbol.h"
+#include "event_handler.h"
 
+namespace RapidTrader {
 class EventHandler;
 
 // A struct for the shared logic between market and concurrent market.
@@ -42,7 +44,6 @@ private:
     std::unique_ptr<EventHandler> event_handler;
 };
 
-namespace RapidTrader::Matching {
 class Market
 {
 public:
@@ -138,12 +139,12 @@ public:
     [[nodiscard]] std::string toString() const;
 
     /**
-     * Writes the string representation of the the market to
-     * a file at the provided path. Creates a new file.
+     * Writes the string representation to a file with the provided
+     * name. Creates a new file.
      *
-     * @param path the path to the file that will be written to.
+     * @param name the name to the file that will be written to.
      */
-    void dumpMarket(const std::string &path) const;
+    void dumpMarket(const std::string &name) const;
 
     friend std::ostream &operator<<(std::ostream &os, const Market &book);
 
@@ -153,6 +154,5 @@ private:
     // Symbol IDs to symbols.
     robin_hood::unordered_map<uint32_t, std::unique_ptr<Symbol>> id_to_symbol;
 };
-
-} // namespace RapidTrader::Matching
+} // namespace RapidTrader
 #endif // RAPID_TRADER_MARKET_H

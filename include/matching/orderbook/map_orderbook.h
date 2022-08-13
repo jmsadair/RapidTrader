@@ -8,6 +8,7 @@
 #include "order.h"
 #include "event_handler/event_handler.h"
 
+namespace RapidTrader {
 // Only validate orderbook in debug mode.
 #ifndef NDEBUG
 #    define VALIDATE_ORDERBOOK validateOrderBook()
@@ -363,4 +364,5 @@ private:
     // The symbol ID associated with the book.
     uint32_t symbol_id;
 };
+}
 #endif // RAPID_TRADER_MAP_ORDERBOOK_H

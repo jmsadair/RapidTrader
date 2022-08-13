@@ -4,7 +4,7 @@
 #include <mutex>
 #include <condition_variable>
 
-namespace Concurrent {
+namespace RapidTrader::Concurrent {
 /**
  * A thread-safe queue.
  *

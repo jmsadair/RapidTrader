@@ -136,22 +136,26 @@ set(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --error-exitcode
 # ------------------------------------------------------------------------------
 file(GLOB_RECURSE LIB_HEADER_FILES "include/*.h")
 file(GLOB_RECURSE LIB_SOURCE_FILES "src/*.cpp")
-add_library(rapid_trader ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES} src/matching/orderbook/symbol.cpp)
-target_link_libraries(rapid_trader spdlog)
+add_library(trader_lib ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES})
+target_link_libraries(trader_lib spdlog)
+install(TARGETS trader_lib DESTINATION ${TRADER_INSTALL_LIB_DIR})
 
 # ------------------------------------------------------------------------------
 # Rapid Trader Example
 # ------------------------------------------------------------------------------
-add_executable(rapid_trader_example examples/market_example.cpp)
-target_link_libraries(rapid_trader_example rapid_trader)
-install(TARGETS rapid_trader_example DESTINATION ${TRADER_INSTALL_BIN_DIR}/examples)
+add_executable(trader_market_example examples/market_example.cpp)
+add_executable(trader_concurrent_market_example examples/concurrent_market_example.cpp examples/simple_event_handler.h)
+target_link_libraries(trader_market_example trader_lib)
+target_link_libraries(trader_concurrent_market_example trader_lib)
+install(TARGETS trader_market_example DESTINATION ${TRADER_INSTALL_BIN_DIR}/examples)
+install(TARGETS trader_concurrent_market_example DESTINATION ${TRADER_INSTALL_BIN_DIR}/examples)
 
 # ------------------------------------------------------------------------------
 # Rapid Trader Benchmark
 # ------------------------------------------------------------------------------
-add_executable(rapid_trader_benchmark benchmark/bench_market.cpp)
-target_link_libraries(rapid_trader_benchmark benchmark::benchmark rapid_trader)
-install(TARGETS rapid_trader_benchmark DESTINATION ${TRADER_INSTALL_BIN_DIR}/benchmarks)
+add_executable(trader_benchmark benchmark/bench_market.cpp)
+target_link_libraries(trader_benchmark benchmark::benchmark trader_lib)
+install(TARGETS trader_benchmark DESTINATION ${TRADER_INSTALL_BIN_DIR}/benchmarks)
 
 # ------------------------------------------------------------------------------
 # Rapid Trader Tests
@@ -159,9 +163,9 @@ install(TARGETS rapid_trader_benchmark DESTINATION ${TRADER_INSTALL_BIN_DIR}/ben
 include(CTest)
 include(GoogleTest)
 file(GLOB_RECURSE TEST_SOURCE_FILES "test/*.cpp")
-add_executable(rapid_trader_tests ${TEST_SOURCE_FILES})
-target_link_libraries(rapid_trader_tests rapid_trader)
-target_link_libraries(rapid_trader_tests gtest_main)
-gtest_discover_tests(rapid_trader_tests)
-install(TARGETS rapid_trader_tests DESTINATION ${TRADER_INSTALL_BIN_DIR}/tests)
+add_executable(trader_tests ${TEST_SOURCE_FILES})
+target_link_libraries(trader_tests trader_lib)
+target_link_libraries(trader_tests gtest_main)
+gtest_discover_tests(trader_tests)
+install(TARGETS trader_tests DESTINATION ${TRADER_INSTALL_BIN_DIR}/tests)
 

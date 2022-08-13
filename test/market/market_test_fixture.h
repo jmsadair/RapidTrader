@@ -4,6 +4,8 @@
 #include "debug_event_handler.h"
 #include "market/market.h"
 
+using namespace RapidTrader;
+
 class MarketTest : public ::testing::Test
 {
 
@@ -75,7 +77,7 @@ protected:
     }
 
     MarketEventDebugger market_debugger;
-    RapidTrader::Matching::Market market{std::make_unique<DebugEventHandler>(market_debugger)};
+    RapidTrader::Market market{std::unique_ptr<RapidTrader::EventHandler>(new DebugEventHandler(market_debugger))};
     uint32_t symbol_id = 1;
     std::string symbol_name = "GOOG";
 };

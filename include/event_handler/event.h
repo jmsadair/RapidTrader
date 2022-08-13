@@ -2,6 +2,7 @@
 #define RAPID_TRADER_EVENT_H
 #include "order.h"
 
+namespace RapidTrader {
 struct Event
 {
     virtual ~Event() = default;
@@ -80,4 +81,5 @@ struct OrderUpdated : public OrderEvent
 
     friend std::ostream &operator<<(std::ostream &os, const OrderUpdated &notification);
 };
+}
 #endif // RAPID_TRADER_EVENT_H

@@ -2,6 +2,7 @@
 #define RAPID_TRADER_SYMBOL_H
 #include <iostream>
 
+namespace RapidTrader {
 /**
  * Represents a publicly traded security.
  */
@@ -14,4 +15,5 @@ struct Symbol
     Symbol(uint32_t id_, std::string name_);
     friend std::ostream &operator<<(std::ostream &os, const Symbol &symbol);
 };
+}
 #endif // RAPID_TRADER_SYMBOL_H

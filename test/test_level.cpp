@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include "level.h"
 
+using namespace RapidTrader;
+
 TEST(Level, AddingOrdersToLevelShouldWork1)
 {
     // Create a LIMIT BID GTC order.

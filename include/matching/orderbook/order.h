@@ -2,6 +2,7 @@
 #define RAPID_TRADER_ORDER_H
 #include <boost/intrusive/list.hpp>
 
+namespace RapidTrader {
 // Only validate order in debug mode.
 #ifndef NDEBUG
 #    define VALIDATE_ORDER validateOrder()
@@ -620,4 +621,5 @@ private:
     uint64_t open_quantity;
     uint64_t last_executed_quantity;
 };
+}
 #endif // RAPID_TRADER_ORDER_H

@@ -1,6 +1,9 @@
 #ifndef RAPID_TRADER_DEBUG_EVENT_HANDLER_H
 #define RAPID_TRADER_DEBUG_EVENT_HANDLER_H
 #include "event_handler/event_handler.h"
+#include "event.h"
+
+using namespace RapidTrader;
 
 struct MarketEventDebugger
 {

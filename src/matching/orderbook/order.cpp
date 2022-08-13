@@ -1,6 +1,7 @@
 #include <iostream>
 #include "order.h"
 
+namespace RapidTrader {
 Order::Order(OrderType type_, OrderSide side_, OrderTimeInForce time_in_force_, uint32_t symbol_id_, uint64_t price_, uint64_t stop_price_,
     uint64_t trail_amount_, uint64_t quantity_, uint64_t id_)
     : type(type_)
@@ -231,5 +232,6 @@ void Order::validateOrder() const
     assert(executed_quantity <= quantity && "Executed quantity of the order should never exceed the quantity of the order!");
     // All orders must have a positive ID.
     assert(id > 0 && "Order ID must be positive!");
+}
 }
 // LCOV_EXCL_STOP

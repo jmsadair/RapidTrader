@@ -1,6 +1,7 @@
 #include <iostream>
 #include "level.h"
 
+namespace RapidTrader {
 Level::Level(uint64_t price_, LevelSide side_, uint32_t symbol_id_)
     : price(price_)
     , side(side_)
@@ -100,5 +101,6 @@ void Level::validateLevel() const
         actual_volume += order.getOpenQuantity();
     }
     assert(actual_volume == volume && "Level has incorrect volume!");
+}
 }
 // LCOV_EXCL_STOP

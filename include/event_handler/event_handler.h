@@ -4,6 +4,7 @@
 #include "market/concurrent_market.h"
 #include "event_handler/event.h"
 
+namespace RapidTrader {
 class EventHandler
 {
 public:
@@ -62,4 +63,5 @@ protected:
     virtual void handleSymbolDeleted(const SymbolDeleted &event) {}
     // LCOV_EXCL_STOP
 };
+}
 #endif // RAPID_TRADER_EVENT_HANDLER_H

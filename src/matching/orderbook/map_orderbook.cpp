@@ -4,6 +4,7 @@
 #include "event_handler/event.h"
 #include "log.h"
 
+namespace RapidTrader {
 MapOrderBook::MapOrderBook(uint32_t symbol_id_, EventHandler &event_handler_)
     : symbol_id(symbol_id_)
     , event_handler(event_handler_)
@@ -624,5 +625,6 @@ void MapOrderBook::validateTrailingStopOrders() const
                        "Trailing stop level contains an order that is not a trailing stop order!");
         }
     }
+}
 }
 // LCOV_EXCL_END

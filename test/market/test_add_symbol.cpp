@@ -8,7 +8,7 @@
 TEST(AddSymbolTest, AddSymbolTest1)
 {
     MarketEventDebugger event_debugger;
-    RapidTrader::Matching::Market market{std::make_unique<DebugEventHandler>(event_debugger)};
+    Market market{std::make_unique<DebugEventHandler>(event_debugger)};
 
     std::string symbol_name = "GOOG";
     uint32_t symbol_id = 1;
