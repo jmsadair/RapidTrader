@@ -4,13 +4,17 @@
 // LCOV_EXCL_START
 std::ostream &operator<<(std::ostream &os, const SymbolAdded &notification)
 {
-    os << "ADDED SYMBOL\n" << "Symbol Name: " << notification.name << "\n" << "Symbol ID: " << notification.symbol_id << "\n";
+    os << "ADDED SYMBOL\n"
+       << "Symbol Name: " << notification.name << "\n"
+       << "Symbol ID: " << notification.symbol_id << "\n";
     return os;
 }
 
 std::ostream &operator<<(std::ostream &os, const SymbolDeleted &notification)
 {
-    os << "DELETED SYMBOL\n" << "Symbol Name: " << notification.name << "\n" << "Symbol ID: " << notification.symbol_id << "\n";
+    os << "DELETED SYMBOL\n"
+       << "Symbol Name: " << notification.name << "\n"
+       << "Symbol ID: " << notification.symbol_id << "\n";
     return os;
 }
 
