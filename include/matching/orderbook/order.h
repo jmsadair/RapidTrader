@@ -22,6 +22,7 @@ class Level;
  * at the price of the order or lower. For a limit
  * order on the ask side, the order will only execute
  * at the price of the order or higher.
+ *
  * Market: an order type that will buy / sell a security
  * at the best available price. This type of order
  * will be executed immediately, but the price at
@@ -29,15 +30,19 @@ class Level;
  * If the there is not enough volume to completely
  * fill the order, it will be filled as much as possible
  * before being deleted.
+ *
  * Stop: an order type that will buy / sell a security once the price
  * of the security reaches the stop price. When the stop price
  * is reached, the order becomes a market order.
+ *
  * Stop Limit: an order type that will buy / sell a security once the
  * price of the security reaches the stop price. When the stop price
  * is reached, the order becomes a limit order.
+ *
  * Trailing Stop: a stop order that does not have a specific stop price.
  * Instead, the stop price is defined as a specific dollar amount (the trail
  * amount) below or above the market price of the security (the trailing stop price).
+ *
  * Trailing Stop Limit: a stop limit order that does not have a specific stop price.
  * Instead, the stop price is defined as a specific dollar amount (the trail
  * amount) below or above the market price of the security (the trailing stop price).
@@ -57,8 +62,10 @@ enum class OrderType
  *
  * GTC (Good Till Cancel): an order with time in force GTC will remain
  * active until the order is completed or cancelled.
+ *
  * FOK (Fill Or Kill): an order with time in force FOK will be executed
  * immediately in its entirety; otherwise, it will be cancelled.
+ *
  * IOC (Immediate Or Cancel): an order with time in force IOC will
  * be executed immediately. Any portion of the IOC order that cannot
  * be filled will be cancelled.

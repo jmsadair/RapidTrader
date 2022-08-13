@@ -5,12 +5,30 @@
 class SimpleEventHandler : public EventHandler
 {
 protected:
-    void handleOrderAdded(const OrderAdded &notification) override {}
-    void handleOrderDeleted(const OrderDeleted &notification) override {}
-    void handleOrderUpdated(const OrderUpdated &notification) override {}
-    void handleOrderExecuted(const ExecutedOrder &notification) override {}
-    void handleSymbolAdded(const SymbolAdded &notification) override {}
-    void handleSymbolDeleted(const SymbolDeleted &notification) override {}
+    void handleOrderAdded(const OrderAdded &notification) override
+    {
+        std::cout << notification << "\n";
+    }
+    void handleOrderDeleted(const OrderDeleted &notification) override
+    {
+        std::cout << notification << "\n";
+    }
+    void handleOrderUpdated(const OrderUpdated &notification) override
+    {
+        std::cout << notification << "\n";
+    }
+    void handleOrderExecuted(const ExecutedOrder &notification) override
+    {
+        std::cout << notification << "\n";
+    }
+    void handleSymbolAdded(const SymbolAdded &notification) override
+    {
+        std::cout << notification << "\n";
+    }
+    void handleSymbolDeleted(const SymbolDeleted &notification) override
+    {
+        std::cout << notification << "\n";
+    }
 };
 
 int main()

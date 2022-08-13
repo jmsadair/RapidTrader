@@ -4,34 +4,37 @@
 // LCOV_EXCL_START
 std::ostream &operator<<(std::ostream &os, const SymbolAdded &notification)
 {
-    os << "ADDED SYMBOL: " << notification.name << " " << notification.symbol_id << "\n";
+    os << "ADDED SYMBOL\n" << "Symbol Name: " << notification.name << "\n" << "Symbol ID: " << notification.symbol_id << "\n";
     return os;
 }
 
 std::ostream &operator<<(std::ostream &os, const SymbolDeleted &notification)
 {
-    os << "DELETED SYMBOL: " << notification.name << " " << notification.symbol_id << "\n";
+    os << "DELETED SYMBOL\n" << "Symbol Name: " << notification.name << "\n" << "Symbol ID: " << notification.symbol_id << "\n";
     return os;
 }
 
 std::ostream &operator<<(std::ostream &os, const OrderAdded &notification)
 {
-    os << "ADDED ORDER: " << notification.order.getOrderID() << "\n";
+    os << "ADDED ORDER\n" << notification.order;
     return os;
 }
+
 std::ostream &operator<<(std::ostream &os, const ExecutedOrder &notification)
 {
-    os << "EXECUTED ORDER: " << notification.order.getOrderID() << "\n";
+    os << "EXECUTED ORDER\n" << notification.order;
     return os;
 }
+
 std::ostream &operator<<(std::ostream &os, const OrderDeleted &notification)
 {
-    os << "DELETED ORDER: " << notification.order.getOrderID() << "\n";
+    os << "DELETED ORDER\n" << notification.order;
     return os;
 }
+
 std::ostream &operator<<(std::ostream &os, const OrderUpdated &notification)
 {
-    os << "UPDATED ORDER: " << notification.order.getOrderID() << "\n";
+    os << "UPDATED ORDER\n" << notification.order;
     return os;
 }
 // LCOV_EXCL_STOP

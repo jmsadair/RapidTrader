@@ -206,6 +206,7 @@ std::string Order::toString() const
     order_string += "TOF: " + timeInForceToString(time_in_force) + "\n";
     order_string += "Price: " + std::to_string(price) + "\n";
     order_string += "Quantity: " + std::to_string(quantity) + "\n";
+    order_string += "Open Quantity: " + std::to_string(open_quantity) + "\n";
     return order_string;
 }
 

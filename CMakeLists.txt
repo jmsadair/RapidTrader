@@ -136,7 +136,7 @@ set(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --error-exitcode
 # ------------------------------------------------------------------------------
 file(GLOB_RECURSE LIB_HEADER_FILES "include/*.h")
 file(GLOB_RECURSE LIB_SOURCE_FILES "src/*.cpp")
-add_library(rapid_trader ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES})
+add_library(rapid_trader ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES} src/matching/orderbook/symbol.cpp)
 target_link_libraries(rapid_trader spdlog)
 
 # ------------------------------------------------------------------------------
