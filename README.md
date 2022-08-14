@@ -4,4 +4,11 @@
 
 # RapidTrader
 
-TODO.
+RapidTrader is a low-latency, high-throughput order matching system that is optimised for high frequency trading. 
+This system is capable of processing upwards of 3M order insertions per second and offers support for the following order types:
+- Limit
+- Market
+- Stop
+- Trailing Stop
+
+
