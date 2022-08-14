@@ -30,3 +30,6 @@ To build and test the project, run the following commands:
 
   make test
 ```
+
+## Performance
+The following benchmarks
