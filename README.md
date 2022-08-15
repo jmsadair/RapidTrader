@@ -10,7 +10,7 @@ RapidTrader is a low-latency, high-throughput [order matching system](https://en
 - Stop
 - Trailing Stop
 
-Be aware that this project is still in developmenmt - bugs are expected and pull requests are welcome.
+Be aware that this project is still in development - bugs are expected and pull requests are welcome.
 
 ## Requirements
 - Linux or MacOS
