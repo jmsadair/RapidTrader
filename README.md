@@ -15,6 +15,7 @@ Be aware that this project is still in development - bugs are expected and pull 
 ## Requirements
 - Linux or MacOS
 - gcc or clang
+- [python3](https://www.python.org/downloads/)
 - [CMake](https://cmake.org/download/)
 - [boost](https://github.com/boostorg/boost)
 
