@@ -4,12 +4,13 @@
 
 # RapidTrader
 
-RapidTrader is a low-latency, high-throughput order matching system that is optimised for high frequency trading. 
-This system is capable of processing upwards of 2-4 million order insertions per second and offers support for the following order types:
+RapidTrader is a low-latency, high-throughput [order matching system](https://en.wikipedia.org/wiki/Order_matching_system) that is optimised for high frequency trading. This system is capable of processing upwards of 2-4 million order insertions per second and offers support for the following order types:
 - Limit
 - Market
 - Stop
 - Trailing Stop
+
+Be aware that this project is still in developmenmt - bugs are expected and pull requests are welcome.
 
 ## Requirements
 - Linux or MacOS
@@ -32,9 +33,7 @@ To build and test the project, run the following commands:
 ```
 
 ## Performance
-The following are benchmarks of the synchronous and concurrent implementations of RapidTrader. This benchmark measured the
-performance of the add order operation with a varying number of symbols and orders with a maximum price depth of 15. All benchmarks
-were ran on an Intel Core i7-8700 processor, which supports up to 12 threads.
+The following are benchmarks of the synchronous and concurrent implementations of RapidTrader. This benchmark measured the performance of the add order operation with a varying number of symbols and orders with a maximum price depth of 15. All benchmarks were ran on an Intel Core i7-8700 processor, which supports up to 12 threads.
 
 ```
 --------------------------------------------------------------------------------
@@ -77,7 +76,12 @@ BM_ConcurrentMarket/symbols:2000/orders:2000000        832 ms          824 ms   
 BM_ConcurrentMarket/symbols:2000/orders:3000000       1471 ms         1204 ms            1
 BM_ConcurrentMarket/symbols:2000/orders:4000000       1746 ms         1501 ms            1
 ```
-As demonstrated by the above data, the synchronous version of RapidTrader tends to offer better performance
-than the concurrent version until the number of symbols reaches 2000. Profiling has revealed that this is primarily
-due the synchronisation of memory allocations. A memory pool will likely need to be implemented for the concurrent
-version in order to eliminate this synchronization. 
+As demonstrated by the above data, the synchronous version of RapidTrader tends to offer better performance than the concurrent version until the number of symbols reaches 2000. Profiling has revealed that this is primarily due the synchronisation of memory allocations. A memory pool will likely need to be implemented for the concurrent version in order to eliminate this synchronization.
+
+## Resources
+
+The following are some resources that I have found helpful in the developmenmt of this project:
+
+- [How to Build a Fast Limit Order Book](https://web.archive.org/web/20110219163448/http://howtohft.wordpress.com/2011/02/15/how-to-build-a-fast-limit-order-book/)
+- [Market Order Matching Engine](https://gist.github.com/jdrew1303/e06361070468f6614d52216fb91b79e5)
+- [The Basics of Trading a Stock: Know Your Orders](https://www.investopedia.com/investing/basics-trading-stock-know-your-orders/)
