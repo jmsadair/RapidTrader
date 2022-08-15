@@ -153,9 +153,12 @@ install(TARGETS trader_concurrent_market_example DESTINATION ${TRADER_INSTALL_BI
 # ------------------------------------------------------------------------------
 # Rapid Trader Benchmark
 # ------------------------------------------------------------------------------
-add_executable(trader_benchmark benchmark/bench_market.cpp)
+add_executable(trader_benchmark benchmark/bench_market.cpp benchmark/generate_orders.h benchmark/generate_orders.cpp)
+add_executable(concurrent_trader_benchmark benchmark/bench_concurrent_market.cpp benchmark/generate_orders.h
+        benchmark/generate_orders.cpp)
 target_link_libraries(trader_benchmark benchmark::benchmark trader_lib)
-install(TARGETS trader_benchmark DESTINATION ${TRADER_INSTALL_BIN_DIR}/benchmarks)
+target_link_libraries(concurrent_trader_benchmark benchmark::benchmark trader_lib)
+install(TARGETS trader_benchmark concurrent_trader_benchmark DESTINATION ${TRADER_INSTALL_BIN_DIR}/benchmarks)
 
 # ------------------------------------------------------------------------------
 # Rapid Trader Tests
