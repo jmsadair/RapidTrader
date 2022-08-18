@@ -1,6 +1,7 @@
 ![workflow](https://github.com/jmsadair/RapidTrader/actions/workflows/linux.yml/badge.svg)
 ![workflow](https://github.com/jmsadair/RapidTrader/actions/workflows/macos.yml/badge.svg)
 [![codecov](https://codecov.io/gh/jmsadair/RapidTrader/branch/dev/graph/badge.svg?token=4QQI0QDVYM)](https://codecov.io/gh/jmsadair/RapidTrader)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/2d9fa4354aac44e9ba97ad18b35e7eb9)](https://www.codacy.com/gh/jmsadair/RapidTrader/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jmsadair/RapidTrader&amp;utm_campaign=Badge_Grade)
 
 # RapidTrader
 
