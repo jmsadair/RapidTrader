@@ -10,7 +10,7 @@ int main()
     // Note that there must be one event handler per thread.
     const uint32_t num_threads = 2;
     std::vector<std::unique_ptr<EventHandler>> event_handlers;
-    for (uint32_t i = 0; i < num_threads; ++i)
+    for (auto i = 0; i < num_threads; ++i)
         event_handlers.push_back(std::unique_ptr<EventHandler>(new SimpleEventHandler));
     ConcurrentMarket market{event_handlers, num_threads};
 

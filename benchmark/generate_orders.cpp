@@ -8,7 +8,7 @@ void generateOrders(std::vector<Order> &orders, uint32_t num_orders, uint32_t nu
     std::mt19937 gen(rd());
     std::uniform_int_distribution<uint64_t> uniform_dist{0, 10};
     std::uniform_int_distribution<uint64_t> symbol_dist{1, num_symbols};
-    for (uint64_t i = 1; i <= num_orders; ++i)
+    for (auto i = 1; i <= num_orders; ++i)
     {
         OrderSide side = i % 2 == 0 ? OrderSide::Ask : OrderSide::Bid;
         OrderTimeInForce tof = OrderTimeInForce::GTC;

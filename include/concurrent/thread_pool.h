@@ -31,7 +31,7 @@ public:
         // Try to spawn the threads for the pool.
         try
         {
-            for (uint32_t i = 0; i < num_threads; ++i)
+            for (auto i = 0; i < num_threads; ++i)
             {
                 thread_queues.push_back(std::make_unique<Queue<std::function<void()>>>());
                 threads.emplace_back(&ThreadPool::workerThread, this, i);
@@ -111,7 +111,7 @@ public:
         // Try to spawn the threads for the pool.
         try
         {
-            for (uint32_t i = 0; i < num_threads; ++i)
+            for (auto i = 0; i < num_threads; ++i)
                 threads[i] = std::thread(&ThreadPool::workerThread, this, i);
         }
         catch (...)

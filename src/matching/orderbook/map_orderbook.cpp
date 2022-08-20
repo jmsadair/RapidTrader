@@ -348,6 +348,7 @@ void MapOrderBook::updateBidStopOrders()
     }
     std::map<uint64_t, Level> new_trailing_levels;
     auto trailing_levels_it = trailing_stop_bid_levels.begin();
+    // Update the stop price of all existing trailing stop orders.
     while (trailing_levels_it != trailing_stop_bid_levels.end())
     {
         while (!trailing_levels_it->second.empty())
@@ -376,6 +377,7 @@ void MapOrderBook::updateAskStopOrders()
     }
     std::map<uint64_t, Level> new_trailing_levels;
     auto trailing_levels_it = trailing_stop_ask_levels.begin();
+    // Update the stop price of all existing trailing stop orders.
     while (trailing_levels_it != trailing_stop_ask_levels.end())
     {
         while (!trailing_levels_it->second.empty())
@@ -413,6 +415,7 @@ void MapOrderBook::match(Order &order)
             bid_level.reduceVolume(bid_order.getLastExecutedQuantity());
             if (bid_order.isFilled())
                 deleteOrder(bid_order.getOrderID(), true);
+            // Reset the level iterator - iterator may be invalidated if the order is deleted.
             bid_levels_it = bid_levels.rbegin();
         }
     }
@@ -429,6 +432,7 @@ void MapOrderBook::match(Order &order)
             ask_level.reduceVolume(ask_order.getLastExecutedQuantity());
             if (ask_order.isFilled())
                 deleteOrder(ask_order.getOrderID(), true);
+            // Reset the level iterator - iterator may be invalidated if the order is deleted.
             ask_levels_it = ask_levels.begin();
         }
     }
