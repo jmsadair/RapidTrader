@@ -1,6 +1,7 @@
 #ifndef RAPID_TRADER_SYMBOL_H
 #define RAPID_TRADER_SYMBOL_H
 #include <iostream>
+#include <cstdint>
 
 namespace RapidTrader {
 /**

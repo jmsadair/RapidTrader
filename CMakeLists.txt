@@ -45,7 +45,7 @@ FetchContent_MakeAvailable(googletest)
 FetchContent_Declare(
         googlebenchmark
         GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG master
+        GIT_TAG main
 )
 set(BENCHMARK_ENABLE_TESTING off)
 FetchContent_MakeAvailable(googlebenchmark)
@@ -56,7 +56,7 @@ FetchContent_MakeAvailable(googlebenchmark)
 FetchContent_Declare(
         spdlog
         GIT_REPOSITORY https://github.com/gabime/spdlog.git
-        GIT_TAG v1.x
+        GIT_TAG v1.8.5
 )
 FetchContent_MakeAvailable(spdlog)
 
